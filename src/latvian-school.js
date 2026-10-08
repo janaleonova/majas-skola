@@ -65,17 +65,29 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
  container.prepend(host);
  const nav=document.createElement('div');host.append(nav);
  const content=document.createElement('div');host.append(content);
+ const pending=new Map();
+ function pendingKey(topic){return 'marks-lv-errors-'+topic.id;}
+ function remember(topic,missed){if(!canSubmit)return; if(missed.length)pending.set(topic.id,missed);else pending.delete(topic.id);}
+ function addButton(parent,title,onClick){const button=document.createElement('button');button.type='button';button.textContent=title;button.style.margin='8px';button.onclick=onClick;parent.append(button);return button;}
  for(const topic of TOPICS){const b=document.createElement('button');b.type='button';b.textContent=topic.icon+' '+topic.name;b.style.margin='5px';b.onclick=()=>choose(topic);nav.append(b);}
  function choose(topic){content.replaceChildren();
   const h=document.createElement('h3');h.textContent=topic.name;content.append(h);
+  const missed=pending.get(topic.id)||[];if(missed.length){const note=document.createElement('p');note.textContent='🐉 Vēl vari nostiprināt '+missed.length+' jautājumus, kuros kļūdījies.';content.append(note);addButton(content,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));}
   for(const [key,label] of [['learn','📖 Mācos'],['practice','🎯 Trenējos'],['exam','📝 Pārbaudu sevi']]){
    const b=document.createElement('button');b.type='button';b.textContent=label;b.style.margin='5px';b.onclick=()=>start(topic,key);content.append(b);}
  }
- function start(topic,mode){const base=BANK[topic.id].map(q=>({kind:'single',prompt:q[0],options:q[1].map((label,i)=>({label,correct:i===q[2]})),explanation:q[3]}));
+ function start(topic,mode,previousMisses=[]){const base=BANK[topic.id].map(q=>({kind:'single',prompt:q[0],options:q[1].map((label,i)=>({label,correct:i===q[2]})),explanation:q[3]}));
   const extras=EXTENDED[topic.id]||[];
-  let items=shuffle([...base,...extras]).slice(0,Math.min(mode==='exam'?20:mode==='practice'?12:8,base.length+extras.length)).map(q=>({...q,options:shuffle(q.options||[])}));
+  const all=[...base,...extras];
+  const source=mode==='errors'
+    ? all.filter(q=>!previousMisses.some(old=>old.prompt===q.prompt))
+    : all;
+  // Error practice uses different questions from the same topic; never repeat the missed prompts.
+  const wanted=mode==='errors'?Math.min(10,Math.max(4,previousMisses.length*2)):mode==='exam'?20:mode==='practice'?12:8;
+  let items=shuffle(source).slice(0,Math.min(wanted,source.length)).map(q=>({...q,options:shuffle(q.options||[])}));
   let index=0,correct=0;
   const results=[];
+  const missed=[];
   render();
   function render(){content.replaceChildren();
    if(index===items.length){void finish();return;}
@@ -95,12 +107,24 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     if(q.kind==='text'){good=q.answers.some(a=>normalize(a)===normalize(input.value));}
     else if(q.kind==='multi'){const selected=[...form.querySelectorAll('input:checked')].map(el=>q.options[Number(el.value)]);if(selected.length===0){feedback.textContent='Izvēlies vismaz vienu atbildi.';return;}good=selected.length===q.answers.length&&selected.every(x=>q.answers.includes(x));}
     else{const selection=form.querySelector('input:checked');if(!selection){feedback.textContent='Izvēlies atbildi.';return;}good=q.options[Number(selection.value)].correct;}
-    correct+=Number(good);results.push(good);form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+    correct+=Number(good);results.push(good);if(!good)missed.push(q);form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     feedback.textContent=mode==='exam'?'Atbilde saglabāta.':good?'✅ Pareizi!':('🔄 Vēl ne. '+q.explanation);
     const next=document.createElement('button');next.type='button';next.textContent=index+1===items.length?'Rezultāts':'Nākamais →';next.onclick=()=>{index++;render();};content.append(next);
    };
   }
   async function finish(){const pct=Math.round(correct/items.length*100);const h=document.createElement('h3');h.textContent=topic.name+': '+pct+'% ('+correct+'/'+items.length+')';content.append(h);
+   if(mode!=='errors')remember(topic,missed);
+   else if(missed.length)remember(topic,missed);
+   else remember(topic,[]);
+   if(missed.length){
+    const callout=document.createElement('div');callout.style.cssText='border:1px solid #b7cfe3;border-radius:12px;padding:14px;margin:14px 0;background:#f3f8fd';
+    const title=document.createElement('strong');title.textContent='🐉 Vēl viens neliels izaicinājums?';callout.append(title);
+    const desc=document.createElement('p');desc.textContent='Tev bija '+missed.length+' nepareizas atbildes. Pamēģini līdzīgus uzdevumus ar citiem piemēriem!';callout.append(desc);
+    addButton(callout,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));
+    addButton(callout,'Vēlāk',()=>choose(topic));content.append(callout);
+   }else if(mode==='errors'){
+    const done=document.createElement('p');done.textContent='🎉 Labi! Šajā kļūdu treniņā visi uzdevumi izpildīti pareizi.';content.append(done);
+   }
    const status=document.createElement('p');content.append(status);
    if(canSubmit){try{await saveProgress({studentRole:'marks',activityType:topic.name+' · '+mode,subject:'Latviešu valoda',score:pct,notes:'Uzdevumi: '+correct+'/'+items.length});status.textContent='✅ Rezultāts saglabāts Firebase.';}catch{status.textContent='⚠️ Rezultātu neizdevās saglabāt.';}}
    else status.textContent='Vecāka priekšskatījums: rezultāts nav saglabāts.';
