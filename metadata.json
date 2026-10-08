@@ -1,0 +1,8 @@
+{
+  "name": "Mājas skola",
+  "description": "Mājas skola - demonstrācijas skati: Marka skola, Samantas skola un Vecāka panelis.",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
