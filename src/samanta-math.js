@@ -37,7 +37,7 @@ export function makeMathQuestions(type='mixed',family=0,count=12){
  return shuffle(base).slice(0,count);
 }
 export function renderSamantaMath(container,{canSubmit=false,saveProgress=async()=>{}}={}){
- const host=document.createElement('section');host.className='module learning-hub math-hub';host.style.gridColumn='1/-1';container.prepend(host);
+ const host=document.createElement('section');host.className='module learning-hub math-hub';host.style.gridColumn='1/-1';container.append(host);
  let session=null,errors=[],currentMode='mixed',family=0;
  function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
  function button(parent,text,action,cls='action-button'){const b=el('button',cls,text);b.type='button';b.onclick=action;parent.append(b);return b;}
