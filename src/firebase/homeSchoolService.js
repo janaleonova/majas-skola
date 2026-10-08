@@ -219,31 +219,24 @@ export async function registerUserProfile(uid, { requestedRole, email, displayNa
 export async function getTasks(role) {
   if (!db) return [];
   const path = 'homeSchool/data/tasks';
+  const colRef = getTasksColRef();
   try {
-    const colRef = getTasksColRef();
-    let q;
     if (role === ROLES.PARENT || !role) {
-      q = query(colRef, orderBy('createdAt', 'desc'));
-    } else {
-      q = query(
-        colRef,
-        where('assignedTo', 'in', [role, 'both']),
-        orderBy('createdAt', 'desc')
-      );
+      const snap = await getDocs(colRef);
+      return snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => (b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
     }
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    // Child-readable, index-free queries. Never fall back to listing all tasks.
+    const [own, shared] = await Promise.all([
+      getDocs(query(colRef, where('assignedTo','==',role))),
+      getDocs(query(colRef, where('assignedTo','==','both')))
+    ]);
+    const map = new Map();
+    for (const snap of [own,shared]) for (const d of snap.docs) map.set(d.id,{id:d.id,...d.data()});
+    return [...map.values()].sort((a,b)=>(b.createdAt?.seconds||0)-(a.createdAt?.seconds||0));
   } catch (error) {
-    // Vienkāršots vaicājums, ja indeksācija serverī vēl nav aktīva
-    try {
-      const snap = await getDocs(getTasksColRef());
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (role === ROLES.PARENT || !role) return all;
-      return all.filter(t => t.assignedTo === role || t.assignedTo === 'both');
-    } catch (fallbackError) {
-      handleFirestoreError(fallbackError, OperationType.LIST, path);
-      return [];
-    }
+    console.warn('[Mājas skola] Uzdevumu vaicājums:',error?.code || 'unknown');
+    handleFirestoreError(error, OperationType.LIST, path);
+    return [];
   }
 }
 
@@ -330,34 +323,16 @@ export async function getProgressHistory({ role, userUid }) {
   if (!db) return [];
   const path = 'homeSchool/data/progress';
   try {
-    const colRef = getProgressColRef();
-    let q;
-
-    if (role === ROLES.PARENT) {
-      // Vecāks skata visus rezultātus
-      q = query(colRef, orderBy('recordedAt', 'desc'));
-    } else if (userUid) {
-      // Bērns pieprasa tikai savus datus pēc UID
-      q = query(colRef, where('studentUid', '==', userUid), orderBy('recordedAt', 'desc'));
-    } else if (role) {
-      // Alternatīva pēc lomas
-      q = query(colRef, where('studentRole', '==', role), orderBy('recordedAt', 'desc'));
-    } else {
-      return [];
-    }
-
-    const snap = await getDocs(q);
-    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
-  } catch (error) {
-    // Ja indeksēšana vēl nav pabeigta:
-    try {
-      const snap = await getDocs(getProgressColRef());
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      if (role === ROLES.PARENT) return all;
-      return all.filter(p => p.studentUid === userUid || p.studentRole === role);
-    } catch (fallbackError) {
-      handleFirestoreError(fallbackError, OperationType.LIST, path);
-      return [];
-    }
+    const colRef=getProgressColRef();
+    if (role !== ROLES.PARENT && !userUid) return [];
+    // No orderBy: avoid requiring a composite index for each child's own results.
+    // Child queries must be constrained by their authenticated UID.
+    const q=role===ROLES.PARENT ? colRef : query(colRef,where('studentUid','==',userUid));
+    const snap=await getDocs(q);
+    return snap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>(b.recordedAt?.seconds||0)-(a.recordedAt?.seconds||0));
+  } catch(error){
+    console.warn('[Mājas skola] Progresa vaicājums:',error?.code || 'unknown');
+    handleFirestoreError(error,OperationType.LIST,path);
+    return [];
   }
 }
