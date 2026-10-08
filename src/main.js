@@ -46,8 +46,17 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
  const area=$('modules');area.replaceChildren();let tasks=[],progress=[];
  if(role==='marks'){renderLatvianSchool(area,{canSubmit:state.role===ROLES.MARKS,saveProgress:data=>recordProgress({...data,currentUid:state.user.uid})});}
- try{tasks=await getTasks(role);progress=await getProgressHistory({role:state.role===ROLES.PARENT?'vecaks':role,userUid:state.user.uid});if(state.role===ROLES.PARENT && role!==ROLES.PARENT)progress=progress.filter(p=>p.studentRole===role);}
- catch(err){area.innerHTML='<div class="module">Neizdevās ielādēt datus. Pārbaudi Firestore piekļuves noteikumus.</div>';return}
+ // Independent data loading: Firestore errors must never remove learning modules.
+ const loadErrors=[];
+ try{
+   tasks=await getTasks(state.role===ROLES.PARENT?ROLES.PARENT:role);
+   if(state.role===ROLES.PARENT && role!==ROLES.PARENT)tasks=tasks.filter(t=>t.assignedTo===role || t.assignedTo==='both');
+ }catch(err){loadErrors.push('uzdevumus');console.warn('[Mājas skola] Uzdevumu ielādes kļūdas kods:',err?.code||'unknown');}
+ try{
+   progress=await getProgressHistory({role:state.role===ROLES.PARENT?'vecaks':role,userUid:state.user.uid});
+   if(state.role===ROLES.PARENT && role!==ROLES.PARENT)progress=progress.filter(p=>p.studentRole===role);
+ }catch(err){loadErrors.push('rezultātus');console.warn('[Mājas skola] Progresa ielādes kļūdas kods:',err?.code||'unknown');}
+ if(loadErrors.length){const notice=document.createElement('div');notice.className='module';notice.style.gridColumn='1/-1';notice.textContent='Pagaidām neizdevās ielādēt '+loadErrors.join(' un ')+'. Mācību trenažieri joprojām ir pieejami.';area.append(notice);}
  if(state.role===ROLES.PARENT){const nav=document.createElement('div');nav.className='module';nav.style.gridColumn='1/-1';
  nav.innerHTML='<h2>Pārslēgt vidi</h2><p>Vecākam pieejami abi bērnu skati.</p>';
  for(const child of ['marks','samanta','vecaks']){const b=document.createElement('button');b.textContent=schools[child][0];b.style.margin='5px';b.addEventListener('click',()=>showSchool(child));nav.append(b)}area.append(nav)}
