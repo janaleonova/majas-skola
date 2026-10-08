@@ -110,7 +110,7 @@ export async function initFirebase() {
 async function testFirestoreConnection() {
   if (!db) return;
   try {
-    await getDocFromServer(doc(db, 'homeSchool', 'testConnection'));
+    await getDocFromServer(doc(db, 'homeSchool', 'data'));
     console.log('[Firebase] Savienojums ar datorika-hub Firestore veiksmīgi apstiprināts.');
   } catch (error) {
     if (error instanceof Error && error.message.includes('the client is offline')) {

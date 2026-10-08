@@ -1,7 +1,15 @@
 /**
  * Mājas skolas datu serviss
- * Nodrošina izolētu datu piekļuvi Cloud Firestore zem 'homeSchool' datu struktūras.
- * Aizsargā visus datorika-hub esošos datus no jebkādas pārrakstīšanas.
+ * Nodrošina izolētu datu piekļuvi Cloud Firestore zem 'homeSchool/data/...' struktūras.
+ * Datu modelis:
+ *   - Kolekcija: 'homeSchool'
+ *   - Dokumenta ceļš: 'homeSchool/data'
+ *   - Apakškolekcijas:
+ *       - 'homeSchool/data/users/{uid}'
+ *       - 'homeSchool/data/tasks/{taskId}'
+ *       - 'homeSchool/data/progress/{progressId}'
+ *       - 'homeSchool/data/settings/{settingId}'
+ * Aizsargā visus datorika-hub esošos datus un novērš neatļautu lomu maiņu.
  */
 import { 
   collection, 
@@ -18,11 +26,8 @@ import {
   onSnapshot, 
   serverTimestamp 
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType } from './init.js';
+import { db, auth, handleFirestoreError, OperationType } from './init.js';
 
-/**
- * Trīs atbalstītās lomas Mājas skolā
- */
 export const ROLES = {
   PARENT: 'vecaks',
   MARKS: 'marks',
@@ -36,7 +41,7 @@ export const ROLE_DETAILS = {
     symbol: '📋',
     canCreateTasks: true,
     canViewAll: true,
-    description: 'Pārvaldība, uzdevumu izveide, progresa pārskats'
+    description: 'Pārvaldība, uzdevumu izveide, abu bērnu progresa pārskats'
   },
   [ROLES.MARKS]: {
     id: 'marks',
@@ -57,31 +62,74 @@ export const ROLE_DETAILS = {
 };
 
 /**
- * Droši kolekciju ceļi — visi atrodas TIKAI zem 'homeSchool/data/...'
- * Tas garantē, ka netiek skartas nevienas esošās datorika-hub kolekcijas.
+ * Pārbaudītas palīgfunkcijas precīziem Firestore ceļiem:
+ * 'homeSchool/data' kā dokuments un apakškolekcijas tajā
  */
-export const HS_PATHS = {
-  ROOT: 'homeSchool',
-  USERS: ['homeSchool', 'data', 'users'],
-  TASKS: ['homeSchool', 'data', 'tasks'],
-  PROGRESS: ['homeSchool', 'data', 'progress'],
-  SETTINGS: ['homeSchool', 'data', 'settings']
-};
-
-function getUsersCollection() {
-  return collection(db, ...HS_PATHS.USERS);
+export function getHomeSchoolDocRef() {
+  if (!db) return null;
+  return doc(db, 'homeSchool', 'data');
 }
 
-function getTasksCollection() {
-  return collection(db, ...HS_PATHS.TASKS);
+export function getUsersColRef() {
+  if (!db) return null;
+  return collection(db, 'homeSchool', 'data', 'users');
 }
 
-function getProgressCollection() {
-  return collection(db, ...HS_PATHS.PROGRESS);
+export function getUserDocRef(uid) {
+  if (!db || !uid) return null;
+  return doc(db, 'homeSchool', 'data', 'users', uid);
 }
 
-function getSettingsCollection() {
-  return collection(db, ...HS_PATHS.SETTINGS);
+export function getTasksColRef() {
+  if (!db) return null;
+  return collection(db, 'homeSchool', 'data', 'tasks');
+}
+
+export function getTaskDocRef(taskId) {
+  if (!db || !taskId) return null;
+  return doc(db, 'homeSchool', 'data', 'tasks', taskId);
+}
+
+export function getProgressColRef() {
+  if (!db) return null;
+  return collection(db, 'homeSchool', 'data', 'progress');
+}
+
+export function getProgressDocRef(progressId) {
+  if (!db || !progressId) return null;
+  return doc(db, 'homeSchool', 'data', 'progress', progressId);
+}
+
+export function getSettingsColRef() {
+  if (!db) return null;
+  return collection(db, 'homeSchool', 'data', 'settings');
+}
+
+export function getSettingsDocRef(settingId = 'config') {
+  if (!db) return null;
+  return doc(db, 'homeSchool', 'data', 'settings', settingId);
+}
+
+/**
+ * Pārbauda, vai lietotāja UID ir reģistrēts kā vecāks settings konfigurācijā
+ */
+export async function verifyParentAuthority(uid) {
+  if (!db || !uid) return false;
+  try {
+    const configSnap = await getDoc(getSettingsDocRef('config'));
+    if (configSnap.exists()) {
+      const parentUids = configSnap.data().parentUids || [];
+      if (parentUids.includes(uid)) return true;
+    }
+    // Pārbauda paša lietotāja uzticamo profilu datubāzē
+    const userSnap = await getDoc(getUserDocRef(uid));
+    if (userSnap.exists() && userSnap.data().role === ROLES.PARENT && userSnap.data().approved === true) {
+      return true;
+    }
+  } catch (err) {
+    console.warn('[Mājas skola] Vecāka autorizācijas pārbaude:', err.message);
+  }
+  return false;
 }
 
 /**
@@ -91,8 +139,7 @@ export async function getUserProfile(uid) {
   if (!db || !uid) return null;
   const path = `homeSchool/data/users/${uid}`;
   try {
-    const docRef = doc(db, ...HS_PATHS.USERS, uid);
-    const snap = await getDoc(docRef);
+    const snap = await getDoc(getUserDocRef(uid));
     if (snap.exists()) {
       return { id: snap.id, ...snap.data() };
     }
@@ -104,41 +151,82 @@ export async function getUserProfile(uid) {
 }
 
 /**
- * Saglabā vai atjaunina lietotāja lomu Mājas skolā
+ * Reģistrē vai atjaunina lietotāja profilu.
+ * DROŠĪBA: Lietotājs pats NEDRĪKST piešķirt sev 'vecaks' lomu.
+ * 'vecaks' loma tiek piešķirta TIKAI tad, ja UID atbilst reģistrētam vecākam.
  */
-export async function setUserRole(uid, { role, email, displayName }) {
+export async function registerUserProfile(uid, { requestedRole, email, displayName, configuredParentUid = null }) {
   if (!db || !uid) return false;
   const path = `homeSchool/data/users/${uid}`;
+
   try {
-    const docRef = doc(db, ...HS_PATHS.USERS, uid);
+    const existing = await getUserProfile(uid);
+
+    let finalRole = requestedRole;
+    let isApproved = false;
+
+    // Ja lietotājs pieprasa vecāka lomu:
+    if (requestedRole === ROLES.PARENT) {
+      // Pārbauda vai šis UID sakrīt ar konfigurēto vecāka UID vai jau apstiprinātu vecāku
+      const isAuthorizedParent = (configuredParentUid && configuredParentUid === uid) ||
+                                 (existing?.role === ROLES.PARENT && existing?.approved === true) ||
+                                 (await verifyParentAuthority(uid));
+
+      if (isAuthorizedParent) {
+        finalRole = ROLES.PARENT;
+        isApproved = true;
+      } else {
+        console.warn(`[Drošība] Lietotājs ${uid} mēģināja sev patvaļīgi piešķirt vecāka lomu. Piešķiršana noraidīta.`);
+        // Drošības nolūkos neļaujam kļūt par vecāku — novirzām uz apstiprināšanas gaidīšanu
+        finalRole = existing?.role || ROLES.MARKS;
+        isApproved = existing?.approved || false;
+      }
+    } else if (requestedRole === ROLES.MARKS || requestedRole === ROLES.SAMANTA) {
+      // Bērna lomas reģistrācija
+      finalRole = requestedRole;
+      isApproved = true; // Ģimenes lietotājs aktīvs
+    } else {
+      finalRole = ROLES.MARKS;
+      isApproved = true;
+    }
+
     const payload = {
       uid,
       email: email || '',
       displayName: displayName || '',
-      role: role || ROLES.PARENT,
+      role: finalRole,
+      approved: isApproved,
       updatedAt: serverTimestamp()
     };
-    await setDoc(docRef, payload, { merge: true });
-    return true;
+
+    if (!existing) {
+      payload.createdAt = serverTimestamp();
+    }
+
+    await setDoc(getUserDocRef(uid), payload, { merge: true });
+    return { success: true, role: finalRole, approved: isApproved };
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
-    return false;
+    return { success: false, error };
   }
 }
 
 /**
- * Iegūst uzdevumus atkarībā no lomas (vecāks redz visus, Marks/Samanta savējos)
+ * Iegūst uzdevumus atkarībā no lomas.
+ * Vecāks redz visus uzdevumus.
+ * Bērns (Marks vai Samanta) redz TIKAI sev un abiem piešķirtos uzdevumus.
  */
 export async function getTasks(role) {
   if (!db) return [];
   const path = 'homeSchool/data/tasks';
   try {
+    const colRef = getTasksColRef();
     let q;
     if (role === ROLES.PARENT || !role) {
-      q = query(getTasksCollection(), orderBy('createdAt', 'desc'));
+      q = query(colRef, orderBy('createdAt', 'desc'));
     } else {
       q = query(
-        getTasksCollection(),
+        colRef,
         where('assignedTo', 'in', [role, 'both']),
         orderBy('createdAt', 'desc')
       );
@@ -146,9 +234,9 @@ export async function getTasks(role) {
     const snap = await getDocs(q);
     return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (error) {
-    // Ja indeksēšana Firestore vēl nav veikta vai kļūda, mēģinām vienkāršu vaicājumu
+    // Vienkāršots vaicājums, ja indeksācija serverī vēl nav aktīva
     try {
-      const snap = await getDocs(getTasksCollection());
+      const snap = await getDocs(getTasksColRef());
       const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       if (role === ROLES.PARENT || !role) return all;
       return all.filter(t => t.assignedTo === role || t.assignedTo === 'both');
@@ -160,32 +248,9 @@ export async function getTasks(role) {
 }
 
 /**
- * Reāllaika klausītājs uzdevumiem
+ * Pievieno jaunu uzdevumu (atļauts tikai vecākam)
  */
-export function subscribeTasks(role, callback) {
-  if (!db) return () => {};
-  const path = 'homeSchool/data/tasks';
-  try {
-    const q = getTasksCollection();
-    return onSnapshot(q, (snapshot) => {
-      const tasks = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-      const filtered = (role === ROLES.PARENT || !role)
-        ? tasks
-        : tasks.filter(t => t.assignedTo === role || t.assignedTo === 'both');
-      callback(filtered);
-    }, (error) => {
-      handleFirestoreError(error, OperationType.GET, path);
-    });
-  } catch (error) {
-    console.error('[Mājas skola] Neizdevās pievienot uzdevumu klausītāju:', error);
-    return () => {};
-  }
-}
-
-/**
- * Pievieno jaunu uzdevumu (tikai no vecāka lomas)
- */
-export async function createTask({ title, subject, assignedTo, description, dueDate, createdBy }) {
+export async function createTask({ title, subject, assignedTo, description, dueDate, createdByUid }) {
   if (!db) return null;
   const path = 'homeSchool/data/tasks';
   try {
@@ -196,11 +261,11 @@ export async function createTask({ title, subject, assignedTo, description, dueD
       description: description || '',
       status: 'pending',
       dueDate: dueDate || null,
-      createdBy: createdBy || 'vecaks',
+      createdBy: createdByUid || auth?.currentUser?.uid || 'vecaks',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp()
     };
-    const ref = await addDoc(getTasksCollection(), taskPayload);
+    const ref = await addDoc(getTasksColRef(), taskPayload);
     return ref.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
@@ -209,14 +274,13 @@ export async function createTask({ title, subject, assignedTo, description, dueD
 }
 
 /**
- * Atjaunina uzdevuma statusu ('pending', 'in_progress', 'completed')
+ * Atjaunina uzdevuma statusu
  */
 export async function updateTaskStatus(taskId, status) {
   if (!db || !taskId) return false;
   const path = `homeSchool/data/tasks/${taskId}`;
   try {
-    const docRef = doc(db, ...HS_PATHS.TASKS, taskId);
-    await updateDoc(docRef, {
+    await updateDoc(getTaskDocRef(taskId), {
       status,
       updatedAt: serverTimestamp()
     });
@@ -228,21 +292,26 @@ export async function updateTaskStatus(taskId, status) {
 }
 
 /**
- * Reģistrē progresu vai treniņa rezultātu
+ * Reģistrē progresu vai treniņa rezultātu.
+ * DROŠĪBA: Obligāti piesaista autentificētā lietotāja UID (studentUid),
+ * lai bērns nevarētu viltot cita bērna rezultātus.
  */
-export async function recordProgress({ studentRole, activityType, subject, score, notes }) {
+export async function recordProgress({ studentRole, activityType, subject, score, notes, currentUid }) {
   if (!db) return null;
   const path = 'homeSchool/data/progress';
+  const effectiveUid = currentUid || auth?.currentUser?.uid || null;
+
   try {
     const progressPayload = {
-      studentRole,
+      studentUid: effectiveUid,
+      studentRole: studentRole, // 'marks' vai 'samanta'
       activityType: activityType || 'trenins',
       subject: subject || 'Mācības',
       score: typeof score === 'number' ? score : 100,
       notes: notes || '',
       recordedAt: serverTimestamp()
     };
-    const ref = await addDoc(getProgressCollection(), progressPayload);
+    const ref = await addDoc(getProgressColRef(), progressPayload);
     return ref.id;
   } catch (error) {
     handleFirestoreError(error, OperationType.CREATE, path);
@@ -251,18 +320,44 @@ export async function recordProgress({ studentRole, activityType, subject, score
 }
 
 /**
- * Iegūst progresa ierakstus
+ * Iegūst progresa vēsturi:
+ * DROŠĪBA:
+ * - Vecāks ('vecaks') var saņemt visu bērnu ierakstus.
+ * - Bērns (Marks vai Samanta) pieprasa TIKAI savus individuālos rezultātus ar `where('studentUid', '==', userUid)`
+ *   vai `where('studentRole', '==', role)`, saskaņā ar Firestore Security Rules prasībām!
  */
-export async function getProgressHistory(studentRole) {
+export async function getProgressHistory({ role, userUid }) {
   if (!db) return [];
   const path = 'homeSchool/data/progress';
   try {
-    const snap = await getDocs(getProgressCollection());
-    const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-    if (!studentRole) return all;
-    return all.filter(p => p.studentRole === studentRole);
+    const colRef = getProgressColRef();
+    let q;
+
+    if (role === ROLES.PARENT) {
+      // Vecāks skata visus rezultātus
+      q = query(colRef, orderBy('recordedAt', 'desc'));
+    } else if (userUid) {
+      // Bērns pieprasa tikai savus datus pēc UID
+      q = query(colRef, where('studentUid', '==', userUid), orderBy('recordedAt', 'desc'));
+    } else if (role) {
+      // Alternatīva pēc lomas
+      q = query(colRef, where('studentRole', '==', role), orderBy('recordedAt', 'desc'));
+    } else {
+      return [];
+    }
+
+    const snap = await getDocs(q);
+    return snap.docs.map(d => ({ id: d.id, ...d.data() }));
   } catch (error) {
-    handleFirestoreError(error, OperationType.LIST, path);
-    return [];
+    // Ja indeksēšana vēl nav pabeigta:
+    try {
+      const snap = await getDocs(getProgressColRef());
+      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      if (role === ROLES.PARENT) return all;
+      return all.filter(p => p.studentUid === userUid || p.studentRole === role);
+    } catch (fallbackError) {
+      handleFirestoreError(fallbackError, OperationType.LIST, path);
+      return [];
+    }
   }
 }

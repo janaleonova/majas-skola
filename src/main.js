@@ -17,7 +17,8 @@ import {
   ROLES, 
   ROLE_DETAILS, 
   getUserProfile, 
-  setUserRole, 
+  registerUserProfile,
+  verifyParentAuthority,
   getTasks, 
   createTask, 
   updateTaskStatus, 
@@ -99,7 +100,7 @@ function updateHeaderAuthUI() {
     userBadge.type = 'button';
     userBadge.style.cssText = 'background:#1f3b5c;color:#fff;border:1px solid #3b608a;padding:6px 12px;border-radius:8px;font-size:0.85rem;cursor:pointer;';
     userBadge.innerHTML = `👤 ${state.user.displayName || state.user.email} <span style="opacity:0.8;font-size:0.75rem;display:block">(${roleName})</span>`;
-    userBadge.title = 'Mainīt lomu';
+    userBadge.title = 'Profila un lomas pārskats';
     userBadge.addEventListener('click', promptRoleSelectModal);
 
     const logoutBtn = document.createElement('button');
@@ -121,7 +122,7 @@ function updateHeaderAuthUI() {
   }
 }
 
-// Lomas izvēles logs
+// Lomas izvēles logs (Ar aizsardzību pret patvaļīgu administratora tiesību piešķiršanu)
 function promptRoleSelectModal() {
   const existing = document.getElementById('role-select-modal');
   if (existing) existing.remove();
@@ -131,27 +132,39 @@ function promptRoleSelectModal() {
   overlay.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;';
 
   const modal = document.createElement('div');
-  modal.style.cssText = 'background:#fff;color:#15243a;padding:28px;border-radius:16px;max-width:440px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,0.25);';
+  modal.style.cssText = 'background:#fff;color:#15243a;padding:28px;border-radius:16px;max-width:480px;width:100%;box-shadow:0 12px 36px rgba(0,0,0,0.25);';
+
+  const isCurrentParent = state.userProfile?.role === ROLES.PARENT;
 
   modal.innerHTML = `
-    <h3 style="margin-top:0;font-size:1.4rem;">Izvēlies savu lomu Mājas skolā</h3>
-    <p style="color:#52637a;font-size:0.95rem;">Šī loma tiks droši saglabāta Firestore <code>homeSchool/data/users</code> kolekcijā.</p>
+    <h3 style="margin-top:0;font-size:1.4rem;">Mājas skolas lietotāja profils</h3>
+    <p style="color:#52637a;font-size:0.95rem;">Lietotāja dati tiek droši glabāti Firestore <code>homeSchool/data/users/{uid}</code>.</p>
+    
     <div style="display:flex;flex-direction:column;gap:10px;margin:20px 0;">
-      <button type="button" class="role-opt-btn" data-role="vecaks" style="padding:14px;border:1px solid #dbe4ef;border-radius:10px;background:#f8fafc;font-weight:600;cursor:pointer;text-align:left;">
-        📋 <strong>Vecāka panelis</strong>
-        <div style="font-weight:normal;font-size:0.85rem;color:#64748b;margin-top:4px;">Pilna pārvaldība: veidot uzdevumus, sekot abu bērnu progresam</div>
-      </button>
+      <!-- Bērnu lomas (droša pašizvēle) -->
       <button type="button" class="role-opt-btn" data-role="marks" style="padding:14px;border:1px solid #dbe4ef;border-radius:10px;background:#f8fafc;font-weight:600;cursor:pointer;text-align:left;">
         🐉 <strong>Marka skola</strong>
         <div style="font-weight:normal;font-size:0.85rem;color:#64748b;margin-top:4px;">Marka personīgā mācību vide: spēles, treniņi un uzdevumi</div>
       </button>
+
       <button type="button" class="role-opt-btn" data-role="samanta" style="padding:14px;border:1px solid #dbe4ef;border-radius:10px;background:#f8fafc;font-weight:600;cursor:pointer;text-align:left;">
         🎨 <strong>Samantas skola</strong>
         <div style="font-weight:normal;font-size:0.85rem;color:#64748b;margin-top:4px;">Samantas personīgā mācību vide: nedēļas plāns un priekšmeti</div>
       </button>
+
+      <!-- Vecāka loma (aizsargāta, nav iespējams patvaļīgi pašpiešķirt) -->
+      <button type="button" class="role-opt-btn" data-role="vecaks" style="padding:14px;border:1px solid ${isCurrentParent ? '#215cba' : '#cbd5e1'};border-radius:10px;background:${isCurrentParent ? '#eff6ff' : '#f1f5f9'};font-weight:600;cursor:pointer;text-align:left;">
+        📋 <strong>Vecāka panelis (Aizsargāts)</strong>
+        <div style="font-weight:normal;font-size:0.85rem;color:${isCurrentParent ? '#1d4ed8' : '#64748b'};margin-top:4px;">
+          ${isCurrentParent ? '✓ Jūsu kontam ir apstiprinātas vecāka tiesības.' : '🔒 Pieejams tikai apstiprinātam Firebase Authentication UID.'}
+        </div>
+      </button>
     </div>
+
+    <div id="role-feedback" style="min-height:20px;font-size:0.85rem;color:#dc2626;margin-bottom:12px;"></div>
+
     <div style="text-align:right;">
-      <button type="button" id="close-role-modal" style="background:transparent;border:1px solid #cbd5e1;padding:8px 16px;border-radius:8px;cursor:pointer;">Atcelt</button>
+      <button type="button" id="close-role-modal" style="background:transparent;border:1px solid #cbd5e1;padding:8px 16px;border-radius:8px;cursor:pointer;">Aizvērt</button>
     </div>
   `;
 
@@ -161,22 +174,44 @@ function promptRoleSelectModal() {
   overlay.querySelectorAll('.role-opt-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const selected = btn.dataset.role;
-      if (state.user) {
-        btn.textContent = 'Saglabā...';
-        await setUserRole(state.user.uid, {
-          role: selected,
-          email: state.user.email,
-          displayName: state.user.displayName
-        });
-        state.userProfile = { role: selected };
+      const feedback = modal.querySelector('#role-feedback');
+      feedback.textContent = '';
+
+      if (!state.user) {
         state.activeRole = selected;
-      } else {
-        state.activeRole = selected;
+        overlay.remove();
+        showSchoolView(selected);
+        return;
       }
-      overlay.remove();
-      updateHeaderAuthUI();
-      // Ja lietotājs izvēlas lomu, atver atbilstošo skolu
-      showSchoolView(selected);
+
+      // Ja pieprasa vecāka lomu, pārbaudām reālās tiesības
+      if (selected === ROLES.PARENT) {
+        const isAuthorized = await verifyParentAuthority(state.user.uid);
+        if (!isAuthorized) {
+          feedback.textContent = '⚠️ Drošības aizsardzība: Šim Google kontam nav piešķirtas vecāka tiesības datubāzē.';
+          return;
+        }
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Saglabā...';
+
+      const res = await registerUserProfile(state.user.uid, {
+        requestedRole: selected,
+        email: state.user.email,
+        displayName: state.user.displayName
+      });
+
+      if (res && res.success) {
+        state.userProfile = { role: res.role, approved: res.approved };
+        state.activeRole = res.role;
+        overlay.remove();
+        updateHeaderAuthUI();
+        showSchoolView(res.role);
+      } else {
+        feedback.textContent = 'Neizdevās atjaunināt lomu datubāzē.';
+        btn.disabled = false;
+      }
     });
   });
 
@@ -250,8 +285,15 @@ async function loadSchoolData(schoolKey) {
 
   if (state.firebaseReady && db) {
     try {
-      tasks = await getTasks(schoolKey === 'vecaks' ? null : schoolKey);
-      progress = await getProgressHistory(schoolKey === 'vecaks' ? null : schoolKey);
+      // Uzdevumu pieprasījums ar lomas filtru
+      tasks = await getTasks(schoolKey);
+      
+      // Progresa pieprasījums:
+      // Vecāks redz visus datus; bērns (Marks/Samanta) — TIKAI savus individuālos datus!
+      progress = await getProgressHistory({ 
+        role: schoolKey, 
+        userUid: state.user?.uid 
+      });
     } catch (e) {
       console.warn('Neizdevās saņemt Firestore datus:', e);
     }
@@ -275,9 +317,24 @@ function renderSchoolModules(schoolKey) {
   }
 }
 
-// 1. Vecāka panelis (Task creation, progress monitoring)
+// 1. Vecāka panelis
 function renderParentDashboard() {
   const container = modulesContainer;
+  const isAuthorizedParent = state.userProfile?.role === ROLES.PARENT;
+
+  // Ja lietotājs nav vecāks, brīdinām par tiesībām
+  if (!isAuthorizedParent && state.user) {
+    const warn = document.createElement('div');
+    warn.className = 'module';
+    warn.style.gridColumn = '1 / -1';
+    warn.style.background = '#fffbeb';
+    warn.style.border = '1px solid #fde68a';
+    warn.innerHTML = `
+      <h3>🔒 Vecāka administratora piekļuve ierobežota</h3>
+      <p style="color:#92400e;margin:0;">Šajā kontā nav reģistrētas vecāka tiesības. Lai izveidotu uzdevumus un skatītu abu bērnu kopsavilkumu, UID ir jābūt apstiprinātam <code>homeSchool/data/settings/config</code> vai <code>homeSchool/data/users</code>.</p>
+    `;
+    container.appendChild(warn);
+  }
 
   // Modulis 1: Jauna uzdevuma izveide
   const createMod = document.createElement('div');
@@ -285,7 +342,7 @@ function renderParentDashboard() {
   createMod.style.gridColumn = '1 / -1';
   createMod.innerHTML = `
     <h2>➕ Izveidot jaunu uzdevumu bērniem</h2>
-    <p style="color:#64748b;margin-bottom:14px;">Uzdevums tiks saglabāts Cloud Firestore <code>homeSchool/data/tasks</code> kolekcijā.</p>
+    <p style="color:#64748b;margin-bottom:14px;">Uzdevums tiks saglabāts Cloud Firestore <code>homeSchool/data/tasks</code> apakškolekcijā.</p>
     <form id="new-task-form" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;background:#f8fafc;padding:16px;border-radius:10px;border:1px solid #e2e8f0;">
       <div>
         <label style="display:block;font-size:0.85rem;font-weight:600;margin-bottom:4px;">Uzdevuma nosaukums:</label>
@@ -327,7 +384,7 @@ function renderParentDashboard() {
         title,
         subject,
         assignedTo,
-        createdBy: state.user?.uid || 'vecaks'
+        createdByUid: state.user?.uid || 'vecaks'
       });
       await loadSchoolData('vecaks');
     } else {
@@ -346,11 +403,11 @@ function renderParentDashboard() {
   `;
   container.appendChild(tasksMod);
 
-  // Modulis 3: Rezultātu & progresa pārskats
+  // Modulis 3: Rezultātu & progresa pārskats (Vecāks redz abus)
   const progMod = document.createElement('div');
   progMod.className = 'module';
   progMod.innerHTML = `
-    <h2>📊 Mācību rezultāti un aktivitātes</h2>
+    <h2>📊 Mācību rezultāti un aktivitātes (Visi bērni)</h2>
     ${renderProgressListHtml(state.progressLogs)}
   `;
   container.appendChild(progMod);
@@ -392,9 +449,11 @@ function renderMarksSchool() {
             activityType: 'Reizrēķina treniņš',
             subject: 'Matemātika',
             score: 100,
-            notes: 'Veiksmīgi atrisināts 7x8'
+            notes: 'Veiksmīgi atrisināts 7x8',
+            currentUid: state.user?.uid || null
           });
-          feedback.textContent = '🎉 Pareizi! Rezultāts saglabāts Cloud Firestore!';
+          feedback.textContent = '🎉 Pareizi! Rezultāts droši saglabāts Cloud Firestore!';
+          await loadSchoolData('marks');
         }
       } else {
         feedback.style.color = '#dc2626';
@@ -412,6 +471,15 @@ function renderMarksSchool() {
   `;
   container.appendChild(tasksMod);
   attachTaskActionListeners(tasksMod);
+
+  // Tikai Marka individuālais progress
+  const progMod = document.createElement('div');
+  progMod.className = 'module';
+  progMod.innerHTML = `
+    <h2>📈 Marka individuālais progress</h2>
+    ${renderProgressListHtml(state.progressLogs)}
+  `;
+  container.appendChild(progMod);
 
   // Sasniegumi
   const badgeMod = document.createElement('div');
@@ -467,6 +535,15 @@ function renderSamantaSchool() {
   `;
   container.appendChild(tasksMod);
   attachTaskActionListeners(tasksMod);
+
+  // Tikai Samantas individuālais progress
+  const progMod = document.createElement('div');
+  progMod.className = 'module';
+  progMod.innerHTML = `
+    <h2>📈 Samantas individuālais progress</h2>
+    ${renderProgressListHtml(state.progressLogs)}
+  `;
+  container.appendChild(progMod);
 }
 
 function renderTaskListHtml(tasks, isParentView) {
@@ -503,7 +580,7 @@ function renderTaskListHtml(tasks, isParentView) {
 
 function renderProgressListHtml(logs) {
   if (!logs || logs.length === 0) {
-    return `<div style="color:#64748b;padding:12px 0;">Vēl nav reģistrētu treniņu rezultātu.</div>`;
+    return `<div style="color:#64748b;padding:12px 0;">Vēl nav reģistrētu individuālo rezultātu.</div>`;
   }
   return `
     <div style="display:flex;flex-direction:column;gap:8px;margin-top:10px;">

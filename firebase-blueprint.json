@@ -13,10 +13,11 @@
           "enum": ["vecaks", "marks", "samanta"],
           "description": "Role in Mājas skola: vecaks, marks, or samanta"
         },
+        "approved": { "type": "boolean", "description": "Whether user is an approved family member" },
         "createdAt": { "type": "string", "description": "Creation timestamp" },
         "updatedAt": { "type": "string", "description": "Last update timestamp" }
       },
-      "required": ["uid", "role", "createdAt"]
+      "required": ["uid", "role", "approved", "createdAt"]
     },
     "HomeSchoolTask": {
       "title": "HomeSchoolTask",
@@ -50,10 +51,11 @@
       "type": "object",
       "properties": {
         "id": { "type": "string", "description": "Progress entry ID" },
+        "studentUid": { "type": "string", "description": "Firebase Auth UID of the student who completed the activity" },
         "studentRole": {
           "type": "string",
           "enum": ["marks", "samanta"],
-          "description": "Target student"
+          "description": "Target student role"
         },
         "activityType": { "type": "string", "description": "Type of activity or game" },
         "subject": { "type": "string", "description": "Subject name" },
@@ -61,7 +63,7 @@
         "notes": { "type": "string", "description": "Progress notes or feedback" },
         "recordedAt": { "type": "string", "description": "Timestamp of the activity" }
       },
-      "required": ["studentRole", "activityType", "recordedAt"]
+      "required": ["studentUid", "studentRole", "activityType", "recordedAt"]
     },
     "HomeSchoolSetting": {
       "title": "HomeSchoolSetting",
@@ -70,11 +72,15 @@
       "properties": {
         "id": { "type": "string", "description": "Setting ID" },
         "schoolName": { "type": "string", "description": "Display name of the home school" },
+        "parentUids": {
+          "type": "array",
+          "description": "List of authorized parent UIDs who have administrator rights in Mājas skola"
+        },
         "parentEmail": { "type": "string", "description": "Registered parent email" },
         "activeSemester": { "type": "string", "description": "Current school term" },
         "updatedAt": { "type": "string", "description": "Last update timestamp" }
       },
-      "required": ["schoolName", "parentEmail", "updatedAt"]
+      "required": ["schoolName", "parentUids", "updatedAt"]
     }
   },
   "firestore": {
@@ -84,15 +90,15 @@
     },
     "/homeSchool/data/tasks/{taskId}": {
       "schema": "HomeSchoolTask",
-      "description": "Learning assignments strictly within the homeSchool namespace"
+      "description": "Learning assignments strictly within the homeSchool/data/tasks subcollection"
     },
     "/homeSchool/data/progress/{progressId}": {
       "schema": "HomeSchoolProgress",
-      "description": "Learning progress and scores strictly within the homeSchool namespace"
+      "description": "Individual learning progress and scores strictly isolated per student UID"
     },
     "/homeSchool/data/settings/{settingId}": {
       "schema": "HomeSchoolSetting",
-      "description": "School settings strictly within the homeSchool namespace"
+      "description": "School settings and authorized parent UIDs strictly within homeSchool/data/settings"
     }
   }
 }
