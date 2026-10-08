@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="lv">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#13273e">
+<title>Mājas skola</title>
+<style>
+:root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#15243a;background:#f3f6fa}
+*{box-sizing:border-box}body{margin:0}header{background:#14283e;color:white;padding:18px max(20px,calc((100vw - 960px)/2));display:flex;justify-content:space-between;align-items:center;gap:16px}header button{background:transparent;color:#fff;border:1px solid #708296;padding:10px;border-radius:9px;cursor:pointer}.wrap{max-width:960px;margin:56px auto;padding:0 20px}h1{font-size:clamp(2rem,5vw,3rem);margin:0 0 12px}p{line-height:1.6;color:#52637a}.intro{max-width:640px;margin-bottom:36px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}.card{background:white;border:1px solid #dbe4ef;border-radius:19px;padding:27px;box-shadow:0 9px 28px #18324d0b}.symbol{font-size:38px}.card h2{margin:14px 0 8px}.card button,.back{background:#215cba;color:#fff;border:0;padding:12px 16px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer}.card button{margin-top:10px}.card button:hover,.back:hover{background:#19498f}.tag{display:inline-block;border-radius:99px;background:#eaf1fa;color:#315987;padding:5px 10px;font-size:.85rem}.modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:28px}.module{border:1px solid #dbe4ef;background:#fff;border-radius:14px;padding:20px}.module p{margin-bottom:0}footer{margin:44px 0;color:#64748b;font-size:.9rem}button:focus-visible{outline:3px solid #f9b83d;outline-offset:3px}[hidden]{display:none!important}
+</style>
+</head>
+<body>
+<header><strong>🏠 Mājas skola</strong><button id="home" type="button" hidden>← Sākums</button></header>
+<main class="wrap">
+<section id="welcome">
+<h1>Laipni lūgti Mājas skolā!</h1>
+<p class="intro">Divas atsevišķas mācību vides vienā vietā. Izvēlies, kuru skolu vēlies apskatīt.</p>
+<div class="grid">
+<article class="card"><div class="symbol" aria-hidden="true">🐉</div><h2>Marka skola</h2><p>Mācību spēles, treniņi un sasniegumi.</p><button type="button" data-school="marka">Atvērt Marka skolu →</button></article>
+<article class="card"><div class="symbol" aria-hidden="true">🎨</div><h2>Samantas skola</h2><p>Mācību priekšmeti, dienas plāns un progress.</p><button type="button" data-school="samanta">Atvērt Samantas skolu →</button></article>
+<article class="card"><div class="symbol" aria-hidden="true">📋</div><h2>Vecāka panelis</h2><p>Vieta nākotnes uzdevumu pārvaldībai un progresa pārskatiem.</p><button type="button" data-school="vecaks">Apskatīt paneli →</button></article>
+</div>
+</section>
+<section id="school" hidden aria-live="polite">
+<span class="tag">Demonstrācijas versija</span><h1 id="school-title"></h1><p id="school-intro"></p>
+<div class="modules" id="modules"></div>
+<p><button class="back" id="back" type="button">← Atpakaļ uz sākumu</button></p>
+</section>
+<footer>1. posms · Vēl nav lietotāju kontu vai datu saglabāšanas. Neievadi šeit personas datus.</footer>
+</main>
+<script>
+const views={
+ marka:{title:"🐉 Marka skola",intro:"Marka personīgā mācību vide — pamats spēlēm un vingrinājumiem.",modules:["📚 Mācību priekšmeti","⚔️ Treniņi un spēles","🏆 Sasniegumi","📈 Progress"]},
+ samanta:{title:"🎨 Samantas skola",intro:"Samantas personīgā mācību vide — plānošanai un mācībām.",modules:["📚 Mācību priekšmeti","📅 Nedēļas plāns","✅ Uzdevumi","📈 Progress"]},
+ vecaks:{title:"📋 Vecāka panelis",intro:"Šeit vēlāk varēs pārvaldīt abu bērnu mācību procesu.",modules:["➕ Uzdevumu izveide","📎 Mācību materiāli","📊 Rezultātu pārskats","⚙️ Iestatījumi"]}
+};
+const welcome=document.getElementById("welcome"),school=document.getElementById("school"),home=document.getElementById("home");
+function show(key){if(!views[key]){welcome.hidden=false;school.hidden=true;home.hidden=true;return}const v=views[key];document.getElementById("school-title").textContent=v.title;document.getElementById("school-intro").textContent=v.intro;document.getElementById("modules").replaceChildren(...v.modules.map(t=>{const d=document.createElement("div");d.className="module";const h=document.createElement("h2");h.textContent=t;const p=document.createElement("p");p.textContent="Šī sadaļa tiks izstrādāta nākamajos posmos.";d.append(h,p);return d}));welcome.hidden=true;school.hidden=false;home.hidden=false;window.scrollTo(0,0)}
+document.querySelectorAll("[data-school]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.school)));home.addEventListener("click",()=>show());document.getElementById("back").addEventListener("click",()=>show());
+</script>
+</body></html>
