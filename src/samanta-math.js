@@ -50,7 +50,14 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
  }
  function start(type,fam,mode){const source=makeMathQuestions(type,fam,mode==='learn'?8:mode==='exam'?20:mode==='mistakes'?Math.min(10,Math.max(4,errors.length*2)):12);
   const previous=new Set(errors.map(q=>q.key));
-  const items=mode==='mistakes'?shuffle([...source.filter(q=>!previous.has(q.key)),...source.filter(q=>previous.has(q.key))]).slice(0,10):source;
+  // Mistake training uses the same number families but another equation form.
+  const related=mode==='mistakes'?errors.flatMap(q=>{
+   const all=makeMathQuestions('mixed',0,400);
+   return all.filter(x=>x.a===q.a&&x.b===q.b&&!previous.has(x.key));
+  }):[];
+  const distinct=[...new Map(related.map(q=>[q.key,q])).values()];
+  const review=shuffle(distinct).slice(0,10);
+  const items=mode==='mistakes'?review.length?review:source.filter(q=>!previous.has(q.key)).slice(0,10):source;
   session={type,fam,mode,items,index:0,correct:0,misses:[],answers:[],began:Date.now()};step();
  }
  function step(){const s=session;if(s.index>=s.items.length){void finish();return;}
