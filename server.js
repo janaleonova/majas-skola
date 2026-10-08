@@ -26,6 +26,16 @@ app.get('/api/firebase-config', (req, res) => {
   });
 });
 
+// Public account identifiers, never passwords. Accounts are created in Firebase Console.
+app.get('/api/login-profiles', (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  res.json({
+    marks: process.env.MARKS_LOGIN_EMAIL || '',
+    samanta: process.env.SAMANTA_LOGIN_EMAIL || '',
+    vecaks: process.env.PARENT_LOGIN_EMAIL || ''
+  });
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
