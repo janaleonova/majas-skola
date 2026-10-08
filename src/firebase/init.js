@@ -6,6 +6,9 @@
 import { initializeApp } from 'firebase/app';
 import { 
   getAuth, 
+  signInWithEmailAndPassword,
+  setPersistence,
+  browserLocalPersistence, 
   GoogleAuthProvider, 
   signInWithPopup, 
   signOut, 
@@ -122,4 +125,4 @@ async function testFirestoreConnection() {
 }
 
 export { app, auth, db, googleProvider, isConfigured };
-export { signInWithPopup, signOut, onAuthStateChanged };
+export { signInWithPopup, signInWithEmailAndPassword, setPersistence, browserLocalPersistence, signOut, onAuthStateChanged };
