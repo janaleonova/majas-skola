@@ -133,12 +133,16 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
  function start(topic,mode,previousMisses=[]){const base=BANK[topic.id].map(q=>({kind:'single',prompt:q[0],options:q[1].map((label,i)=>({label,correct:i===q[2]})),explanation:q[3]}));
   const extras=EXTENDED[topic.id]||[];
   const all=[...base,...extras];
+  const targetedSkills=new Set(previousMisses.map(q=>skillOf(topic,q)));
+  const fresh=all.filter(q=>!previousMisses.some(old=>old.prompt===q.prompt));
+  const targeted=fresh.filter(q=>targetedSkills.has(skillOf(topic,q)));
+  // First train the same skills with fresh examples; broaden only if bank is too small.
   const source=mode==='errors'
-    ? all.filter(q=>!previousMisses.some(old=>old.prompt===q.prompt))
-    : all;
+    ? [...shuffle(targeted),...shuffle(fresh.filter(q=>!targeted.includes(q)))]
+    : shuffle(all);
   // Error practice uses different questions from the same topic; never repeat the missed prompts.
   const wanted=mode==='errors'?Math.min(10,Math.max(4,previousMisses.length*2)):mode==='exam'?20:mode==='practice'?12:8;
-  let items=shuffle(source).slice(0,Math.min(wanted,source.length)).map(q=>({...q,options:shuffle(q.options||[])}));
+  let items=source.slice(0,Math.min(wanted,source.length)).map(q=>({...q,options:shuffle(q.options||[])}));
   let index=0,correct=0;
   const results=[];
   const missed=[];
