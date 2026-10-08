@@ -197,7 +197,26 @@ html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n){background:l
 .subject-trainer>.learning-hub{width:100%}
 @media(max-width:700px){.subject-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.subject-card{min-height:225px;padding:17px;border-radius:21px}.subject-card .subject-symbol{font-size:2.7rem}.subject-card strong{font-size:1.21rem}.subject-description{font-size:.87rem}.subject-status{font-size:.77rem}.subject-intro{padding:17px 4px}}
 @media(max-width:410px){.subject-grid{grid-template-columns:1fr}.subject-card{min-height:185px}}
-.streak-label{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(120deg,#fff4ce,#ffe3d4);color:#8b4a20;font-weight:900;font-size:1rem;border:1px solid #ffd79d;border-radius:15px;padding:12px 18px;margin:8px 0 19px}.points-disclaimer{font-size:.88rem;color:#5d6682;border-left:3px solid #aab3d5;padding:9px 14px;line-height:1.6}.progress-track{height:14px;border-radius:50px}.progress-fill{height:100%;border-radius:50px}</style>
+.streak-label{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(120deg,#fff4ce,#ffe3d4);color:#8b4a20;font-weight:900;font-size:1rem;border:1px solid #ffd79d;border-radius:15px;padding:12px 18px;margin:8px 0 19px}.points-disclaimer{font-size:.88rem;color:#5d6682;border-left:3px solid #aab3d5;padding:9px 14px;line-height:1.6}.progress-track{height:14px;border-radius:50px}.progress-fill{height:100%;border-radius:50px}
+/* Samanta: dyslexia-aware focused task surface */
+.samanta-reading{padding:clamp(24px,4vw,48px);background:#fffcff!important}
+.samanta-reading>h2{font-size:clamp(1.8rem,3.3vw,2.8rem);line-height:1.25}
+.samanta-reading>.progress-track{height:16px;margin:22px 0}
+.reading-task-card{max-width:850px;margin:20px auto;border-radius:28px;background:#fffefb;border:2px solid #f0ddec;padding:clamp(25px,5vw,55px);box-shadow:0 18px 44px #654f6518}
+.reading-prompt{color:#29324d;font-family:Arial,Verdana,sans-serif;font-weight:700;font-size:clamp(1.55rem,3vw,2.25rem);line-height:1.85;letter-spacing:.02em;word-break:normal;overflow-wrap:break-word;margin:0 0 24px;text-align:left}
+.reading-controls{display:flex;gap:13px;flex-wrap:wrap;margin:0 0 26px}
+.reading-controls .reading-listen,.reading-controls .reading-stop{min-height:60px;padding:15px 24px;border-radius:16px;font-weight:900;font-size:1.1rem;border:2px solid transparent}
+.reading-controls .reading-listen{background:#d9f8f0;color:#176958;border-color:#98dccb}
+.reading-controls .reading-stop{background:#f4edfc;color:#604c84;border-color:#dacbee}
+.reading-answer-form{display:grid;gap:14px;align-items:start;max-width:560px}
+.reading-answer-label{font-size:1.08rem;font-weight:900;color:#32334b}
+.reading-answer-input{width:100%;min-height:65px;font-size:1.55rem;font-family:Arial,Verdana,sans-serif;border:2px solid #adabc9;background:#fff;border-radius:17px;padding:15px 18px;color:#26314b}
+.reading-answer-input:focus-visible{border-color:#7054c8;outline:3px solid #ad99ef;outline-offset:3px}
+.reading-answer-form>.action-button{min-height:60px;font-size:1.12rem;padding:16px 26px;justify-self:start}
+.reading-feedback{font-size:1.12rem;font-weight:800;line-height:1.7;min-height:30px;color:#363c64}
+.samanta-reading>button{margin:9px 10px 9px 0!important;padding:14px 20px}
+@media(max-width:600px){.reading-task-card{padding:21px 18px}.reading-prompt{font-size:1.55rem;line-height:1.75}.reading-controls{flex-direction:column}.reading-controls>button{width:100%}.reading-answer-form>.action-button{width:100%}}
+</style>
 </head>
 <body>
 <header><strong>🏠 Mājas skola</strong><button id="home" type="button" hidden>← Sākums</button></header>
