@@ -60,10 +60,10 @@ const EXTENDED={
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 export function renderLatvianSchool(container,{canSubmit=false,saveProgress=async()=>{},askAI=null}={}){
- const host=document.createElement('section');host.className='module';host.style.gridColumn='1/-1';
- host.innerHTML='<h2>📕 Latviešu valoda</h2><p>Izvēlies tēmu un treniņa režīmu.</p>';
+ const host=document.createElement('section');host.className='module learning-hub latvian-hub';host.style.gridColumn='1/-1';
+ host.innerHTML='<div class="learning-heading"><span class="eyebrow">✦ MARKA VALODAS LABORATORIJA</span><h2>📕 Vārdu piedzīvojums</h2><p>Atklāj vārdu noslēpumus, pārbaudi sevi un audzē prasmes! Izvēlies tēmu.</p></div>';
  container.prepend(host);
- const nav=document.createElement('div');host.append(nav);
+ const nav=document.createElement('div');nav.className='topic-grid';host.append(nav);
  const content=document.createElement('div');host.append(content);
  const historyKey=topic=>'marks-lv-history-'+topic.id;
  function readHistory(topic){if(!canSubmit)return [];try{const val=JSON.parse(localStorage.getItem(historyKey(topic))||'[]');return Array.isArray(val)?val.slice(-30):[];}catch{return [];}}
@@ -116,9 +116,9 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
    else localStorage.removeItem(pendingKey(topic));}catch{}
  }
  function addButton(parent,title,onClick){const button=document.createElement('button');button.type='button';button.textContent=title;button.style.margin='8px';button.onclick=onClick;parent.append(button);return button;}
- for(const topic of TOPICS){const b=document.createElement('button');b.type='button';b.textContent=topic.icon+' '+topic.name;b.style.margin='5px';b.onclick=()=>choose(topic);nav.append(b);}
+ for(const topic of TOPICS){const b=document.createElement('button');b.type='button';b.className='topic-tile';b.innerHTML='<span class="topic-emoji">'+topic.icon+'</span><strong>'+topic.name+'</strong><small>Atvērt trenažieri →</small>';b.onclick=()=>choose(topic);nav.append(b);}
  function choose(topic){content.replaceChildren();
-  const h=document.createElement('h3');h.textContent=topic.name;content.append(h);
+  const h=document.createElement('h3');h.textContent='✦ '+topic.name;content.append(h);
   const past=readHistory(topic);
   if(past.length){
    const best=Math.max(...past.map(p=>p.percent||0));const last=past[past.length-1];
@@ -128,7 +128,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
   }
   const missed=loadPending(topic);if(missed.length){const note=document.createElement('p');note.textContent='🐉 Vēl vari nostiprināt '+missed.length+' jautājumus, kuros kļūdījies.';content.append(note);addButton(content,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));}
   for(const [key,label] of [['learn','📖 Mācos'],['practice','🎯 Trenējos'],['exam','📝 Pārbaudu sevi']]){
-   const b=document.createElement('button');b.type='button';b.textContent=label;b.style.margin='5px';b.onclick=()=>start(topic,key);content.append(b);}
+   const b=document.createElement('button');b.type='button';b.textContent=label;b.className='action-button';b.style.margin='5px';b.onclick=()=>start(topic,key);content.append(b);}
  }
  function start(topic,mode,previousMisses=[]){const base=BANK[topic.id].map(q=>({kind:'single',prompt:q[0],options:q[1].map((label,i)=>({label,correct:i===q[2]})),explanation:q[3]}));
   const extras=EXTENDED[topic.id]||[];
@@ -150,8 +150,8 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
   render();
   function render(){content.replaceChildren();
    if(index===items.length){void finish();return;}
-   const q=items[index],h=document.createElement('h3');h.textContent=(index+1)+'/'+items.length+' · '+q.prompt;content.append(h);
-   const form=document.createElement('form');content.append(form);
+   const q=items[index],h=document.createElement('h3');h.className='latvian-question';h.textContent=(index+1)+'/'+items.length+' · '+q.prompt;content.append(h);
+   const form=document.createElement('form');form.className='latvian-question-form';content.append(form);
    const feedback=document.createElement('p');feedback.setAttribute('role','status');
    let input;
    if(q.kind==='text'){
@@ -170,7 +170,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     const skill=skillOf(topic,q);const stats=skillStats[skill]||(skillStats[skill]={correct:0,total:0});stats.total++;stats.correct+=Number(good);
     if(!good&&mode!=='exam'){aiButton(content,'🤖 Palīdzi saprast', {mode:'hint',skill,question:q.prompt,studentAnswer:q.kind==='text'?input.value:q.kind==='multi'?[...form.querySelectorAll('input:checked')].map(el=>q.options[Number(el.value)]).join(', '):String(q.options[Number(form.querySelector('input:checked')?.value)]?.label||''),explanation:q.explanation,attempt:1});}form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     feedback.textContent=mode==='exam'?'Atbilde saglabāta.':good?'✅ Pareizi!':('🔄 Vēl ne. '+q.explanation);
-    const next=document.createElement('button');next.type='button';next.textContent=index+1===items.length?'Rezultāts':'Nākamais →';next.onclick=()=>{index++;render();};content.append(next);
+    const next=document.createElement('button');next.className='action-button';next.type='button';next.textContent=index+1===items.length?'Rezultāts':'Nākamais →';next.onclick=()=>{index++;render();};content.append(next);
    };
   }
   async function finish(){const pct=Math.round(correct/items.length*100);const h=document.createElement('h3');h.textContent=topic.name+': '+pct+'% ('+correct+'/'+items.length+')';content.append(h);
