@@ -1,3 +1,5 @@
+import {renderMarksEnglish} from './marks-english.js';
+import {renderSamantaLatvian} from './samanta-latvian.js';
 import { applyPersonalTheme,renderThemePicker } from './personal-theme.js';
 import { renderSamantaMath } from './samanta-math.js';
 import { renderLatvianSchool } from './latvian-school.js';
@@ -64,9 +66,9 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
   const available=role==='marks'
     ?[{id:'latviesu',icon:'📕',name:'Latviešu valoda',description:'Vārdu piedzīvojums · 3 tēmas',active:true,kind:'language'},
       {id:'matematika',icon:'🧮',name:'Matemātika',description:'Drīzumā',active:false,kind:'math'},
-      {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Drīzumā',active:false,kind:'english'}]
+      {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Dienas, mēneši, gadalaiki un vietniekvārdi',active:true,kind:'english'}]
     :[{id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, attēli un stāsti',active:true,kind:'math'},
-      {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Drīzumā',active:false,kind:'language'},
+      {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Drīzumā',active:false,kind:'english'}];
   const openSubject=id=>{
    subjectRoot.replaceChildren();
@@ -77,6 +79,11 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
     renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
    }else if(id==='matematika'&&role==='samanta'){
     renderSamantaMath(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firestore saglabāšana nav apstiprināta');return id;}});
+   }
+   else if(id==='anglu'&&role==='marks'){
+    renderMarksEnglish(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
+   }else if(id==='latviesu'&&role==='samanta'){
+    renderSamantaLatvian(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
    }
    // Learning mode focuses on the task rather than the decorative dashboard.
    const hero=area.querySelector('.world-hero');if(hero)hero.hidden=true;
