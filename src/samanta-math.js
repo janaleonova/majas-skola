@@ -9,13 +9,29 @@ export function makeMathQuestions(type='mixed',family=0,count=12){
  for(let a=1;a<=10;a++)for(let b=1;b<=10;b++){
   if(family&&a!==family&&b!==family)continue;
   const product=a*b;
-  if(type!=='division'){
+  if(type!=='division'&&type!=='visual'&&type!=='story'){
    base.push({key:'m-'+a+'-'+b,kind:'multiply',a,b,answer:product,prompt:a+' × '+b+' = ?',hint:a+' grupas, katrā '+b+' priekšmeti. Kopā ir '+product+'.'});
    base.push({key:'missing-m-'+a+'-'+b,kind:'missing',a,b,answer:b,prompt:a+' × □ = '+product,hint:'Atrodi skaitli, kuru reizinot ar '+a+', iegūst '+product+'.'});
   }
-  if(type!=='multiply'){
+  if(type!=='multiply'&&type!=='visual'&&type!=='story'){
    base.push({key:'d-'+a+'-'+b,kind:'divide',a,b,answer:b,prompt:product+' ÷ '+a+' = ?',hint:'Ja '+product+' sadala '+a+' vienādās grupās, katrā ir '+b+'.'});
    base.push({key:'missing-d-'+a+'-'+b,kind:'missing',a,b,answer:a,prompt:product+' ÷ □ = '+b,hint:'Atrodi dalītāju, kas dod rezultātu '+b+'.'});
+  }
+ }
+ if(type==='visual'||type==='story'){
+  const objects=['🍎','⭐','🌼','🦋','🟣'];
+  const people=['Samanta','Līga','Anna','Marta','Elza'];
+  for(let a=1;a<=10;a++)for(let b=1;b<=10;b++){
+   if(family&&a!==family&&b!==family)continue;
+   const icon=objects[(a+b)%objects.length],person=people[(a+b)%people.length];
+   if(type==='visual'){
+    // A maximum of 100 visible objects, with clear groups.
+    base.push({key:'v-m-'+a+'-'+b,kind:'visual-multiply',a,b,answer:a*b,prompt:'Cik priekšmetu ir kopā?',icon,hint:a+' grupas pa '+b+' ir '+a*b+'.'});
+    base.push({key:'v-d-'+a+'-'+b,kind:'visual-divide',a,b,answer:b,prompt:'Cik priekšmetu ir katrā grupā?',icon,hint:a*b+' priekšmetus sadalot '+a+' vienādās grupās, katrā būs '+b+'.'});
+   }else{
+    base.push({key:'s-m-'+a+'-'+b,kind:'story-multiply',a,b,answer:a*b,prompt:person+' salika '+a+' groziņus. Katrā groziņā ir '+b+' āboli. Cik ābolu ir kopā?',hint:'Saskaiti '+a+' grupas pa '+b+' āboliem.'});
+    base.push({key:'s-d-'+a+'-'+b,kind:'story-divide',a,b,answer:b,prompt:person+' vienādi sadalīja '+a*b+' uzlīmes '+a+' draugiem. Cik uzlīmju saņēma katrs draugs?',hint:'Sadalām '+a*b+' ar '+a+'.'});
+   }
   }
  }
  return shuffle(base).slice(0,count);
@@ -32,14 +48,14 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
    const last=stats.at(-1),row=el('div','stat-strip');row.append(el('span','','🏅 Labākais '+Math.max(...stats.map(x=>x.percent))+'%'),el('span','','📈 Pēdējais '+last.percent+'%'),el('span','','✦ Treniņi '+stats.length));host.append(row);
   }
   const modeRow=el('div','topic-grid');host.append(modeRow);
-  for(const [type,icon,title,desc] of [['multiply','✖','Reizrēķins','Skaitļi no 1 līdz 10'],['division','➗','Dalīšana','Dalām tikai bez atlikuma'],['mixed','⚡','Jauktais izaicinājums','Reizināšana un dalīšana kopā']]){
+  for(const [type,icon,title,desc] of [['multiply','✖','Reizrēķins','Skaitļi no 1 līdz 10'],['division','➗','Dalīšana','Dalām tikai bez atlikuma'],['mixed','⚡','Jauktais izaicinājums','Reizināšana un dalīšana kopā'],['visual','🧩','Redzu un skaitu','Uzdevumi ar priekšmetu grupām'],['story','📖','Stāstu uzdevumi','Īsi teksta uzdevumi ar balsi']]){
    const b=el('button','topic-tile');b.type='button';b.append(el('span','topic-emoji',icon),el('strong','',title),el('small','',desc));b.onclick=()=>settings(type);modeRow.append(b);
   }
   if(errors.length){const alert=el('div','soft-notice','🎯 Tev ir '+errors.length+' jautājumi, kurus vari patrenēt vēlreiz.');host.append(alert);button(host,'Trenēt manas kļūdas',()=>start(currentMode,family,'mistakes'));}
   const grid=el('div','table-area');grid.append(el('h3','','🔢 Reizināšanas tabula'));const table=el('div','times-grid');
   for(let a=1;a<=10;a++){const line=el('div','times-line');for(let b=1;b<=10;b++){const cell=el('span','times-cell',String(a*b));cell.title=a+' × '+b;line.append(cell);}table.append(line);}grid.append(table);host.append(grid);
  }
- function settings(type){currentMode=type;shell(type==='multiply'?'✖ Reizrēķins':type==='division'?'➗ Dalīšana':'⚡ Jauktais izaicinājums','Izvēlies, ko vēlies patrenēt.');
+ function settings(type){currentMode=type;shell(type==='multiply'?'✖ Reizrēķins':type==='division'?'➗ Dalīšana':type==='visual'?'🧩 Redzu un skaitu':type==='story'?'📖 Stāstu uzdevumi':'⚡ Jauktais izaicinājums','Izvēlies, ko vēlies patrenēt.');
   const controls=el('div','settings-panel');controls.append(el('label','','Kuru reizināšanas tabulu?'));const select=el('select','select-control');
   for(let i=0;i<=10;i++){const op=el('option','',i===0?'Visas tabulas 1–10':i+'. tabula');op.value=i;select.append(op);}select.value=String(family);select.onchange=()=>{family=Number(select.value)};controls.append(select);host.append(controls);
   const buttons=el('div','button-cluster');host.append(buttons);
@@ -60,13 +76,32 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
   const items=mode==='mistakes'?review.length?review:source.filter(q=>!previous.has(q.key)).slice(0,10):source;
   session={type,fam,mode,items,index:0,correct:0,misses:[],answers:[],began:Date.now()};step();
  }
- function step(){const s=session;if(s.index>=s.items.length){void finish();return;}
+ function step(){if('speechSynthesis' in window)window.speechSynthesis.cancel();const s=session;if(s.index>=s.items.length){void finish();return;}
   const q=s.items[s.index];shell('Atrisini uzdevumu','Jautājums '+(s.index+1)+' no '+s.items.length);
   const bar=el('div','progress-track');const fill=el('div','progress-fill');fill.style.width=Math.round(s.index/s.items.length*100)+'%';bar.append(fill);host.append(bar);
-  const card=el('div','question-stage');card.append(el('span','eyebrow',s.mode==='exam'?'PĀRBAUDES REŽĪMS':'TAVS IZAICINĀJUMS'),el('div','math-expression',q.prompt));
+  const card=el('div','question-stage');card.append(el('span','eyebrow',s.mode==='exam'?'PĀRBAUDES REŽĪMS':'TAVS IZAICINĀJUMS'),el('div',q.kind.startsWith('story')?'story-expression':'math-expression',q.prompt));
+  if(q.kind.startsWith('visual')){
+   const grid=el('div','visual-groups');grid.setAttribute('role','img');
+   grid.setAttribute('aria-label',q.a+' grupas ar '+q.b+' priekšmetiem katrā');
+   for(let i=0;i<q.a;i++){const group=el('div','visual-group');for(let j=0;j<q.b;j++)group.append(el('span','visual-object',q.icon));grid.append(group);}
+   card.append(grid);
+  }
+  if(q.kind.startsWith('story')){
+   const controls=el('div','reading-controls');
+   const read=button(controls,'🔊 Nolasīt uzdevumu',()=>{
+    if(!('speechSynthesis' in window)){feedback.textContent='Šajā pārlūkā balss nolasīšana nav pieejama.';return;}
+    window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(q.prompt);speech.lang='lv-LV';speech.rate=0.85;speech.pitch=1;
+    const available=window.speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('lv'));
+    if(available)speech.voice=available;
+    window.speechSynthesis.speak(speech);
+   },'quiet-button');
+   read.setAttribute('aria-label','Nolasīt teksta uzdevumu skaļi');
+   button(controls,'⏹ Apturēt',()=>{if('speechSynthesis' in window)window.speechSynthesis.cancel();},'quiet-button');
+   card.append(controls);
+  }
   const form=el('form','math-answer-form');const inp=el('input','big-number-input');inp.type='number';inp.inputMode='numeric';inp.min='0';inp.max='100';inp.step='1';inp.required=true;inp.placeholder='?';inp.autocomplete='off';inp.setAttribute('aria-label','Tava atbilde');form.append(inp);
   const feedback=el('p','feedback-line');feedback.setAttribute('role','status');
-  if(s.mode==='learn')button(card,'💡 Parādi pavedienu',()=>{feedback.textContent=q.kind==='multiply'?'Atceries: reizināšana ir atkārtota saskaitīšana.':q.kind==='divide'?'Pārbaudi dalīšanu ar reizināšanu.':'Kādu skaitli vajadzētu ievietot lodziņā?';},'quiet-button');
+  if(s.mode==='learn')button(card,'💡 Parādi pavedienu',()=>{feedback.textContent=q.kind.includes('multiply')?'Atceries: reizināšana ir atkārtota saskaitīšana.':q.kind.includes('divide')?'Pārbaudi dalīšanu ar reizināšanu.':'Domā, kura darbība jāizpilda.';},'quiet-button');
   const submit=el('button','action-button','Pārbaudīt');submit.type='submit';form.append(submit);card.append(form,feedback);host.append(card);
   inp.focus({preventScroll:true});
   form.onsubmit=e=>{e.preventDefault();const val=Number(inp.value);if(!Number.isInteger(val)||inp.value==='')return;
