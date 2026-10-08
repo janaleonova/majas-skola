@@ -174,6 +174,29 @@ html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n){background:l
 #school:has(.world-hero) .theme-picker{box-shadow:0 17px 44px #51448414}
 @media(max-width:720px){#school:has(.world-hero) .modules{gap:14px}#school:has(.world-hero) .modules>.world-hero{min-height:360px}#school:has(.world-hero) .world-hero-content{padding:26px;min-height:360px}#school:has(.world-hero) .topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}#school:has(.world-hero) .topic-tile{min-height:205px;padding:16px}#school:has(.world-hero) .topic-tile strong{font-size:1.05rem}#school:has(.world-hero) .topic-tile small{font-size:.86rem}#school:has(.world-hero) .topic-emoji{font-size:2.8rem}}
 @media(max-width:370px){#school:has(.world-hero) .topic-grid{grid-template-columns:1fr}}
+
+/* Subject-first home screen: one level per decision */
+.subjects-root{grid-column:1/-1;min-width:0}
+.subject-intro{padding:26px 4px 16px}
+.subject-intro h2{font-size:clamp(2rem,4vw,3rem);margin:15px 0 8px;font-weight:900}
+.subject-intro p{font-size:1.08rem;margin:0 0 12px}
+.subject-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(235px,1fr));gap:19px}
+.subject-card{position:relative;display:flex;flex-direction:column;align-items:flex-start;gap:13px;text-align:left;min-height:265px;border:2px solid #d5c8ff;border-radius:28px;padding:27px;background:linear-gradient(150deg,#f0eaff,#fff);color:#2a3156;box-shadow:0 16px 36px #493b8420;overflow:hidden}
+.subject-card::after{content:"";width:140px;height:140px;border-radius:50%;background:#fff9;position:absolute;right:-65px;top:-65px}
+.subject-card .subject-symbol{font-size:3.65rem;line-height:1.1;z-index:1}
+.subject-card strong{font-family:'Nunito',sans-serif;font-size:1.65rem;font-weight:900;z-index:1;line-height:1.12}
+.subject-description{font-size:1.02rem;color:#4c5674;line-height:1.55;z-index:1}
+.subject-status{margin-top:auto;padding:8px 13px;border-radius:100px;background:#fff8;color:var(--personal-primary,#584fc2);font-weight:900;font-size:.93rem;z-index:1}
+.subject-card.subject-math{background:linear-gradient(145deg,#ffe6ce,#fffbeb);border-color:#f6cd97}
+.subject-card.subject-language{background:linear-gradient(145deg,#ecddff,#f9f1ff);border-color:#ddc1f8}
+.subject-card.subject-english{background:linear-gradient(145deg,#d9f7f0,#f2fffa);border-color:#a9e5d9}
+.subject-card:disabled{cursor:default;opacity:.68;filter:saturate(.64);box-shadow:none}
+.subject-card:not(:disabled):hover{transform:translateY(-5px);box-shadow:0 25px 50px #40307930;border-color:var(--personal-primary)}
+.subject-backbar{margin:0 0 18px}
+.subject-back{border:2px solid #dfd5fa;border-radius:15px;padding:14px 22px;color:var(--personal-primary,#6351bd);background:#fff;font-weight:900;min-height:50px}
+.subject-trainer>.learning-hub{width:100%}
+@media(max-width:700px){.subject-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.subject-card{min-height:225px;padding:17px;border-radius:21px}.subject-card .subject-symbol{font-size:2.7rem}.subject-card strong{font-size:1.21rem}.subject-description{font-size:.87rem}.subject-status{font-size:.77rem}.subject-intro{padding:17px 4px}}
+@media(max-width:410px){.subject-grid{grid-template-columns:1fr}.subject-card{min-height:185px}}
 </style>
 </head>
 <body>
