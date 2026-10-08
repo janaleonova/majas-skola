@@ -67,7 +67,21 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  for(const task of tasks){const item=document.createElement('p');item.textContent=(task.status==='completed'?'✅ ':'⬜ ')+task.title+' — '+(task.subject||'');const b=document.createElement('button');b.textContent=task.status==='completed'?'Atzīmēt kā neizpildītu':'Pabeigts';b.style.margin='8px';b.addEventListener('click',async()=>{try{await updateTaskStatus(task.id,task.status==='completed'?'pending':'completed');await showSchool(role)}catch(err){alert('Neizdevās saglabāt')}});item.append(b);taskBox.append(item)}area.append(taskBox);
  const progressBox=document.createElement('div');progressBox.className='module';progressBox.innerHTML='<h2>Rezultāti</h2>';
  if(!progress.length)progressBox.append(Object.assign(document.createElement('p'),{textContent:'Rezultātu vēl nav.'}));
- for(const p of progress){const row=document.createElement('p');row.textContent=(p.studentRole||'')+' · '+(p.activityType||'')+' · '+(p.score??'')+' punkti';progressBox.append(row)}area.append(progressBox);
+ for(const p of progress){
+  const row=document.createElement('div');row.style.cssText='padding:10px 0;border-bottom:1px solid #dce3eb';
+  const header=document.createElement('strong');
+  header.textContent=(p.studentRole==='marks'?'Marks':p.studentRole==='samanta'?'Samanta':'')+' · '+(p.activityType||'Treniņš')+' · '+(typeof p.score==='number'?p.score+'%':'Rezultāts nav zināms');
+  row.append(header);
+  try{
+   const details=JSON.parse(p.notes||'null');
+   if(details && Array.isArray(details.skills) && details.skills.length){
+    const weak=details.skills.filter(skill=>skill.percent<80).sort((a,b)=>a.percent-b.percent);
+    const info=document.createElement('p');info.textContent='Uzdevumi: '+(details.correct??0)+'/'+(details.total??0)+(weak.length?' · Jāpatrenē: '+weak.map(x=>x.skill+' '+x.percent+'%').join(', '):' · Pārbaudītās prasmes apgūtas labi');
+    row.append(info);
+   }
+  }catch{}
+  progressBox.append(row);
+}area.append(progressBox);
  if(role==='marks'){const practice=document.createElement('div');practice.className='module';practice.innerHTML='<h2>⚔️ Ātrais treniņš</h2><p>7 × 8 = ?</p>';
  for(const n of [48,56,64]){const b=document.createElement('button');b.textContent=n;b.style.margin='4px';b.addEventListener('click',async()=>{if(n!==56){alert('Mēģini vēlreiz!');return}try{await recordProgress({studentRole:'marks',activityType:'Reizrēķins',subject:'Matemātika',score:100,currentUid:state.user.uid});alert('Pareizi! Rezultāts saglabāts.');await showSchool(role)}catch(err){alert('Pareizi, bet saglabāt neizdevās.')}});practice.append(b)}area.append(practice)}
 }
