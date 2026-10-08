@@ -4,28 +4,36 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#13273e">
 <title>Mājas skola</title>
-<meta name="description" content="Mājas skola - demonstrācijas skati: Marka skola, Samantas skola un Vecāka panelis.">
+<meta name="description" content="Mājas skola — Marka, Samantas un vecāku vide.">
 <meta property="og:title" content="Mājas skola">
 <meta property="og:description" content="Mājas skola - demonstrācijas skati: Marka skola, Samantas skola un Vecāka panelis.">
 <style>
 :root{font-family:system-ui,-apple-system,"Segoe UI",sans-serif;color:#15243a;background:#f3f6fa}
 *{box-sizing:border-box}body{margin:0}header{background:#14283e;color:white;padding:18px max(20px,calc((100vw - 960px)/2));display:flex;justify-content:space-between;align-items:center;gap:16px}header button{background:transparent;color:#fff;border:1px solid #708296;padding:10px;border-radius:9px;cursor:pointer}.wrap{max-width:960px;margin:56px auto;padding:0 20px}h1{font-size:clamp(2rem,5vw,3rem);margin:0 0 12px}p{line-height:1.6;color:#52637a}.intro{max-width:640px;margin-bottom:36px}.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px}.card{background:white;border:1px solid #dbe4ef;border-radius:19px;padding:27px;box-shadow:0 9px 28px #18324d0b}.symbol{font-size:38px}.card h2{margin:14px 0 8px}.card button,.back{background:#215cba;color:#fff;border:0;padding:12px 16px;border-radius:11px;font:inherit;font-weight:650;cursor:pointer}.card button{margin-top:10px}.card button:hover,.back:hover{background:#19498f}.tag{display:inline-block;border-radius:99px;background:#eaf1fa;color:#315987;padding:5px 10px;font-size:.85rem}.modules{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:15px;margin-top:28px}.module{border:1px solid #dbe4ef;background:#fff;border-radius:14px;padding:20px}.module p{margin-bottom:0}footer{margin:44px 0;color:#64748b;font-size:.9rem}button:focus-visible{outline:3px solid #f9b83d;outline-offset:3px}[hidden]{display:none!important}
-</style>
+.card input:focus{outline:2px solid #215cba;outline-offset:2px}.card button:disabled{opacity:.55;cursor:wait}</style>
 </head>
 <body>
 <header><strong>🏠 Mājas skola</strong><button id="home" type="button" hidden>← Sākums</button></header>
 <main class="wrap">
 <section id="welcome">
-<h1>Laipni lūgti Mājas skolā!</h1>
-<p class="intro">Divas atsevišķas mācību vides vienā vietā. Izvēlies, kuru skolu vēlies apskatīt.</p>
+<h1>🏠 Mājas skola</h1>
+<p class="intro">Izvēlies savu skolu un ievadi paroli. Katrā ierīcē turpināsi ar saviem saglabātajiem rezultātiem.</p>
 <div class="grid">
-<article class="card"><div class="symbol" aria-hidden="true">🐉</div><h2>Marka skola</h2><p>Mācību spēles, treniņi un sasniegumi.</p><button type="button" data-school="marka">Atvērt Marka skolu →</button></article>
-<article class="card"><div class="symbol" aria-hidden="true">🎨</div><h2>Samantas skola</h2><p>Mācību priekšmeti, dienas plāns un progress.</p><button type="button" data-school="samanta">Atvērt Samantas skolu →</button></article>
-<article class="card"><div class="symbol" aria-hidden="true">📋</div><h2>Vecāka panelis</h2><p>Vieta nākotnes uzdevumu pārvaldībai un progresa pārskatiem.</p><button type="button" data-school="vecaks">Apskatīt paneli →</button></article>
+<article class="card"><div class="symbol">🐉</div><h2>Marka skola</h2><p>Spēles un mācību izaicinājumi.</p><button type="button" data-school="marks">Atvērt →</button></article>
+<article class="card"><div class="symbol">🎨</div><h2>Samantas skola</h2><p>Mācību priekšmeti un uzdevumi.</p><button type="button" data-school="samanta">Atvērt →</button></article>
+<article class="card"><div class="symbol">📋</div><h2>Vecākiem</h2><p>Abu bērnu progress un uzdevumu pārvaldība.</p><button type="button" data-school="vecaks">Atvērt →</button></article>
 </div>
+<form id="login-form" class="card" hidden style="max-width:450px;margin:28px auto">
+<h2 id="login-heading">Pieteikšanās</h2>
+<label for="login-password">Parole</label>
+<input id="login-password" name="password" type="password" minlength="6" required autocomplete="current-password" style="display:block;width:100%;padding:13px;border:1px solid #aebdd0;border-radius:10px;font:inherit;margin:10px 0">
+<p id="login-message" role="status" aria-live="polite"></p>
+<button type="submit">Pieslēgties</button>
+<button type="button" id="login-cancel" style="background:#e4ebf4;color:#15243a">Atcelt</button>
+</form>
 </section>
 <section id="school" hidden aria-live="polite">
-<span class="tag">Demonstrācijas versija</span><h1 id="school-title"></h1><p id="school-intro"></p>
+<span class="tag">Mājas skola</span><h1 id="school-title"></h1><p id="school-intro"></p>
 <div class="modules" id="modules"></div>
 <p><button class="back" id="back" type="button">← Atpakaļ uz sākumu</button></p>
 </section>
