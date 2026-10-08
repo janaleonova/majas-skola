@@ -17,19 +17,14 @@
 <main class="wrap">
 <section id="welcome">
 <h1>🏠 Mājas skola</h1>
-<p class="intro">Izvēlies savu skolu un ievadi paroli. Katrā ierīcē turpināsi ar saviem saglabātajiem rezultātiem.</p>
-<div class="grid">
-<article class="card"><div class="symbol">🐉</div><h2>Marka skola</h2><p>Spēles un mācību izaicinājumi.</p><button type="button" data-school="marks">Atvērt →</button></article>
-<article class="card"><div class="symbol">🎨</div><h2>Samantas skola</h2><p>Mācību priekšmeti un uzdevumi.</p><button type="button" data-school="samanta">Atvērt →</button></article>
-<article class="card"><div class="symbol">📋</div><h2>Vecākiem</h2><p>Abu bērnu progress un uzdevumu pārvaldība.</p><button type="button" data-school="vecaks">Atvērt →</button></article>
-</div>
-<form id="login-form" class="card" hidden style="max-width:450px;margin:28px auto">
-<h2 id="login-heading">Pieteikšanās</h2>
+<p class="intro">Ievadi savu paroli — atvērsies Marka, Samantas vai vecāku vide.</p>
+<form id="login-form" class="card" style="max-width:450px;margin:28px auto">
+<h2 id="login-heading">Laipni lūgti!</h2>
 <label for="login-password">Parole</label>
 <input id="login-password" name="password" type="password" minlength="6" required autocomplete="current-password" style="display:block;width:100%;padding:13px;border:1px solid #aebdd0;border-radius:10px;font:inherit;margin:10px 0">
 <p id="login-message" role="status" aria-live="polite"></p>
 <button type="submit">Pieslēgties</button>
-<button type="button" id="login-cancel" style="background:#e4ebf4;color:#15243a">Atcelt</button>
+
 </form>
 </section>
 <section id="school" hidden aria-live="polite">
