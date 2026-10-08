@@ -1,3 +1,4 @@
+import {calculatePracticePoints,previewImprovement} from './points-policy.js';
 // Samantas skola — pilns reizrēķina un dalīšanas trenažieris 1–10.
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
@@ -79,6 +80,7 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
  function step(){if('speechSynthesis' in window)window.speechSynthesis.cancel();const s=session;if(s.index>=s.items.length){void finish();return;}
   const q=s.items[s.index];shell('Atrisini uzdevumu','Jautājums '+(s.index+1)+' no '+s.items.length);
   const bar=el('div','progress-track');const fill=el('div','progress-fill');fill.style.width=Math.round(s.index/s.items.length*100)+'%';bar.append(fill);host.append(bar);
+  const streakLabel=el('div','streak-label','🔥 '+(s.streak||0)+' pareizas atbildes pēc kārtas · Rekords: '+(s.maxStreak||0));host.append(streakLabel);
   const card=el('div','question-stage');card.append(el('span','eyebrow',s.mode==='exam'?'PĀRBAUDES REŽĪMS':'TAVS IZAICINĀJUMS'),el('div',q.kind.startsWith('story')?'story-expression':'math-expression',q.prompt));
   if(q.kind.startsWith('visual')){
    const grid=el('div','visual-groups');grid.setAttribute('role','img');
@@ -105,7 +107,7 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
   const submit=el('button','action-button','Pārbaudīt');submit.type='submit';form.append(submit);card.append(form,feedback);host.append(card);
   inp.focus({preventScroll:true});
   form.onsubmit=e=>{e.preventDefault();const val=Number(inp.value);if(!Number.isInteger(val)||inp.value==='')return;
-   const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});if(!good)s.misses.push(q);
+   const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});s.streak=good?(s.streak||0)+1:0;s.maxStreak=Math.max(s.maxStreak||0,s.streak);if(!good)s.misses.push(q);
    inp.disabled=true;submit.disabled=true;
    feedback.textContent=s.mode==='exam'?'Atbilde pieņemta.':good?'✅ Pareizi! Tu to paveici!':'🔍 Vēl ne. '+q.hint;
    button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Nākamais →',()=>{s.index++;step();});
@@ -116,8 +118,13 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
   host.append(el('div','result-hero',pct+'%'),el('p','result-subtitle',s.correct+' pareizi no '+s.items.length+' uzdevumiem'));
   const weak=el('div','soft-notice',s.misses.length?'Visvairāk jānostiprina '+(s.type==='multiply'?'reizināšana':s.type==='division'?'dalīšana':'dažas reizināšanas un dalīšanas darbības')+'.':'🌟 Visas atbildes pareizas!');
   host.append(weak);
-  const row={type:s.type,mode:s.mode,percent:pct,correct:s.correct,total:s.items.length,date:new Date().toISOString()};
-  if(canSubmit)store(row);
+  const policy=calculatePracticePoints({correct:s.correct,total:s.items.length,maxStreak:s.maxStreak||0,mode:s.mode});
+  const key='samanta-math-best-'+s.type+'-'+s.fam;let previous=0;try{previous=Number(localStorage.getItem(key))||0;}catch{}
+  const award=previewImprovement(previous,policy.potential);
+  const row={type:s.type,mode:s.mode,percent:pct,correct:s.correct,total:s.items.length,date:new Date().toISOString(),streak:s.maxStreak||0,pointsPreview:award.earned,pointsPotential:policy.potential};
+  if(canSubmit){store(row);try{localStorage.setItem(key,String(award.best));}catch{}}
+  const pts=el('div','soft-notice',policy.eligible?'🏅 Šī mēģinājuma punktu potenciāls: '+policy.potential+'/20 · Jauns uzlabojums: +'+award.earned+' treniņa BP · Sērijas bonuss: '+policy.streakBonus:'🌱 Šis ir mācību režīms — bez balvu punktiem.');host.append(pts);
+  const disclaimer=el('p','points-disclaimer','Treniņa BP pagaidām ir informatīvi. Balvu makam tos nepieskaita, līdz ir droša servera vērtēšana.');host.append(disclaimer);
   const status=el('p','save-status');host.append(status);
   if(canSubmit){try{const id=await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Reizrēķins un dalīšana · '+s.type+' · '+s.mode,score:pct,notes:JSON.stringify(row)});status.textContent=id?'✅ Rezultāts saglabāts.':'⚠️ Saglabāšanu nevarēja apstiprināt.';}catch{status.textContent='⚠️ Firebase saglabāšana neizdevās. Rezultāts paliek šīs pārlūkprogrammas vēsturē.';}}
   else status.textContent='Vecāka priekšskatījums — rezultāts netiek ieskaitīts.';
