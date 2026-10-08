@@ -1,26 +1,33 @@
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,ROLES} from './firebase/homeSchoolService.js';
-const state={user:null,role:null,view:null,emails:{},ready:false};
+const state={user:null,role:null,view:null,ready:false};
 const $=id=>document.getElementById(id);
 const schools={marks:['🐉 Marka skola','Mācību spēles un progress'],samanta:['🎨 Samantas skola','Uzdevumi un sasniegumi'],vecaks:['📋 Vecāka panelis','Abu bērnu mācību pārskats']};
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let pendingRole=null;
 function message(s){$('login-message').textContent=s||''}
-function showLogin(role){if(!state.ready){alert('Firebase vēl nav konfigurēts. Skatiet projekta SETUP_LOGIN.md.');return}
- pendingRole=role;$('login-form').hidden=false;$('login-heading').textContent=schools[role][0]+' — parole';$('login-password').value='';message('');$('login-password').focus();}
-function showWelcome(){state.view=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=!state.user;$('login-form').hidden=true;}
+function showLogin(){if(!state.ready){message('Firebase vēl nav konfigurēts.');return}
+ $('login-form').hidden=false;$('login-password').value='';message('');$('login-password').focus();}
+function showWelcome(){state.view=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=!state.user;$('login-form').hidden=Boolean(state.user);}
 function header(){let bar=$('header-auth-bar');if(!bar){bar=document.createElement('div');bar.id='header-auth-bar';document.querySelector('header').append(bar)}
  bar.replaceChildren();if(state.user){const out=document.createElement('button');out.textContent='Iziet';out.addEventListener('click',async()=>{await signOut(auth);showWelcome()});bar.append(out);}}
 async function login(e){e.preventDefault();const btn=$('login-form').querySelector('[type=submit]');btn.disabled=true;
- try{const email=state.emails[pendingRole];if(!email)throw Error('Šai skolai vēl nav iestatīts Firebase konts.');
- await setPersistence(auth,browserLocalPersistence);
- const result=await signInWithEmailAndPassword(auth,email,$('login-password').value);
- const profile=await getUserProfile(result.user.uid);
- if(!profile || profile.approved!==true || profile.role!==pendingRole){await signOut(auth);throw Error('Šim kontam nav apstiprinātas piekļuves.')}
- state.user=result.user;state.role=profile.role;$('login-password').value='';showWelcome();await showSchool(pendingRole);
- }catch(err){message(err.message?.includes('auth/')?'Nepareiza parole vai konts nav aktivizēts.':(err.message||'Neizdevās pieslēgties.'))}
- finally{btn.disabled=false}}
-async function showSchool(role){if(!state.user || !state.role){showLogin(role);return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
+ const password=$('login-password').value;
+ try{
+   const response=await fetch('/api/password-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password})});
+   const identified=await response.json();
+   if(!response.ok)throw Error(identified.error||'Pieteikšanās neizdevās.');
+   await setPersistence(auth,browserLocalPersistence);
+   const result=await signInWithEmailAndPassword(auth,identified.email,password);
+   const profile=await getUserProfile(result.user.uid);
+   if(!profile||profile.approved!==true||profile.role!==identified.role){
+     await signOut(auth);throw Error('Šim kontam vēl nav apstiprināta piekļuve.');
+   }
+   state.user=result.user;state.role=profile.role;
+   $('login-password').value='';await showSchool(state.role);
+ }catch(err){message(err.message?.includes('auth/')?'Konts vēl nav aktivizēts.':(err.message||'Pieteikšanās neizdevās.'))}
+ finally{btn.disabled=false;}
+}
+async function showSchool(role){if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
  const area=$('modules');area.replaceChildren();let tasks=[],progress=[];
@@ -40,8 +47,25 @@ async function showSchool(role){if(!state.user || !state.role){showLogin(role);r
  if(role==='marks'){const practice=document.createElement('div');practice.className='module';practice.innerHTML='<h2>⚔️ Ātrais treniņš</h2><p>7 × 8 = ?</p>';
  for(const n of [48,56,64]){const b=document.createElement('button');b.textContent=n;b.style.margin='4px';b.addEventListener('click',async()=>{if(n!==56){alert('Mēģini vēlreiz!');return}try{await recordProgress({studentRole:'marks',activityType:'Reizrēķins',subject:'Matemātika',score:100,currentUid:state.user.uid});alert('Pareizi! Rezultāts saglabāts.');await showSchool(role)}catch(err){alert('Pareizi, bet saglabāt neizdevās.')}});practice.append(b)}area.append(practice)}
 }
-async function start(){document.querySelectorAll('[data-school]').forEach(b=>b.addEventListener('click',()=>showSchool(b.dataset.school)));$('login-form').addEventListener('submit',login);$('login-cancel').addEventListener('click',()=>{$('login-form').hidden=true;message('')});$('home').addEventListener('click',showWelcome);$('back').addEventListener('click',showWelcome);
- try{const [fb,logins]=await Promise.all([initFirebase(),fetch('/api/login-profiles').then(r=>r.json())]);state.ready=Boolean(fb.isConfigured);state.emails=logins;
- if(state.ready){onAuthStateChanged(auth,async user=>{state.user=user;state.role=null;if(user){try{const profile=await getUserProfile(user.uid);if(profile?.approved && ['marks','samanta','vecaks'].includes(profile.role)){state.role=profile.role;await showSchool(profile.role)}else{await signOut(auth);showWelcome()}}catch(err){showWelcome()}}else showWelcome();header()})}
- }catch(e){console.error('Pieteikšanās konfigurācijas kļūda',e)}header();}
+async function start(){
+ $('login-form').addEventListener('submit',login);
+ $('home').addEventListener('click',showWelcome);
+ $('back').addEventListener('click',showWelcome);
+ try{
+   const fb=await initFirebase();state.ready=Boolean(fb.isConfigured);
+   if(state.ready)onAuthStateChanged(auth,async user=>{
+     state.user=user;state.role=null;
+     if(user){
+       try{const profile=await getUserProfile(user.uid);
+         if(profile?.approved && ['marks','samanta','vecaks'].includes(profile.role)){
+           state.role=profile.role;await showSchool(profile.role);
+         }else{await signOut(auth);showWelcome();}
+       }catch(e){await signOut(auth);showWelcome();}
+     }else showWelcome();
+     header();
+   });
+   else message('Firebase vēl nav konfigurēts.');
+ }catch(e){message('Neizdevās inicializēt savienojumu.')}
+ header();
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start);else start();
