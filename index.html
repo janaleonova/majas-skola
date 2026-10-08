@@ -146,6 +146,34 @@ html[data-school-theme] .topic-tile{border-width:2px;box-shadow:0 13px 30px #322
 html[data-school-theme] .topic-tile:focus-visible{outline:4px solid var(--personal-accent);outline-offset:3px}
 html[data-school-theme] .module button:not(.password-toggle){min-height:48px}
 @media(max-width:700px){.world-hero{min-height:350px;border-radius:24px}.world-hero::after{background:linear-gradient(0deg,#171b55eb 0%,#171b5580 57%,transparent 100%)}.world-hero-samanta::after{background:linear-gradient(0deg,#543267db 0%,#54326784 58%,transparent 100%)}.world-hero-content{min-height:350px;display:flex;flex-direction:column;justify-content:flex-end;padding:24px}.world-hero h2{margin:14px 0 8px}.world-hero p{font-size:.98rem}}
+
+/* Child dashboard, large interactive destinations */
+#school:has(.world-hero) #school-title{font-size:clamp(2.35rem,4.5vw,4.3rem)}
+#school:has(.world-hero) .modules{gap:24px;grid-template-columns:repeat(12,minmax(0,1fr))}
+#school:has(.world-hero) .modules>.world-hero{grid-column:1/-1;min-height:440px}
+#school:has(.world-hero) .modules>.theme-picker{grid-column:1/-1}
+#school:has(.world-hero) .modules>.learning-hub{grid-column:1/-1}
+#school:has(.world-hero) .world-hero-content{padding-top:90px;padding-bottom:85px}
+#school:has(.world-hero) .learning-heading h2{font-size:clamp(2rem,4vw,3rem)}
+#school:has(.world-hero) .learning-heading>p{font-size:1.13rem}
+#school:has(.world-hero) .topic-grid{grid-template-columns:repeat(auto-fit,minmax(225px,1fr));gap:18px}
+#school:has(.world-hero) .topic-tile{min-height:240px;position:relative;overflow:hidden;padding:26px;background:linear-gradient(160deg,#fff,#fbf8ff);border:2px solid #efe7f7;box-shadow:0 14px 35px #5f45621c}
+#school:has(.world-hero) .topic-tile::before{content:"";position:absolute;right:-22px;top:-22px;width:108px;height:108px;border-radius:50%;background:#f6dbeb;opacity:.75}
+#school:has(.world-hero) .topic-emoji{font-size:3.8rem;line-height:1.1;position:relative;z-index:1;margin-bottom:auto}
+#school:has(.world-hero) .topic-tile strong{font-size:1.4rem;line-height:1.2;color:#292e53;position:relative}
+#school:has(.world-hero) .topic-tile small{font-size:1rem;line-height:1.45;color:#66708c;position:relative}
+html[data-school-theme=marks] .topic-tile{background:linear-gradient(145deg,#f1edff,#e9fcff)!important;border-color:#beb2fa!important}
+html[data-school-theme=marks] .topic-tile:nth-child(2n){background:linear-gradient(145deg,#e6f9fc,#f2edff)!important}
+html[data-school-theme=marks] .topic-tile::before{background:#b3acef!important}
+html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n+1){background:linear-gradient(155deg,#ffe3da,#fff7e7)!important;border-color:#fac5ae!important}
+html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n+2){background:linear-gradient(155deg,#dff8f6,#edfaff)!important;border-color:#abdfd8!important}
+html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n+3){background:linear-gradient(155deg,#eee7ff,#f9f3ff)!important;border-color:#d7c4f8!important}
+html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n+4){background:linear-gradient(155deg,#fef4ca,#fff9e8)!important;border-color:#f4dc91!important}
+html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n){background:linear-gradient(155deg,#ffe7f4,#fff4fb)!important;border-color:#f7bfdb!important}
+#school:has(.world-hero) .topic-tile:hover{transform:translateY(-5px) scale(1.01);box-shadow:0 24px 50px #3e315b2a}
+#school:has(.world-hero) .theme-picker{box-shadow:0 17px 44px #51448414}
+@media(max-width:720px){#school:has(.world-hero) .modules{gap:14px}#school:has(.world-hero) .modules>.world-hero{min-height:360px}#school:has(.world-hero) .world-hero-content{padding:26px;min-height:360px}#school:has(.world-hero) .topic-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:11px}#school:has(.world-hero) .topic-tile{min-height:205px;padding:16px}#school:has(.world-hero) .topic-tile strong{font-size:1.05rem}#school:has(.world-hero) .topic-tile small{font-size:.86rem}#school:has(.world-hero) .topic-emoji{font-size:2.8rem}}
+@media(max-width:370px){#school:has(.world-hero) .topic-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
