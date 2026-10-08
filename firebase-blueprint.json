@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "HomeSchoolUser": {
+      "title": "HomeSchoolUser",
+      "description": "User profile with role assignment for Mājas skola",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Firebase Auth UID" },
+        "email": { "type": "string", "description": "User email address" },
+        "displayName": { "type": "string", "description": "Display name" },
+        "role": {
+          "type": "string",
+          "enum": ["vecaks", "marks", "samanta"],
+          "description": "Role in Mājas skola: vecaks, marks, or samanta"
+        },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["uid", "role", "createdAt"]
+    },
+    "HomeSchoolTask": {
+      "title": "HomeSchoolTask",
+      "description": "Learning task or assignment for Marks or Samanta",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Task identifier" },
+        "assignedTo": {
+          "type": "string",
+          "enum": ["marks", "samanta", "both"],
+          "description": "Student the task is assigned to"
+        },
+        "subject": { "type": "string", "description": "Subject name" },
+        "title": { "type": "string", "description": "Task title" },
+        "description": { "type": "string", "description": "Task details" },
+        "status": {
+          "type": "string",
+          "enum": ["pending", "in_progress", "completed"],
+          "description": "Task status"
+        },
+        "createdBy": { "type": "string", "description": "UID of the parent who created the task" },
+        "dueDate": { "type": "string", "description": "Optional due date ISO string" },
+        "createdAt": { "type": "string", "description": "Creation timestamp" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["title", "assignedTo", "status", "createdBy", "createdAt"]
+    },
+    "HomeSchoolProgress": {
+      "title": "HomeSchoolProgress",
+      "description": "Recorded learning session, exercise score, or milestone",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Progress entry ID" },
+        "studentRole": {
+          "type": "string",
+          "enum": ["marks", "samanta"],
+          "description": "Target student"
+        },
+        "activityType": { "type": "string", "description": "Type of activity or game" },
+        "subject": { "type": "string", "description": "Subject name" },
+        "score": { "type": "number", "description": "Score or percentage" },
+        "notes": { "type": "string", "description": "Progress notes or feedback" },
+        "recordedAt": { "type": "string", "description": "Timestamp of the activity" }
+      },
+      "required": ["studentRole", "activityType", "recordedAt"]
+    },
+    "HomeSchoolSetting": {
+      "title": "HomeSchoolSetting",
+      "description": "Configuration and parent settings for Mājas skola",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Setting ID" },
+        "schoolName": { "type": "string", "description": "Display name of the home school" },
+        "parentEmail": { "type": "string", "description": "Registered parent email" },
+        "activeSemester": { "type": "string", "description": "Current school term" },
+        "updatedAt": { "type": "string", "description": "Last update timestamp" }
+      },
+      "required": ["schoolName", "parentEmail", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/homeSchool/data/users/{userId}": {
+      "schema": "HomeSchoolUser",
+      "description": "Profiles and role mappings for Mājas skola users"
+    },
+    "/homeSchool/data/tasks/{taskId}": {
+      "schema": "HomeSchoolTask",
+      "description": "Learning assignments strictly within the homeSchool namespace"
+    },
+    "/homeSchool/data/progress/{progressId}": {
+      "schema": "HomeSchoolProgress",
+      "description": "Learning progress and scores strictly within the homeSchool namespace"
+    },
+    "/homeSchool/data/settings/{settingId}": {
+      "schema": "HomeSchoolSetting",
+      "description": "School settings strictly within the homeSchool namespace"
+    }
+  }
+}

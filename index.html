@@ -29,16 +29,7 @@
 <div class="modules" id="modules"></div>
 <p><button class="back" id="back" type="button">← Atpakaļ uz sākumu</button></p>
 </section>
-<footer>1. posms · Vēl nav lietotāju kontu vai datu saglabāšanas. Neievadi šeit personas datus.</footer>
+<footer>Mājas skola ar Firebase integrāciju · Projekts: <code>datorika-hub</code> · Dati izolēti <code>homeSchool</code> struktūrā</footer>
 </main>
-<script>
-const views={
- marka:{title:"🐉 Marka skola",intro:"Marka personīgā mācību vide — pamats spēlēm un vingrinājumiem.",modules:["📚 Mācību priekšmeti","⚔️ Treniņi un spēles","🏆 Sasniegumi","📈 Progress"]},
- samanta:{title:"🎨 Samantas skola",intro:"Samantas personīgā mācību vide — plānošanai un mācībām.",modules:["📚 Mācību priekšmeti","📅 Nedēļas plāns","✅ Uzdevumi","📈 Progress"]},
- vecaks:{title:"📋 Vecāka panelis",intro:"Šeit vēlāk varēs pārvaldīt abu bērnu mācību procesu.",modules:["➕ Uzdevumu izveide","📎 Mācību materiāli","📊 Rezultātu pārskats","⚙️ Iestatījumi"]}
-};
-const welcome=document.getElementById("welcome"),school=document.getElementById("school"),home=document.getElementById("home");
-function show(key){if(!views[key]){welcome.hidden=false;school.hidden=true;home.hidden=true;return}const v=views[key];document.getElementById("school-title").textContent=v.title;document.getElementById("school-intro").textContent=v.intro;document.getElementById("modules").replaceChildren(...v.modules.map(t=>{const d=document.createElement("div");d.className="module";const h=document.createElement("h2");h.textContent=t;const p=document.createElement("p");p.textContent="Šī sadaļa tiks izstrādāta nākamajos posmos.";d.append(h,p);return d}));welcome.hidden=true;school.hidden=false;home.hidden=false;window.scrollTo(0,0)}
-document.querySelectorAll("[data-school]").forEach(b=>b.addEventListener("click",()=>show(b.dataset.school)));home.addEventListener("click",()=>show());document.getElementById("back").addEventListener("click",()=>show());
-</script>
+<script type="module" src="/public/bundle.js"></script>
 </body></html>
