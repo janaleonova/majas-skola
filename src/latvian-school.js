@@ -59,12 +59,42 @@ const EXTENDED={
 };
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
-export function renderLatvianSchool(container,{canSubmit=false,saveProgress=async()=>{}}={}){
+export function renderLatvianSchool(container,{canSubmit=false,saveProgress=async()=>{},askAI=null}={}){
  const host=document.createElement('section');host.className='module';host.style.gridColumn='1/-1';
  host.innerHTML='<h2>📕 Latviešu valoda</h2><p>Izvēlies tēmu un treniņa režīmu.</p>';
  container.prepend(host);
  const nav=document.createElement('div');host.append(nav);
  const content=document.createElement('div');host.append(content);
+ const historyKey=topic=>'marks-lv-history-'+topic.id;
+ function readHistory(topic){if(!canSubmit)return [];try{const val=JSON.parse(localStorage.getItem(historyKey(topic))||'[]');return Array.isArray(val)?val.slice(-30):[];}catch{return [];}}
+ function saveHistory(topic,row){if(!canSubmit)return;try{localStorage.setItem(historyKey(topic),JSON.stringify([...readHistory(topic),row].slice(-30)));}catch{}}
+ function skillOf(topic,q){
+  const p=q.prompt.toLocaleLowerCase('lv-LV');
+  if(topic.id==='sazina'){
+    if(/žest|mīmik|neverbāl|sejas/.test(p))return 'Neverbālā saziņa';
+    if(/pieklāj|uzklaus|sarun|saprast/.test(p))return 'Sarunāšanās prasmes';
+    return 'Saziņas veidi un jēdzieni';
+  }
+  if(topic.id==='vardskiras'){
+    if(/pamatform|nenoteiksm/.test(p))return 'Vārda pamatforma';
+    return 'Vārdšķiru atpazīšana';
+  }
+  if(/salikten|vārdu savienojum/.test(p))return 'Salikteņi';
+  if(/radniecīg|sakn/.test(p))return 'Sakne un radniecīgie vārdi';
+  if(/priedēkl|ieskrēj|izskrēj|brauca|kāpa|pārrakst/.test(p))return 'Priedēkļi';
+  if(/izskaņ|piedēkl|galotn/.test(p))return 'Vārda sastāvs';
+  return 'Vārda sastāvs un vārddarināšana';
+ }
+ function aiButton(parent,label,payload){
+  if(!canSubmit || typeof askAI!=='function')return;
+  const button=addButton(parent,label,async()=>{
+   button.disabled=true;button.textContent='🤖 Domāju…';
+   const output=document.createElement('p');output.setAttribute('role','status');parent.append(output);
+   try{output.textContent=await askAI(payload);}
+   catch(e){output.textContent='MI treneris pašlaik nav pieejams. Turpinām parasto treniņu.';console.warn('[Marka skola] MI:',e?.message||'unknown');}
+   finally{button.disabled=false;button.textContent=label;}
+  });
+ }
  const pending=new Map();
  function pendingKey(topic){return 'marks-lv-errors-'+topic.id;}
  function loadPending(topic){
@@ -89,6 +119,13 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
  for(const topic of TOPICS){const b=document.createElement('button');b.type='button';b.textContent=topic.icon+' '+topic.name;b.style.margin='5px';b.onclick=()=>choose(topic);nav.append(b);}
  function choose(topic){content.replaceChildren();
   const h=document.createElement('h3');h.textContent=topic.name;content.append(h);
+  const past=readHistory(topic);
+  if(past.length){
+   const best=Math.max(...past.map(p=>p.percent||0));const last=past[past.length-1];
+   const summary=document.createElement('p');summary.textContent='📈 Mans progress · Pēdējais: '+last.percent+'% · Labākais: '+best+'% · Mēģinājumi: '+past.length;content.append(summary);
+   const recent=past.slice(-5).map(p=>p.percent+'%').join(' → ');
+   const line=document.createElement('small');line.textContent='Pēdējie rezultāti: '+recent;content.append(line);
+  }
   const missed=loadPending(topic);if(missed.length){const note=document.createElement('p');note.textContent='🐉 Vēl vari nostiprināt '+missed.length+' jautājumus, kuros kļūdījies.';content.append(note);addButton(content,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));}
   for(const [key,label] of [['learn','📖 Mācos'],['practice','🎯 Trenējos'],['exam','📝 Pārbaudu sevi']]){
    const b=document.createElement('button');b.type='button';b.textContent=label;b.style.margin='5px';b.onclick=()=>start(topic,key);content.append(b);}
@@ -105,6 +142,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
   let index=0,correct=0;
   const results=[];
   const missed=[];
+  const skillStats={};
   render();
   function render(){content.replaceChildren();
    if(index===items.length){void finish();return;}
@@ -124,12 +162,22 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     if(q.kind==='text'){good=q.answers.some(a=>normalize(a)===normalize(input.value));}
     else if(q.kind==='multi'){const selected=[...form.querySelectorAll('input:checked')].map(el=>q.options[Number(el.value)]);if(selected.length===0){feedback.textContent='Izvēlies vismaz vienu atbildi.';return;}good=selected.length===q.answers.length&&selected.every(x=>q.answers.includes(x));}
     else{const selection=form.querySelector('input:checked');if(!selection){feedback.textContent='Izvēlies atbildi.';return;}good=q.options[Number(selection.value)].correct;}
-    correct+=Number(good);results.push(good);if(!good)missed.push(q);form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
+    correct+=Number(good);results.push(good);if(!good)missed.push(q);
+    const skill=skillOf(topic,q);const stats=skillStats[skill]||(skillStats[skill]={correct:0,total:0});stats.total++;stats.correct+=Number(good);
+    if(!good&&mode!=='exam'){aiButton(content,'🤖 Palīdzi saprast', {mode:'hint',skill,question:q.prompt,studentAnswer:q.kind==='text'?input.value:q.kind==='multi'?[...form.querySelectorAll('input:checked')].map(el=>q.options[Number(el.value)]).join(', '):String(q.options[Number(form.querySelector('input:checked')?.value)]?.label||''),explanation:q.explanation,attempt:1});}form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     feedback.textContent=mode==='exam'?'Atbilde saglabāta.':good?'✅ Pareizi!':('🔄 Vēl ne. '+q.explanation);
     const next=document.createElement('button');next.type='button';next.textContent=index+1===items.length?'Rezultāts':'Nākamais →';next.onclick=()=>{index++;render();};content.append(next);
    };
   }
   async function finish(){const pct=Math.round(correct/items.length*100);const h=document.createElement('h3');h.textContent=topic.name+': '+pct+'% ('+correct+'/'+items.length+')';content.append(h);
+   const breakdown=Object.entries(skillStats).map(([skill,stat])=>({skill,percent:Math.round(100*stat.correct/stat.total),correct:stat.correct,total:stat.total})).sort((a,b)=>a.percent-b.percent);
+   if(breakdown.length){
+    const heading=document.createElement('h4');heading.textContent='Prasmju pārskats';content.append(heading);
+    for(const skill of breakdown){const line=document.createElement('p');line.textContent=(skill.percent>=80?'🟢 ':skill.percent>=60?'🟡 ':'🟠 ')+skill.skill+': '+skill.percent+'% ('+skill.correct+'/'+skill.total+')';content.append(line);}
+    if(breakdown[0].percent<80){const suggestion=document.createElement('p');suggestion.textContent='Ieteikums: vēl patrenē “'+breakdown[0].skill+'”.';content.append(suggestion);}
+   }
+   saveHistory(topic,{date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown});
+   if(mode!=='exam'&&breakdown.length)aiButton(content,'🤖 MI trenera ieteikums',{mode:'result',skill:breakdown[0].skill,percent:pct});
    if(mode!=='errors')remember(topic,missed);
    else if(missed.length)remember(topic,missed);
    else remember(topic,[]);
@@ -143,7 +191,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     const done=document.createElement('p');done.textContent='🎉 Labi! Šajā kļūdu treniņā visi uzdevumi izpildīti pareizi.';content.append(done);
    }
    const status=document.createElement('p');content.append(status);
-   if(canSubmit){try{await saveProgress({studentRole:'marks',activityType:topic.name+' · '+mode,subject:'Latviešu valoda',score:pct,notes:'Uzdevumi: '+correct+'/'+items.length});status.textContent='✅ Rezultāts saglabāts Firebase.';}catch{status.textContent='⚠️ Rezultātu neizdevās saglabāt.';}}
+   if(canSubmit){try{await saveProgress({studentRole:'marks',activityType:topic.name+' · '+mode,subject:'Latviešu valoda',score:pct,notes:JSON.stringify({topicId:topic.id,mode,correct,total:items.length,skills:breakdown})});status.textContent='✅ Rezultāts saglabāts Firebase.';}catch{status.textContent='⚠️ Rezultātu neizdevās saglabāt.';}}
    else status.textContent='Vecāka priekšskatījums: rezultāts nav saglabāts.';
    const again=document.createElement('button');again.type='button';again.textContent='Trenēties vēlreiz';again.onclick=()=>start(topic,mode);content.append(again);
    const back=document.createElement('button');back.type='button';back.textContent='Atpakaļ uz režīmiem';back.style.margin='8px';back.onclick=()=>choose(topic);content.append(back);
