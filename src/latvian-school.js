@@ -62,7 +62,7 @@ const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(
 export function renderLatvianSchool(container,{canSubmit=false,saveProgress=async()=>{},askAI=null}={}){
  const host=document.createElement('section');host.className='module learning-hub latvian-hub';host.style.gridColumn='1/-1';
  host.innerHTML='<div class="learning-heading"><span class="eyebrow">✦ MARKA VALODAS LABORATORIJA</span><h2>📕 Vārdu piedzīvojums</h2><p>Atklāj vārdu noslēpumus, pārbaudi sevi un audzē prasmes! Izvēlies tēmu.</p></div>';
- container.prepend(host);
+ container.append(host);
  const nav=document.createElement('div');nav.className='topic-grid';host.append(nav);
  const content=document.createElement('div');host.append(content);
  const historyKey=topic=>'marks-lv-history-'+topic.id;
