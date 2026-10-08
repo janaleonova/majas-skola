@@ -1,3 +1,4 @@
+import {calculatePracticePoints,previewImprovement} from './points-policy.js';
 // Marka skola: latviešu valodas trenažieri. Sākotnējā integrācijas versija.
 const TOPICS=[
   {id:'morfemas',name:'Vārda sastāvs un vārddarināšana',icon:'🔎'},
@@ -143,13 +144,15 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
   // Error practice uses different questions from the same topic; never repeat the missed prompts.
   const wanted=mode==='errors'?Math.min(10,Math.max(4,previousMisses.length*2)):mode==='exam'?20:mode==='practice'?12:8;
   let items=source.slice(0,Math.min(wanted,source.length)).map(q=>({...q,options:shuffle(q.options||[])}));
-  let index=0,correct=0;
+  let index=0,correct=0,streak=0,maxStreak=0;
   const results=[];
   const missed=[];
   const skillStats={};
   render();
   function render(){content.replaceChildren();
    if(index===items.length){void finish();return;}
+   const progress=document.createElement('div');progress.className='progress-track';const fill=document.createElement('div');fill.className='progress-fill';fill.style.width=Math.round(index/items.length*100)+'%';progress.append(fill);content.append(progress);
+   const streakTag=document.createElement('p');streakTag.className='streak-label';streakTag.textContent='🔥 '+streak+' pareizas pēc kārtas · Rekords: '+maxStreak;content.append(streakTag);
    const q=items[index],h=document.createElement('h3');h.className='latvian-question';h.textContent=(index+1)+'/'+items.length+' · '+q.prompt;content.append(h);
    const form=document.createElement('form');form.className='latvian-question-form';content.append(form);
    const feedback=document.createElement('p');feedback.setAttribute('role','status');
@@ -166,7 +169,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     if(q.kind==='text'){good=q.answers.some(a=>normalize(a)===normalize(input.value));}
     else if(q.kind==='multi'){const selected=[...form.querySelectorAll('input:checked')].map(el=>q.options[Number(el.value)]);if(selected.length===0){feedback.textContent='Izvēlies vismaz vienu atbildi.';return;}good=selected.length===q.answers.length&&selected.every(x=>q.answers.includes(x));}
     else{const selection=form.querySelector('input:checked');if(!selection){feedback.textContent='Izvēlies atbildi.';return;}good=q.options[Number(selection.value)].correct;}
-    correct+=Number(good);results.push(good);if(!good)missed.push(q);
+    correct+=Number(good);streak=good?streak+1:0;maxStreak=Math.max(maxStreak,streak);results.push(good);if(!good)missed.push(q);
     const skill=skillOf(topic,q);const stats=skillStats[skill]||(skillStats[skill]={correct:0,total:0});stats.total++;stats.correct+=Number(good);
     if(!good&&mode!=='exam'){aiButton(content,'🤖 Palīdzi saprast', {mode:'hint',skill,question:q.prompt,studentAnswer:q.kind==='text'?input.value:q.kind==='multi'?[...form.querySelectorAll('input:checked')].map(el=>q.options[Number(el.value)]).join(', '):String(q.options[Number(form.querySelector('input:checked')?.value)]?.label||''),explanation:q.explanation,attempt:1});}form.querySelectorAll('input,button').forEach(el=>el.disabled=true);
     feedback.textContent=mode==='exam'?'Atbilde saglabāta.':good?'✅ Pareizi!':('🔄 Vēl ne. '+q.explanation);
@@ -180,7 +183,15 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     for(const skill of breakdown){const line=document.createElement('p');line.textContent=(skill.percent>=80?'🟢 ':skill.percent>=60?'🟡 ':'🟠 ')+skill.skill+': '+skill.percent+'% ('+skill.correct+'/'+skill.total+')';content.append(line);}
     if(breakdown[0].percent<80){const suggestion=document.createElement('p');suggestion.textContent='Ieteikums: vēl patrenē “'+breakdown[0].skill+'”.';content.append(suggestion);}
    }
-   saveHistory(topic,{date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown});
+   const policy=calculatePracticePoints({correct,total:items.length,maxStreak,mode});
+   const bestKey='marks-lv-best-points-'+topic.id;let bestBefore=0;try{bestBefore=Number(localStorage.getItem(bestKey))||0;}catch{}
+   const award=previewImprovement(bestBefore,policy.potential);
+   if(canSubmit)try{localStorage.setItem(bestKey,String(award.best));}catch{}
+   const points=document.createElement('div');points.className='soft-notice';
+   points.textContent=policy.eligible?'🏅 Punktu potenciāls '+policy.potential+'/20 · Uzlabojums +'+award.earned+' treniņa BP · Sērijas bonuss '+policy.streakBonus:'🌱 Mācību režīmā balvu punktus neiegūst.';
+   content.append(points);
+   const note=document.createElement('p');note.className='points-disclaimer';note.textContent='Treniņa BP pašlaik ir informatīvi un netiek pieskaitīti balvu makam, līdz ieviesta droša servera pārbaude.';content.append(note);
+   saveHistory(topic,{date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown,maxStreak,pointsPotential:policy.potential,pointsPreview:award.earned});
    if(breakdown.length)aiButton(content,'🤖 MI trenera ieteikums',{mode:'result',skill:breakdown[0].skill,percent:pct});
    if(mode!=='errors')remember(topic,missed);
    else if(missed.length)remember(topic,missed);
