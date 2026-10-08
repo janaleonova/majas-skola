@@ -1,3 +1,4 @@
+import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
@@ -44,6 +45,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
  const area=$('modules');area.replaceChildren();let tasks=[],progress=[];
+ if(role==='marks'){renderLatvianSchool(area,{canSubmit:state.role===ROLES.MARKS,saveProgress:data=>recordProgress({...data,currentUid:state.user.uid})});}
  try{tasks=await getTasks(role);progress=await getProgressHistory({role:state.role===ROLES.PARENT?'vecaks':role,userUid:state.user.uid});if(state.role===ROLES.PARENT && role!==ROLES.PARENT)progress=progress.filter(p=>p.studentRole===role);}
  catch(err){area.innerHTML='<div class="module">Neizdevās ielādēt datus. Pārbaudi Firestore piekļuves noteikumus.</div>';return}
  if(state.role===ROLES.PARENT){const nav=document.createElement('div');nav.className='module';nav.style.gridColumn='1/-1';
