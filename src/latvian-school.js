@@ -57,7 +57,7 @@ const EXTENDED={
   {kind:'text',prompt:'Uzraksti lietvārda “kokiem” pamatformu.',answers:['koks'],explanation:'Lietvārda pamatforma parasti ir vienskaitļa nominatīvs.'}
  ]
 };
-const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\\s+/g,' ');
+const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 export function renderLatvianSchool(container,{canSubmit=false,saveProgress=async()=>{}}={}){
  const host=document.createElement('section');host.className='module';host.style.gridColumn='1/-1';
