@@ -10,6 +10,19 @@ function showLogin(){if(!state.ready){message('Firebase vēl nav konfigurēts.')
 function showWelcome(){state.view=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=!state.user;$('login-form').hidden=Boolean(state.user);}
 function header(){let bar=$('header-auth-bar');if(!bar){bar=document.createElement('div');bar.id='header-auth-bar';document.querySelector('header').append(bar)}
  bar.replaceChildren();if(state.user){const out=document.createElement('button');out.textContent='Iziet';out.addEventListener('click',async()=>{await signOut(auth);showWelcome()});bar.append(out);}}
+function loginErrorMessage(err){
+ const code=err?.code || '';
+ if(code==='auth/invalid-api-key')return 'Firebase API atslēga nav derīga. Pārbaudi FIREBASE_API_KEY iestatījumus.';
+ if(code==='auth/invalid-credential'||code==='auth/wrong-password'||code==='auth/user-not-found')return 'Nepareiza parole vai konta dati.';
+ if(code==='auth/operation-not-allowed')return 'Firebase Email/Password pieteikšanās nav iespējota.';
+ if(code==='auth/unauthorized-domain')return 'Preview domēns nav atļauts Firebase Authentication iestatījumos.';
+ if(code==='auth/too-many-requests')return 'Pārāk daudz pieteikšanās mēģinājumu. Mēģini vēlāk.';
+ if(code==='permission-denied'||code==='firestore/permission-denied')return 'Firestore liedz piekļuvi profilam. Pārbaudi profila tiesības.';
+ if(code==='auth/network-request-failed')return 'Neizdevās savienoties ar Firebase. Pārbaudi internetu.';
+ if(code==='auth/user-disabled')return 'Šis Firebase konts ir atspējots.';
+ if(code.startsWith('auth/'))return 'Firebase pieteikšanās kļūda ('+code+').';
+ return err?.message || 'Pieteikšanās neizdevās.';
+}
 async function login(e){e.preventDefault();const btn=$('login-form').querySelector('[type=submit]');btn.disabled=true;
  const password=$('login-password').value;
  try{
@@ -24,7 +37,7 @@ async function login(e){e.preventDefault();const btn=$('login-form').querySelect
    }
    state.user=result.user;state.role=profile.role;
    $('login-password').value='';await showSchool(state.role);
- }catch(err){message(err.message?.includes('auth/')?'Konts vēl nav aktivizēts.':(err.message||'Pieteikšanās neizdevās.'))}
+ }catch(err){message(loginErrorMessage(err))}
  finally{btn.disabled=false;}
 }
 async function showSchool(role){if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
