@@ -29,5 +29,5 @@ export function renderThemePicker(parent,role){
   b.onclick=()=>{active=name;try{localStorage.setItem('home-school-theme-'+role,name);}catch{}applyPersonalTheme(role);
    for(const child of variants.children)child.setAttribute('aria-pressed',String(child===b));};
  }
- parent.prepend(box);
+ parent.append(box);
 }
