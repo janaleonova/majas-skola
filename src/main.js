@@ -58,8 +58,56 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
   overlay.append(k,title,desc);hero.append(art,overlay);area.append(hero);
   renderThemePicker(area,role);
  }
- if(role==='marks'){renderLatvianSchool(area,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});}
- if(role==='samanta'){renderSamantaMath(area,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firestore saglabāšana nav apstiprināta');return id;}});}
+
+ if(role==='marks'||role==='samanta'){
+  const subjectRoot=document.createElement('section');subjectRoot.className='subjects-root';subjectRoot.style.gridColumn='1/-1';area.append(subjectRoot);
+  const available=role==='marks'
+    ?[{id:'latviesu',icon:'📕',name:'Latviešu valoda',description:'Vārdu piedzīvojums · 3 tēmas',active:true,kind:'language'},
+      {id:'matematika',icon:'🧮',name:'Matemātika',description:'Drīzumā',active:false,kind:'math'},
+      {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Drīzumā',active:false,kind:'english'}]
+    :[{id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, attēli un stāsti',active:true,kind:'math'},
+      {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Drīzumā',active:false,kind:'language'},
+      {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Drīzumā',active:false,kind:'english'}];
+  const openSubject=id=>{
+   subjectRoot.replaceChildren();
+   const nav=document.createElement('div');nav.className='subject-backbar';
+   const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=renderSubjects;nav.append(back);subjectRoot.append(nav);
+   const trainer=document.createElement('div');trainer.className='subject-trainer';subjectRoot.append(trainer);
+   if(id==='latviesu'&&role==='marks'){
+    renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
+   }else if(id==='matematika'&&role==='samanta'){
+    renderSamantaMath(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firestore saglabāšana nav apstiprināta');return id;}});
+   }
+   // Learning mode focuses on the task rather than the decorative dashboard.
+   const hero=area.querySelector('.world-hero');if(hero)hero.hidden=true;
+   const picker=area.querySelector('.theme-picker');if(picker)picker.hidden=true;
+   subjectRoot.scrollIntoView({behavior:'smooth',block:'start'});
+  };
+  function renderSubjects(){
+   subjectRoot.replaceChildren();
+   const head=document.createElement('div');head.className='subject-intro';
+   const eyebrow=document.createElement('span');eyebrow.className='eyebrow';eyebrow.textContent='IZVĒLIES MĀCĪBU PRIEKŠMETU';
+   const title=document.createElement('h2');title.textContent='Ko šodien mācīsimies?';
+   const caption=document.createElement('p');caption.textContent='Izvēlies savu mācību priekšmetu. Pieejamās tēmas atvērsies nākamajā solī.';
+   head.append(eyebrow,title,caption);subjectRoot.append(head);
+   const tiles=document.createElement('div');tiles.className='subject-grid';
+   for(const subject of available){
+    const button=document.createElement('button');button.type='button';button.className='subject-card subject-'+subject.kind;
+    button.disabled=!subject.active;
+    const symbol=document.createElement('span');symbol.className='subject-symbol';symbol.textContent=subject.icon;
+    const name=document.createElement('strong');name.textContent=subject.name;
+    const desc=document.createElement('span');desc.className='subject-description';desc.textContent=subject.description;
+    const state=document.createElement('span');state.className='subject-status';state.textContent=subject.active?'Atvērt priekšmetu →':'Vēl nav pieejams';
+    button.append(symbol,name,desc,state);
+    if(subject.active)button.onclick=()=>openSubject(subject.id);
+    tiles.append(button);
+   }
+   subjectRoot.append(tiles);
+   const hero=area.querySelector('.world-hero');if(hero)hero.hidden=false;
+   const picker=area.querySelector('.theme-picker');if(picker)picker.hidden=false;
+  }
+  renderSubjects();
+ }
  // Independent data loading: Firestore errors must never remove learning modules.
  const loadErrors=[];
  try{
