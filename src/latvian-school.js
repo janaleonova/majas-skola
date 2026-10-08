@@ -181,7 +181,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     if(breakdown[0].percent<80){const suggestion=document.createElement('p');suggestion.textContent='Ieteikums: vēl patrenē “'+breakdown[0].skill+'”.';content.append(suggestion);}
    }
    saveHistory(topic,{date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown});
-   if(mode!=='exam'&&breakdown.length)aiButton(content,'🤖 MI trenera ieteikums',{mode:'result',skill:breakdown[0].skill,percent:pct});
+   if(breakdown.length)aiButton(content,'🤖 MI trenera ieteikums',{mode:'result',skill:breakdown[0].skill,percent:pct});
    if(mode!=='errors')remember(topic,missed);
    else if(missed.length)remember(topic,missed);
    else remember(topic,[]);
