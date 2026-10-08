@@ -26,16 +26,35 @@ app.get('/api/firebase-config', (req, res) => {
   });
 });
 
-// Public account identifiers, never passwords. Accounts are created in Firebase Console.
-app.get('/api/login-profiles', (req, res) => {
-  res.set('Cache-Control', 'no-store');
-  res.json({
-    marks: process.env.MARKS_LOGIN_EMAIL || '',
-    samanta: process.env.SAMANTA_LOGIN_EMAIL || '',
-    vecaks: process.env.PARENT_LOGIN_EMAIL || ''
-  });
+// Verify one password against three Firebase Auth accounts, with throttling.
+// Deploy only behind HTTPS. Never log, store or return submitted passwords.
+app.use('/api/password-login', express.json({limit:'2kb'}));
+const attempts=new Map();
+app.post('/api/password-login',async(req,res)=>{
+  res.set('Cache-Control','no-store');
+  const ip=req.ip;
+  const now=Date.now();
+  const a=attempts.get(ip)||{count:0,until:now+15*60*1000};
+  if(now>a.until){a.count=0;a.until=now+15*60*1000}
+  if(a.count>=8)return res.status(429).json({error:'Pārāk daudz mēģinājumu. Mēģini vēlāk.'});
+  a.count++;attempts.set(ip,a);
+  if(attempts.size>5000){for(const [key,val] of attempts)if(now>val.until)attempts.delete(key)}
+  const password=req.body?.password;
+  const apiKey=process.env.FIREBASE_API_KEY;
+  const accounts={marks:process.env.MARKS_LOGIN_EMAIL,samanta:process.env.SAMANTA_LOGIN_EMAIL,vecaks:process.env.PARENT_LOGIN_EMAIL};
+  if(typeof password!=='string'||password.length<6||password.length>128)return res.status(400).json({error:'Nederīga parole.'});
+  if(!apiKey||Object.values(accounts).some(x=>!x))return res.status(503).json({error:'Pieteikšanās vēl nav konfigurēta.'});
+  try{
+    for(const [role,email] of Object.entries(accounts)){
+      const response=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{
+        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})
+      });
+      if(response.ok){return res.json({role,email})}
+      if(response.status!==400){return res.status(503).json({error:'Autentifikācijas pakalpojums nav pieejams.'})}
+    }
+    return res.status(401).json({error:'Nepareiza parole.'});
+  }catch(e){return res.status(503).json({error:'Savienojuma kļūda. Mēģini vēlāk.'})}
 });
-
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
