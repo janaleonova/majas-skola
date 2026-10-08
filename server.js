@@ -50,7 +50,23 @@ app.post('/api/password-login',async(req,res)=>{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})
       });
       if(response.ok){return res.json({role,email})}
-      if(response.status!==400){return res.status(503).json({error:'Autentifikācijas pakalpojums nav pieejams.'})}
+      let firebaseError;
+      try{firebaseError=(await response.json())?.error?.message}catch{}
+      // HTTP 400 does not always mean an incorrect password.
+      if(response.status===400 && ['INVALID_LOGIN_CREDENTIALS','INVALID_PASSWORD','EMAIL_NOT_FOUND','USER_DISABLED'].includes(firebaseError)){
+        continue;
+      }
+      if(response.status===400 && (firebaseError?.includes('API key not valid') || firebaseError==='INVALID_API_KEY')){
+        return res.status(503).json({error:'Firebase API atslēga nav derīga. Pārbaudi FIREBASE_API_KEY.'});
+      }
+      if(firebaseError==='API_KEY_SERVICE_BLOCKED'||firebaseError==='API_KEY_HTTP_REFERRER_BLOCKED'){
+        return res.status(503).json({error:'Firebase API atslēgas ierobežojumi liedz autentifikāciju.'});
+      }
+      if(response.status===429 || firebaseError==='TOO_MANY_ATTEMPTS_TRY_LATER'){
+        return res.status(429).json({error:'Firebase īslaicīgi ierobežo pieteikšanos. Mēģini vēlāk.'});
+      }
+      // Do not expose provider error payloads, credentials, or API keys.
+      return res.status(503).json({error:'Firebase pieteikšanās konfigurācijas vai pakalpojuma kļūda.'});
     }
     return res.status(401).json({error:'Nepareiza parole.'});
   }catch(e){return res.status(503).json({error:'Savienojuma kļūda. Mēģini vēlāk.'})}
