@@ -1,3 +1,4 @@
+import { applyPersonalTheme,renderThemePicker } from './personal-theme.js';
 import { renderSamantaMath } from './samanta-math.js';
 import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
@@ -46,6 +47,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
  const area=$('modules');area.replaceChildren();let tasks=[],progress=[];
+ applyPersonalTheme(role);if(role==='marks'||role==='samanta')renderThemePicker(area,role);
  if(role==='marks'){renderLatvianSchool(area,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});}
  if(role==='samanta'){renderSamantaMath(area,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firestore saglabāšana nav apstiprināta');return id;}});}
  // Independent data loading: Firestore errors must never remove learning modules.
