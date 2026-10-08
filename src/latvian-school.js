@@ -67,12 +67,29 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
  const content=document.createElement('div');host.append(content);
  const pending=new Map();
  function pendingKey(topic){return 'marks-lv-errors-'+topic.id;}
- function remember(topic,missed){if(!canSubmit)return; if(missed.length)pending.set(topic.id,missed);else pending.delete(topic.id);}
+ function loadPending(topic){
+   if(pending.has(topic.id))return pending.get(topic.id);
+   if(!canSubmit)return [];
+   try{
+     const raw=JSON.parse(localStorage.getItem(pendingKey(topic))||'[]');
+     const valid=Array.isArray(raw)?raw.filter(prompt=>typeof prompt==='string').slice(0,30):[];
+     const all=[...BANK[topic.id].map(q=>q[0]),...(EXTENDED[topic.id]||[]).map(q=>q.prompt)];
+     const found=valid.filter(prompt=>all.includes(prompt)).map(prompt=>({prompt}));
+     pending.set(topic.id,found);return found;
+   }catch{return [];}
+ }
+ function remember(topic,missed){
+   if(!canSubmit)return;
+   const questions=missed.slice(0,30);
+   pending.set(topic.id,questions);
+   try{if(questions.length)localStorage.setItem(pendingKey(topic),JSON.stringify(questions.map(q=>q.prompt)));
+   else localStorage.removeItem(pendingKey(topic));}catch{}
+ }
  function addButton(parent,title,onClick){const button=document.createElement('button');button.type='button';button.textContent=title;button.style.margin='8px';button.onclick=onClick;parent.append(button);return button;}
  for(const topic of TOPICS){const b=document.createElement('button');b.type='button';b.textContent=topic.icon+' '+topic.name;b.style.margin='5px';b.onclick=()=>choose(topic);nav.append(b);}
  function choose(topic){content.replaceChildren();
   const h=document.createElement('h3');h.textContent=topic.name;content.append(h);
-  const missed=pending.get(topic.id)||[];if(missed.length){const note=document.createElement('p');note.textContent='🐉 Vēl vari nostiprināt '+missed.length+' jautājumus, kuros kļūdījies.';content.append(note);addButton(content,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));}
+  const missed=loadPending(topic);if(missed.length){const note=document.createElement('p');note.textContent='🐉 Vēl vari nostiprināt '+missed.length+' jautājumus, kuros kļūdījies.';content.append(note);addButton(content,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));}
   for(const [key,label] of [['learn','📖 Mācos'],['practice','🎯 Trenējos'],['exam','📝 Pārbaudu sevi']]){
    const b=document.createElement('button');b.type='button';b.textContent=label;b.style.margin='5px';b.onclick=()=>start(topic,key);content.append(b);}
  }
