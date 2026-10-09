@@ -216,6 +216,44 @@ html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n){background:l
 .reading-feedback{font-size:1.12rem;font-weight:800;line-height:1.7;min-height:30px;color:#363c64}
 .samanta-reading>button{margin:9px 10px 9px 0!important;padding:14px 20px}
 @media(max-width:600px){.reading-task-card{padding:21px 18px}.reading-prompt{font-size:1.55rem;line-height:1.75}.reading-controls{flex-direction:column}.reading-controls>button{width:100%}.reading-answer-form>.action-button{width:100%}}
+
+/* Mobile usability hotfix: compact sticky header, no side-by-side admin overflow. */
+html{scroll-padding-top:86px}
+#school,#welcome,.wrap,.modules,.subjects-root,.subject-trainer,.module{min-width:0;max-width:100%}
+#school .modules>*,.subject-trainer>*{min-width:0}
+.module,.card{overflow-wrap:anywhere}
+.module button{max-width:100%;white-space:normal}
+#school .subject-trainer{width:100%;min-width:0}
+#school .subject-trainer .question-stage{max-width:100%;overflow:hidden}
+#school .subject-trainer .math-expression{font-size:clamp(2rem,10vw,4.8rem);overflow-wrap:normal;word-break:normal;white-space:normal}
+#school .subject-trainer .math-answer-form{min-width:0}
+#school .subject-trainer .big-number-input{max-width:100%;font-size:clamp(1.6rem,7vw,2.1rem)}
+#school .subject-trainer .visual-groups{max-width:100%;overflow-wrap:anywhere}
+#school .subject-trainer .visual-group{max-width:100%}
+#school .subject-trainer .learning-hub{max-width:100%;min-width:0}
+#school .module>p{overflow-wrap:anywhere}
+@media(max-width:760px){
+ header{position:sticky;top:0;z-index:40;display:flex;align-items:center;gap:8px;padding:9px 13px;min-height:59px;flex-wrap:nowrap}
+ header strong{font-size:clamp(.87rem,3.7vw,1rem);line-height:1.1;max-width:34%;flex:1 1 auto;overflow-wrap:normal}
+ header button{font-size:.82rem;padding:8px 10px;min-height:42px;line-height:1.1;border-radius:12px}
+ #header-auth-bar{flex:none}
+ #home{flex:0 1 auto;min-width:0}
+ .wrap{padding:22px 12px 32px}
+ .modules{display:flex!important;flex-direction:column;align-items:stretch;gap:16px}
+ .modules>*{width:100%!important;min-width:0!important;max-width:100%!important;grid-column:auto!important}
+ .subject-trainer>.learning-hub{width:100%;min-width:0}
+ .subject-trainer>.learning-hub,.module{padding:clamp(15px,4vw,24px)}
+ #school:has(.world-hero) .modules{display:flex!important;flex-direction:column}
+ #school:has(.world-hero) .modules>.world-hero{width:100%;max-width:100%}
+ #school .subject-trainer .math-answer-form{width:100%}
+ #school .subject-trainer .math-answer-form>.action-button{width:100%}
+ .card,.module{border-radius:22px}
+ .modules>.module,.modules>.subjects-root{width:100%}
+ .subject-trainer .question-stage{padding:18px 14px}
+ .subject-trainer .math-expression{padding:12px 3px}
+ .subject-backbar{margin-bottom:10px}
+}
+@media(max-width:390px){header{padding:8px}header strong{font-size:.82rem;max-width:30%}header button{padding:7px 8px;font-size:.77rem}}
 </style>
 </head>
 <body>
