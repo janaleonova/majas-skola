@@ -3,9 +3,7 @@ import {attachTouchNumpad} from './touch-numpad.js';
 // Samantas skola — pilns reizrēķina un dalīšanas trenažieris 1–10.
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
-const historyKey='samanta-math-v1';
-function history(){try{const x=JSON.parse(localStorage.getItem(historyKey)||'[]');return Array.isArray(x)?x.slice(-50):[];}catch{return [];}}
-function store(result){try{localStorage.setItem(historyKey,JSON.stringify([...history(),result].slice(-50)));}catch{}}
+
 export function makeMathQuestions(type='mixed',family=0,count=12){
  const base=[];
  for(let a=1;a<=10;a++)for(let b=1;b<=10;b++){
@@ -38,7 +36,11 @@ export function makeMathQuestions(type='mixed',family=0,count=12){
  }
  return shuffle(base).slice(0,count);
 }
-export function renderSamantaMath(container,{canSubmit=false,saveProgress=async()=>{}}={}){
+export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveProgress=async()=>{}}={}){
+ const storagePrefix=canSubmit&&currentUid?'majas-skola:'+currentUid+':samanta-math:':null;
+ const historyKey=storagePrefix+'history-v2';
+ function history(){if(!storagePrefix)return [];try{const x=JSON.parse(localStorage.getItem(historyKey)||'[]');return Array.isArray(x)?x.slice(-50):[];}catch{return [];}}
+ function store(result){if(!storagePrefix)return;try{localStorage.setItem(historyKey,JSON.stringify([...history(),result].slice(-50)));}catch{}}
  const host=document.createElement('section');host.className='module learning-hub math-hub';host.style.gridColumn='1/-1';container.append(host);
  let session=null,errors=[],currentMode='mixed',family=0;
  function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
@@ -123,14 +125,13 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
   const weak=el('div','soft-notice',s.misses.length?'Visvairāk jānostiprina '+(s.type==='multiply'?'reizināšana':s.type==='division'?'dalīšana':'dažas reizināšanas un dalīšanas darbības')+'.':'🌟 Visas atbildes pareizas!');
   host.append(weak);
   const policy=calculatePracticePoints({correct:s.correct,total:s.items.length,maxStreak:s.maxStreak||0,mode:s.mode});
-  const key='samanta-math-best-'+s.type+'-'+s.fam;let previous=0;try{previous=Number(localStorage.getItem(key))||0;}catch{}
+  const key=storagePrefix+'best-'+s.type+'-'+s.fam;let previous=0;if(storagePrefix)try{previous=Number(localStorage.getItem(key))||0;}catch{}
   const award=previewImprovement(previous,policy.potential);
   const row={type:s.type,mode:s.mode,percent:pct,correct:s.correct,total:s.items.length,date:new Date().toISOString(),streak:s.maxStreak||0,pointsPreview:award.earned,pointsPotential:policy.potential};
-  if(canSubmit){store(row);try{localStorage.setItem(key,String(award.best));}catch{}}
   const pts=el('div','soft-notice',policy.eligible?'🏅 Šī mēģinājuma punktu potenciāls: '+policy.potential+'/20 · Jauns uzlabojums: +'+award.earned+' treniņa BP · Sērijas bonuss: '+policy.streakBonus:'🌱 Šis ir mācību režīms — bez balvu punktiem.');host.append(pts);
   const disclaimer=el('p','points-disclaimer','Treniņa BP pagaidām ir informatīvi. Balvu makam tos nepieskaita, līdz ir droša servera vērtēšana.');host.append(disclaimer);
   const status=el('p','save-status');host.append(status);
-  if(canSubmit){try{const id=await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Reizrēķins un dalīšana · '+s.type+' · '+s.mode,score:pct,notes:JSON.stringify(row)});status.textContent=id?'✅ Rezultāts saglabāts.':'⚠️ Saglabāšanu nevarēja apstiprināt.';}catch{status.textContent='⚠️ Firebase saglabāšana neizdevās. Rezultāts paliek šīs pārlūkprogrammas vēsturē.';}}
+  if(canSubmit){try{const id=await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Reizrēķins un dalīšana · '+s.type+' · '+s.mode,score:pct,notes:JSON.stringify(row)});if(id){store(row);if(storagePrefix)try{localStorage.setItem(key,String(award.best));}catch{};status.textContent='✅ Rezultāts saglabāts.';}else status.textContent='⚠️ Saglabāšanu nevarēja apstiprināt.';}catch{status.textContent='⚠️ Firebase saglabāšana neizdevās. Rezultāts paliek šīs pārlūkprogrammas vēsturē.';}}
   else status.textContent='Vecāka priekšskatījums — rezultāts netiek ieskaitīts.';
   const actions=el('div','button-cluster');host.append(actions);
   if(s.misses.length){button(actions,'🎯 Trenēt manas kļūdas',()=>start(s.type,s.fam,'mistakes'));button(actions,'Vēlāk',welcome,'quiet-button');}
