@@ -126,7 +126,10 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  }catch(err){loadErrors.push('uzdevumus');console.warn('[Mājas skola] Uzdevumu ielādes kļūdas kods:',err?.code||'unknown');}
  try{
    progress=await getProgressHistory({role:state.role===ROLES.PARENT?'vecaks':role,userUid:state.user.uid});
+   // Never count a parent's preview recordings as either child's achievements.
+   progress=progress.filter(p=>p.studentUid!== 'j6nmqLJj0CaJ0fo4eAQ6u6qgPal2');
    if(state.role===ROLES.PARENT && role!==ROLES.PARENT)progress=progress.filter(p=>p.studentRole===role);
+   if(state.role!==ROLES.PARENT)progress=progress.filter(p=>p.studentUid===state.user.uid);
  }catch(err){loadErrors.push('rezultātus');console.warn('[Mājas skola] Progresa ielādes kļūdas kods:',err?.code||'unknown');}
  if(loadErrors.length){const notice=document.createElement('div');notice.className='module';notice.style.gridColumn='1/-1';notice.textContent='Pagaidām neizdevās ielādēt '+loadErrors.join(' un ')+'. Mācību trenažieri joprojām ir pieejami.';area.append(notice);}
  if(state.role===ROLES.PARENT){const nav=document.createElement('div');nav.className='module';nav.style.gridColumn='1/-1';
