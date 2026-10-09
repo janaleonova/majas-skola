@@ -181,7 +181,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    shopTile.type='button';shopTile.className='subject-card';
    shopTile.style.cssText='background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px';
    const points=calculateChildPoints(role,progress);
-   shopTile.innerHTML=`<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">🎁</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un mērķi</strong><span style="color:#6553a9;font-weight:700">Tev ir ${points.balance} BP! Izvēlies ģimenes balvu.</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atvērt veikalu →</span>`;
+   shopTile.innerHTML=`<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">🎁</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un mērķi</strong><span style="color:#6553a9;font-weight:700">Iesniedz balvas vēlmi vecākam. BP krāšana vēl nav aktivizēta.</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atvērt veikalu →</span>`;
    shopTile.onclick=()=>{
     subjectRoot.replaceChildren();
     const nav=document.createElement('div');nav.className='subject-backbar';
