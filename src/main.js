@@ -159,7 +159,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
 }
 async function start(){
  $('login-form').addEventListener('submit',login);
- $('home').addEventListener('click',showWelcome);
+ $('home').addEventListener('click',()=>{if(state.user && state.role){void showSchool(state.view||state.role);}else showWelcome();});
  $('back').addEventListener('click',showWelcome);
  try{
    const fb=await initFirebase();state.ready=Boolean(fb.isConfigured);
