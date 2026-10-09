@@ -293,6 +293,12 @@ export async function recordProgress({ studentRole, activityType, subject, score
   if (!db) return null;
   const path = 'homeSchool/data/progress';
   const effectiveUid = currentUid || auth?.currentUser?.uid || null;
+  // A parent inspecting a child screen must never create child progress.
+  // Check real authentication and profile rather than trusting a supplied role.
+  if(!effectiveUid || auth?.currentUser?.uid!==effectiveUid) return null;
+  if(studentRole!==ROLES.MARKS && studentRole!==ROLES.SAMANTA) return null;
+  const profile=await getUserProfile(effectiveUid);
+  if(profile?.role!==studentRole) return null;
 
   try {
     const progressPayload = {
