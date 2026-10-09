@@ -11,6 +11,8 @@ const port = process.env.PORT || 3000;
 
 // Serve public directory (compiled bundles, assets)
 app.use('/public', express.static(path.join(__dirname, 'public')));
+app.get('/sw.js', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sw.js')));
+app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'public', 'manifest.json')));
 app.use(express.static(__dirname));
 
 // Secure endpoint exposing Firebase client configuration from environment variables

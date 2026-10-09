@@ -1,6 +1,8 @@
 import {renderMarksMath} from './marks-math.js';
 import {renderMarksEnglish} from './marks-english.js';
 import {renderSamantaLatvian} from './samanta-latvian.js';
+import {renderSamantaEnglish} from './samanta-english.js';
+import {renderRewardShop,renderParentRewardManager,calculateChildPoints} from './rewards-system.js';
 import { applyPersonalTheme,renderThemePicker } from './personal-theme.js';
 import { renderSamantaMath } from './samanta-math.js';
 import { renderLatvianSchool } from './latvian-school.js';
@@ -46,6 +48,67 @@ async function login(e){e.preventDefault();const btn=$('login-form').querySelect
  }catch(err){message(loginErrorMessage(err))}
  finally{btn.disabled=false;}
 }
+function render7DayAnalytics(container,allProgress){
+ const section=document.createElement('section');section.className='module';section.style.gridColumn='1/-1';
+ const title=document.createElement('h2');title.textContent='📊 7 dienu mācību analītika un kopsavilkums';section.append(title);
+ const desc=document.createElement('p');desc.textContent='Abu bērnu aktivitāte pēdējā nedēļā (treniņu skaits, vidējais rezultāts un apgūtās tēmas).';section.append(desc);
+ const sevenDaysAgo=Date.now() - 7*24*60*60*1000;
+ const recent=allProgress.filter(p=>{
+  const t=p.recordedAt?.seconds?p.recordedAt.seconds*1000:(p.date?new Date(p.date).getTime():0);
+  return t>=sevenDaysAgo;
+ });
+ const mRecent=recent.filter(p=>p.studentRole==='marks');
+ const sRecent=recent.filter(p=>p.studentRole==='samanta');
+ const mAvg=mRecent.length?Math.round(mRecent.reduce((acc,p)=>acc+(Number(p.score)||0),0)/mRecent.length):null;
+ const sAvg=sRecent.length?Math.round(sRecent.reduce((acc,p)=>acc+(Number(p.score)||0),0)/sRecent.length):null;
+
+ const grid=document.createElement('div');
+ grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0';
+
+ const mCard=document.createElement('div');
+ mCard.style.cssText='background:#f6f7ff;border:2px solid #dedbf8;border-radius:20px;padding:20px';
+ mCard.innerHTML=`<h3 style="margin-top:0">🐉 Marks (7 dienas)</h3>
+  <p style="margin:6px 0"><strong>Pabeigti treniņi:</strong> ${mRecent.length}</p>
+  <p style="margin:6px 0"><strong>Vidējais rezultāts:</strong> ${mAvg!==null?mAvg+'%':'Nav ierakstu pēdējās 7 dienās'}</p>
+  <p style="margin:6px 0;font-size:0.92rem;color:#67718e">Tēmas: ${mRecent.map(p=>p.activityType||p.subject).slice(0,5).join(', ')||'Pagaidām nav'}</p>`;
+
+ const sCard=document.createElement('div');
+ sCard.style.cssText='background:#fff8fc;border:2px solid #fadbe9;border-radius:20px;padding:20px';
+ sCard.innerHTML=`<h3 style="margin-top:0">🌸 Samanta (7 dienas)</h3>
+  <p style="margin:6px 0"><strong>Pabeigti treniņi:</strong> ${sRecent.length}</p>
+  <p style="margin:6px 0"><strong>Vidējais rezultāts:</strong> ${sAvg!==null?sAvg+'%':'Nav ierakstu pēdējās 7 dienās'}</p>
+  <p style="margin:6px 0;font-size:0.92rem;color:#67718e">Tēmas: ${sRecent.map(p=>p.activityType||p.subject).slice(0,5).join(', ')||'Pagaidām nav'}</p>`;
+
+ grid.append(mCard,sCard);section.append(grid);
+
+ const copyBtn=document.createElement('button');
+ copyBtn.type='button';copyBtn.className='action-button';
+ copyBtn.textContent='📋 Kopēt 7 dienu pārskatu starpliktuvē';
+ copyBtn.onclick=async()=>{
+  const report=['--- MĀJAS SKOLA: 7 DIENU PĀRSKATS ---',
+   `Izveidots: ${new Date().toLocaleDateString('lv-LV')} plkst. ${new Date().toLocaleTimeString('lv-LV')}`,
+   '',
+   `🐉 MARKS:`,
+   `- Treniņu skaits: ${mRecent.length}`,
+   `- Vidējais vērtējums: ${mAvg!==null?mAvg+'%':'Nav datu'}`,
+   `- Galvenās tēmas: ${mRecent.map(p=>p.activityType||p.subject).join(', ')||'Nav'}`,
+   '',
+   `🌸 SAMANTA:`,
+   `- Treniņu skaits: ${sRecent.length}`,
+   `- Vidējais vērtējums: ${sAvg!==null?sAvg+'%':'Nav datu'}`,
+   `- Galvenās tēmas: ${sRecent.map(p=>p.activityType||p.subject).join(', ')||'Nav'}`,
+   '--------------------------------------'
+  ].join('\n');
+  try{
+   await navigator.clipboard.writeText(report);
+   copyBtn.textContent='✅ Nokopēts starpliktuvē!';
+   setTimeout(()=>{copyBtn.textContent='📋 Kopēt 7 dienu pārskatu starpliktuvē';},2500);
+  }catch{
+   alert(report);
+  }
+ };
+ section.append(copyBtn);container.append(section);
+}
 async function showSchool(role){if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
@@ -70,7 +133,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Dienas, mēneši, gadalaiki un vietniekvārdi',active:true,kind:'english'}]
     :[{id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, attēli un stāsti',active:true,kind:'math'},
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
-      {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Drīzumā',active:false,kind:'english'}];
+      {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
    subjectRoot.replaceChildren();
    const nav=document.createElement('div');nav.className='subject-backbar';
@@ -85,6 +148,8 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    }
    else if(id==='anglu'&&role==='marks'){
     renderMarksEnglish(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
+   }else if(id==='anglu'&&role==='samanta'){
+    renderSamantaEnglish(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
    }else if(id==='latviesu'&&role==='samanta'){
     renderSamantaLatvian(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
    }
@@ -112,6 +177,19 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
     if(subject.active)button.onclick=()=>openSubject(subject.id);
     tiles.append(button);
    }
+   const shopTile=document.createElement('button');
+   shopTile.type='button';shopTile.className='subject-card';
+   shopTile.style.cssText='background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px';
+   const points=calculateChildPoints(role,progress);
+   shopTile.innerHTML=`<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">🎁</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un mērķi</strong><span style="color:#6553a9;font-weight:700">Tev ir ${points.balance} BP! Izvēlies ģimenes balvu.</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atvērt veikalu →</span>`;
+   shopTile.onclick=()=>{
+    subjectRoot.replaceChildren();
+    const nav=document.createElement('div');nav.className='subject-backbar';
+    const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=renderSubjects;nav.append(back);subjectRoot.append(nav);
+    const shopContainer=document.createElement('div');subjectRoot.append(shopContainer);
+    renderRewardShop(shopContainer,{studentRole:role,progressRecords:progress,onBack:renderSubjects});
+   };
+   tiles.append(shopTile);
    subjectRoot.append(tiles);
    const hero=area.querySelector('.world-hero');if(hero)hero.hidden=false;
    const picker=area.querySelector('.theme-picker');if(picker)picker.hidden=false;
@@ -136,6 +214,8 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  nav.innerHTML='<h2>Pārslēgt vidi</h2><p>Vecākam pieejami abi bērnu skati.</p>';
  for(const child of ['marks','samanta','vecaks']){const b=document.createElement('button');b.textContent=schools[child][0];b.style.margin='5px';b.addEventListener('click',()=>showSchool(child));nav.append(b)}area.append(nav)}
  if(role===ROLES.PARENT){
+  render7DayAnalytics(area,progress);
+  renderParentRewardManager(area);
   const panel=document.createElement('section');panel.className='module';panel.style.gridColumn='1/-1';
   const title=document.createElement('h2');title.textContent='🧹 Testēšanas rezultātu sakārtošana';panel.append(title);
   const info=document.createElement('p');info.textContent='Var izdzēst tikai rezultātus, kuru īpašnieks ir šis vecāka konts. Marka un Samantas ieraksti netiek skarti.';panel.append(info);

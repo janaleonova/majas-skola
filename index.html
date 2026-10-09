@@ -3,6 +3,12 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#13273e">
+<link rel="manifest" href="/public/manifest.json">
+<link rel="icon" type="image/svg+xml" href="/public/icon.svg">
+<link rel="apple-touch-icon" href="/public/icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Mājas skola">
 <title>Mājas skola</title>
 <meta name="description" content="Mājas skola — Marka, Samantas un vecāku vide.">
 <meta property="og:title" content="Mājas skola">
@@ -197,7 +203,25 @@ html[data-school-theme=samanta] .math-hub .topic-tile:nth-child(5n){background:l
 .subject-trainer>.learning-hub{width:100%}
 @media(max-width:700px){.subject-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.subject-card{min-height:225px;padding:17px;border-radius:21px}.subject-card .subject-symbol{font-size:2.7rem}.subject-card strong{font-size:1.21rem}.subject-description{font-size:.87rem}.subject-status{font-size:.77rem}.subject-intro{padding:17px 4px}}
 @media(max-width:410px){.subject-grid{grid-template-columns:1fr}.subject-card{min-height:185px}}
-.streak-label{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(120deg,#fff4ce,#ffe3d4);color:#8b4a20;font-weight:900;font-size:1rem;border:1px solid #ffd79d;border-radius:15px;padding:12px 18px;margin:8px 0 19px}.points-disclaimer{font-size:.88rem;color:#5d6682;border-left:3px solid #aab3d5;padding:9px 14px;line-height:1.6}.progress-track{height:14px;border-radius:50px}.progress-fill{height:100%;border-radius:50px}
+.streak-label{display:inline-flex;align-items:center;gap:8px;background:linear-gradient(120deg,#fff4ce,#ffe3d4);color:#8b4a20;font-weight:900;font-size:1rem;border:1px solid #ffd79d;border-radius:15px;padding:10px 18px;margin:8px 0 19px;box-shadow:0 6px 16px #f59e0b1f}
+.streak-label:hover{transform:scale(1.02)}
+.points-disclaimer{font-size:.88rem;color:#5d6682;border-left:3px solid #aab3d5;padding:9px 14px;line-height:1.6}
+.progress-track{height:14px;border-radius:50px;background:#e8e9f5;box-shadow:inset 0 2px 4px rgba(0,0,0,0.06)}
+.progress-fill{height:100%;border-radius:50px;background:linear-gradient(90deg,var(--personal-primary,#6554e8),var(--personal-accent,#36c5be));box-shadow:0 0 10px rgba(101,84,232,0.35);transition:width .4s cubic-bezier(0.4, 0, 0.2, 1)}
+
+/* Audio visualizer wave effect */
+.audio-playing{animation:pulse-wave 1.2s infinite ease-in-out;background:#c2f7e9!important;border-color:#20b294!important}
+@keyframes pulse-wave{0%,100%{transform:scale(1);box-shadow:0 0 0 0 rgba(32,178,148,0.4)}50%{transform:scale(1.03);box-shadow:0 0 0 8px rgba(32,178,148,0)}}
+
+/* Coupon-style reward cards */
+.reward-coupon-card{position:relative;background:#fff;border:2px dashed #cfc5f5;border-radius:22px;padding:22px;display:flex;flex-direction:column;justify-content:space-between;gap:12px;box-shadow:0 10px 28px rgba(92,67,163,0.08);transition:transform .18s ease,box-shadow .18s ease}
+.reward-coupon-card:hover{transform:translateY(-3px);box-shadow:0 16px 36px rgba(92,67,163,0.15)}
+.reward-coupon-card::before,.reward-coupon-card::after{content:"";position:absolute;top:50%;width:16px;height:16px;background:#f5f7ff;border-radius:50%;transform:translateY(-50%)}
+.reward-coupon-card::before{left:-9px}
+.reward-coupon-card::after{right:-9px}
+.reward-stamp{display:inline-block;padding:5px 11px;border-radius:8px;font-weight:900;font-size:0.8rem;text-transform:uppercase;letter-spacing:0.04em;transform:rotate(-2deg)}
+.reward-stamp-ready{background:#dcfce7;color:#15803d;border:1.5px solid #86efac}
+.reward-stamp-need{background:#f1f5f9;color:#64748b;border:1.5px solid #cbd5e1}
 /* Samanta: dyslexia-aware focused task surface */
 .samanta-reading{padding:clamp(24px,4vw,48px);background:#fffcff!important}
 .samanta-reading>h2{font-size:clamp(1.8rem,3.3vw,2.8rem);line-height:1.25}
@@ -254,10 +278,19 @@ html{scroll-padding-top:86px}
  .subject-backbar{margin-bottom:10px}
 }
 @media(max-width:390px){header{padding:8px}header strong{font-size:.82rem;max-width:30%}header button{padding:7px 8px;font-size:.77rem}}
+.touch-numpad{margin:16px auto 6px;max-width:320px;width:100%}
+.numpad-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.numpad-key{min-height:58px;border-radius:18px;background:#f3f1ff;border:2px solid #ded8fc;font-family:'Nunito',system-ui,sans-serif;font-size:1.65rem;font-weight:900;color:#2c2866;display:flex;align-items:center;justify-content:center;transition:transform .12s,background .12s;box-shadow:0 4px 12px #3e33910f}
+.numpad-key:not(:disabled):hover{background:#ebe6ff;border-color:#beb2fa}
+.numpad-key:active{transform:scale(.95);background:#dfd7ff}
+.numpad-key-delete{background:#fff0f0;border-color:#fcd4d4;color:#ba1a1a;font-size:1.35rem}
+.numpad-key-submit{background:linear-gradient(135deg,#10b981,#059669);border-color:#059669;color:#fff;font-size:1.45rem;box-shadow:0 6px 18px #10b98135}
+.numpad-key-submit:not(:disabled):hover{background:linear-gradient(135deg,#059669,#047857)}
+.numpad-toggle-button{margin:8px auto;background:#f0edff;border:1px solid #ded6fd;color:#5745a5;border-radius:12px;padding:8px 14px;font-size:0.88rem;font-weight:800;display:inline-flex;align-items:center;gap:6px}
 </style>
 </head>
 <body>
-<header><strong>🏠 Mājas skola</strong><button id="home" type="button" hidden>← Sākums</button></header>
+<header><strong>🏠 Mājas skola</strong><div style="display:flex;gap:8px;align-items:center"><button id="pwa-install-btn" type="button" class="quiet-button" hidden title="Pievienot sākuma ekrānam">📲 Instalēt lietotni</button><button id="home" type="button" hidden>← Sākums</button></div></header>
 <main class="wrap">
 <section id="welcome">
 <h1>🏠 Mājas skola</h1>
@@ -299,6 +332,30 @@ html{scroll-padding-top:86px}
     input.focus({preventScroll:true});
   });
 })();
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('/sw.js').catch(function(err){
+      console.warn('[PWA] SW reģistrācija:', err);
+    });
+  });
+}
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  const btn = document.getElementById('pwa-install-btn');
+  if (btn) {
+    btn.hidden = false;
+    btn.onclick = async function() {
+      btn.hidden = true;
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const choice = await deferredPrompt.userChoice;
+        deferredPrompt = null;
+      }
+    };
+  }
+});
 </script>
 <script type="module" src="/public/bundle.js"></script>
 </body></html>

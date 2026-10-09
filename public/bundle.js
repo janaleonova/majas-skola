@@ -1,4 +1,1985 @@
 (() => {
+  // src/touch-numpad.js
+  function attachTouchNumpad(container, inputElement, { onSubmit, onInput } = {}) {
+    const pad = document.createElement("div");
+    pad.className = "touch-numpad";
+    pad.setAttribute("role", "group");
+    pad.setAttribute("aria-label", "Ekr\u0101na ciparn\u012Bca skait\u013Cu ievadei");
+    const keys = [
+      ["1", "1"],
+      ["2", "2"],
+      ["3", "3"],
+      ["4", "4"],
+      ["5", "5"],
+      ["6", "6"],
+      ["7", "7"],
+      ["8", "8"],
+      ["9", "9"],
+      ["\u232B", "delete", "Dz\u0113st p\u0113d\u0113jo ciparu"],
+      ["0", "0"],
+      ["\u2713", "submit", "Apstiprin\u0101t atbildi"]
+    ];
+    const grid = document.createElement("div");
+    grid.className = "numpad-grid";
+    keys.forEach(([label, action, ariaLabel]) => {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "numpad-key";
+      if (action === "delete") btn.classList.add("numpad-key-delete");
+      if (action === "submit") btn.classList.add("numpad-key-submit");
+      btn.textContent = label;
+      btn.setAttribute("aria-label", ariaLabel || label);
+      btn.addEventListener("click", (e2) => {
+        e2.preventDefault();
+        if (inputElement.disabled) return;
+        if (action === "delete") {
+          inputElement.value = inputElement.value.slice(0, -1);
+          if (onInput) onInput(inputElement.value);
+          inputElement.dispatchEvent(new Event("input", { bubbles: true }));
+        } else if (action === "submit") {
+          if (onSubmit) {
+            onSubmit();
+          } else if (inputElement.form) {
+            inputElement.form.requestSubmit ? inputElement.form.requestSubmit() : inputElement.form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+          }
+        } else {
+          if (inputElement.value.length < 4) {
+            inputElement.value = (inputElement.value || "") + action;
+            if (onInput) onInput(inputElement.value);
+            inputElement.dispatchEvent(new Event("input", { bubbles: true }));
+          }
+        }
+      });
+      grid.append(btn);
+    });
+    pad.append(grid);
+    container.append(pad);
+    return pad;
+  }
+
+  // src/marks-math.js
+  var shuffle = (a) => {
+    const x2 = [...a];
+    for (let i2 = x2.length - 1; i2 > 0; i2--) {
+      let j = Math.floor(Math.random() * (i2 + 1));
+      [x2[i2], x2[j]] = [x2[j], x2[i2]];
+    }
+    return x2;
+  };
+  function makeMarksMathBank(topic) {
+    const out = [];
+    for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
+      const n2 = a * b2;
+      const visual = { groups: a, each: b2, icon: ["\u2B50", "\u{1F48E}", "\u{1F34E}", "\u{1F7E3}"][(a + b2) % 4] };
+      if (topic === "multiply") out.push({ id: "m" + a + "-" + b2, prompt: a + " \xD7 " + b2 + " = ?", answer: n2, hint: a + " grupas pa " + b2 + " = " + n2 });
+      if (topic === "divide") out.push({ id: "d" + a + "-" + b2, prompt: n2 + " \xF7 " + a + " = ?", answer: b2, hint: "P\u0101rbaudi: " + a + " \xD7 " + b2 + " = " + n2 });
+      if (topic === "family") {
+        out.push({ id: "f1-" + a + "-" + b2, prompt: a + " \xD7 " + b2 + " = ?", answer: n2, hint: "\u0160\u012B pati skait\u013Cu saime: " + n2 + " \xF7 " + a + " = " + b2 });
+        out.push({ id: "f2-" + a + "-" + b2, prompt: n2 + " \xF7 " + b2 + " = ?", answer: a, hint: "Atceries: " + a + " \xD7 " + b2 + " = " + n2 });
+        out.push({ id: "f3-" + a + "-" + b2, prompt: a + " \xD7 \u25A1 = " + n2, answer: b2, hint: "Nosaki nezin\u0101mo reizin\u0101t\u0101ju" });
+      }
+      if (topic === "story") {
+        out.push({ id: "s1-" + a + "-" + b2, prompt: "P\u016B\u0137is atrada " + a + " l\u0101des. Katr\u0101 l\u0101d\u0113 ir " + b2 + " krist\u0101li. Cik krist\u0101lu kop\u0101?", answer: n2, hint: "Reizini l\u0101des ar krist\u0101lu skaitu.", visual });
+        out.push({ id: "s2-" + a + "-" + b2, prompt: n2 + " krist\u0101lus vien\u0101di sadal\u012Bja " + a + " kast\u0113s. Cik krist\u0101lu ir katr\u0101 kast\u0113?", answer: b2, hint: "Sadali visus krist\u0101lus kast\u0113s.", visual });
+      }
+    }
+    return out;
+  }
+  function renderMarksMath(root, { canSubmit = false, saveProgress = async () => {
+  } } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub marks-math";
+    root.append(host);
+    const topics = [["multiply", "\u2694\uFE0F Reizr\u0113\u0137ins", "Reizin\u0101\u0161ana 1\u201310, rezult\u0101ti l\u012Bdz 100"], ["divide", "\u{1F6E1}\uFE0F Dal\u012B\u0161ana", "Dal\u012B\u0161ana bez atlikuma"], ["family", "\u{1F517} Saist\u012Btais pieraksts", "Reizin\u0101\u0161anas un dal\u012B\u0161anas saimes"], ["story", "\u{1F409} Teksta misijas", "Uzdevumi ar krist\u0101lu grup\u0101m"]];
+    const el = (tag, txt) => {
+      const e2 = document.createElement(tag);
+      if (txt !== void 0) e2.textContent = txt;
+      return e2;
+    };
+    const btn = (parent, txt, fn2) => {
+      const b2 = el("button", txt);
+      b2.type = "button";
+      b2.className = "action-button";
+      b2.onclick = fn2;
+      parent.append(b2);
+      return b2;
+    };
+    let chosen = "", mode = "", items = [], position = 0, correct = 0, streak = 0, record = 0, errors = [];
+    function head(title, desc) {
+      host.replaceChildren();
+      const h = el("div");
+      h.className = "learning-heading";
+      h.append(el("span", "\u{1F409} MARKA MATEM\u0100TIKA"), el("h2", title), el("p", desc));
+      host.append(h);
+    }
+    function home() {
+      head("Skait\u013Cu misijas", "Izv\u0113lies misiju un tren\u0113jies sav\u0101 ritm\u0101.");
+      const grid = el("div");
+      grid.className = "topic-grid";
+      host.append(grid);
+      for (const [id, name4, desc] of topics) {
+        const b2 = el("button");
+        b2.type = "button";
+        b2.className = "topic-tile";
+        b2.append(el("span", name4.split(" ")[0]), el("strong", name4.slice(name4.indexOf(" ") + 1)), el("small", desc));
+        b2.onclick = () => choose(id);
+        grid.append(b2);
+      }
+    }
+    function choose(id) {
+      chosen = id;
+      const label = topics.find((t2) => t2[0] === id);
+      head(label[1], label[2]);
+      btn(host, "\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
+      btn(host, "\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
+      btn(host, "\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
+      btn(host, "\u2190 Misijas", home);
+    }
+    function start2(m2, review = false) {
+      mode = review ? "review" : m2;
+      const all = makeMarksMathBank(chosen);
+      const different = review ? all.filter((q) => !errors.some((e2) => e2.id === q.id)) : all;
+      items = shuffle(different).slice(0, review ? 10 : m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
+      position = correct = streak = record = 0;
+      errors = [];
+      step();
+    }
+    function step() {
+      if (position >= items.length) {
+        void finish();
+        return;
+      }
+      const q = items[position];
+      head("Misija " + (position + 1) + " no " + items.length, "Atrisini un turpini savu s\u0113riju.");
+      const progress = el("div");
+      progress.className = "progress-track";
+      const fill = el("div");
+      fill.className = "progress-fill";
+      fill.style.width = Math.round(position / items.length * 100) + "%";
+      progress.append(fill);
+      host.append(progress);
+      const count = el("p", "\u{1F525} " + streak + " p\u0113c k\u0101rtas \xB7 Rekords " + record);
+      count.className = "streak-label";
+      host.append(count);
+      const card = el("div");
+      card.className = "question-stage";
+      card.append(el("div", q.prompt));
+      card.firstChild.className = "math-expression";
+      if (q.visual) {
+        const groups = el("div");
+        groups.className = "visual-groups";
+        groups.setAttribute("role", "img");
+        groups.setAttribute("aria-label", q.visual.groups + " grupas pa " + q.visual.each);
+        for (let i2 = 0; i2 < q.visual.groups; i2++) {
+          const g = el("div");
+          g.className = "visual-group";
+          for (let j = 0; j < q.visual.each; j++) {
+            const icon = el("span", q.visual.icon);
+            icon.className = "visual-object";
+            g.append(icon);
+          }
+          groups.append(g);
+        }
+        card.append(groups);
+      }
+      const form = el("form");
+      form.className = "math-answer-form";
+      const input = el("input");
+      input.type = "number";
+      input.inputMode = "numeric";
+      input.required = true;
+      input.min = 0;
+      input.max = 100;
+      input.step = 1;
+      input.className = "big-number-input";
+      input.setAttribute("aria-label", "Tava atbilde");
+      const submit = el("button", "P\u0101rbaud\u012Bt");
+      submit.type = "submit";
+      submit.className = "action-button";
+      form.append(input, submit);
+      card.append(form);
+      const status = el("p");
+      status.setAttribute("role", "status");
+      card.append(status);
+      const numpad = attachTouchNumpad(card, input);
+      host.append(card);
+      if (mode === "learn") btn(card, "\u{1F4A1} Pavediena pal\u012Bdz\u012Bba", () => {
+        status.textContent = q.hint;
+      });
+      form.onsubmit = (e2) => {
+        e2.preventDefault();
+        const value = Number(input.value);
+        if (input.value === "" || !Number.isInteger(value)) return;
+        const ok = value === q.answer;
+        correct += Number(ok);
+        streak = ok ? streak + 1 : 0;
+        record = Math.max(record, streak);
+        if (!ok) errors.push(q);
+        input.disabled = submit.disabled = true;
+        numpad.querySelectorAll("button").forEach((b2) => b2.disabled = true);
+        status.textContent = mode === "exam" ? "Atbilde pie\u0146emta." : ok ? "\u2705 Pareizi!" : "\u{1F50E} " + q.hint;
+        btn(card, "N\u0101kamais \u2192", () => {
+          position++;
+          step();
+        });
+      };
+    }
+    async function finish() {
+      const pct = Math.round(correct / items.length * 100);
+      head("Misija pabeigta!", "Katrs m\u0113\u0123in\u0101jums nostiprina prasmes.");
+      const score = el("div", pct + "%");
+      score.className = "result-hero";
+      host.append(score, el("p", correct + " / " + items.length + " pareizi \xB7 Gar\u0101k\u0101 s\u0113rija " + record));
+      const note = el("p");
+      host.append(note);
+      if (canSubmit) {
+        try {
+          const id = await saveProgress({ studentRole: "marks", subject: "Matem\u0101tika", activityType: chosen + " \xB7 " + mode, score: pct, notes: JSON.stringify({ correct, total: items.length, bestStreak: record }) });
+          note.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts Firebase." : "\u26A0\uFE0F Nav apstiprin\u0101ta saglab\u0101\u0161ana.";
+        } catch {
+          note.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana neizdev\u0101s.";
+        }
+      }
+      if (errors.length) {
+        btn(host, "\u{1F3AF} Tren\u0113t k\u013C\u016Bdas ar citiem piem\u0113riem", () => start2(mode, true));
+      }
+      btn(host, "Atk\u0101rtot misiju", () => start2(mode));
+      btn(host, "\u2190 Uz t\u0113m\u0101m", home);
+    }
+    home();
+  }
+
+  // src/marks-english.js
+  var shuffle2 = (a) => {
+    const b2 = [...a];
+    for (let i2 = b2.length - 1; i2 > 0; i2--) {
+      let j = Math.floor(Math.random() * (i2 + 1));
+      [b2[i2], b2[j]] = [b2[j], b2[i2]];
+    }
+    return b2;
+  };
+  var words = { days: [["Monday", "pirmdiena"], ["Tuesday", "otrdiena"], ["Wednesday", "tre\u0161diena"], ["Thursday", "ceturtdiena"], ["Friday", "piektdiena"], ["Saturday", "sestdiena"], ["Sunday", "sv\u0113tdiena"]], months: [["January", "janv\u0101ris"], ["February", "febru\u0101ris"], ["March", "marts"], ["April", "apr\u012Blis"], ["May", "maijs"], ["June", "j\u016Bnijs"], ["July", "j\u016Blijs"], ["August", "augusts"], ["September", "septembris"], ["October", "oktobris"], ["November", "novembris"], ["December", "decembris"]], seasons: [["spring", "pavasaris"], ["summer", "vasara"], ["autumn", "rudens"], ["winter", "ziema"]] };
+  var pronouns = [["I", "es"], ["you", "tu"], ["he", "vi\u0146\u0161"], ["she", "vi\u0146a"], ["it", "tas"], ["we", "m\u0113s"], ["they", "vi\u0146i"]];
+  function makeEnglishBank() {
+    let bank = [];
+    for (const [topic, pairs] of Object.entries(words)) {
+      pairs.forEach(([en, lv], i2) => {
+        bank.push({ id: topic + "-en-" + i2, topic, q: "Iztulko angliski: " + lv, a: en, hint: "Atceries nosaukumu ang\u013Cu valod\u0101." }, { id: topic + "-lv-" + i2, topic, q: "Iztulko latviski: " + en, a: lv, hint: "Atceries tulkojumu." }, { id: topic + "-order-" + i2, topic, q: "Kur\u0161 nosaukums n\u0101k p\u0113c " + en + "?", a: pairs[(i2 + 1) % pairs.length][0], hint: "Padom\u0101 par sec\u012Bbu." });
+      });
+    }
+    pronouns.forEach(([en, lv], i2) => bank.push({ id: "pronoun-" + i2, topic: "pronouns", q: "Iztulko angliski: " + lv, a: en, hint: "I, you, he, she, it, we, they." }));
+    [["Anna is my friend. ___ is kind.", "she"], ["Dad is tall. ___ is strong.", "he"], ["Tom and I are friends. ___ play.", "we"], ["The cats are hungry. ___ want food.", "they"], ["This is a dog. ___ is happy.", "it"], ["___ am at school.", "I"], ["Are ___ ready?", "you"], ["Marta and Lisa sing. ___ sing well.", "they"], ["Mother reads. ___ likes books.", "she"], ["The boy runs. ___ is fast.", "he"]].forEach(([q, a], i2) => bank.push({ id: "usage-" + i2, topic: "pronouns", q, a, hint: "Nosaki, par kuru personu vai lietu ir runa." }));
+    return bank;
+  }
+  function renderMarksEnglish(root, { canSubmit = false, saveProgress = async () => {
+  } } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub";
+    root.append(host);
+    const bank = makeEnglishBank();
+    const topics = [["days", "\u{1F4C5} Ned\u0113\u013Cas dienas"], ["months", "\u{1F5D3}\uFE0F M\u0113ne\u0161i"], ["seasons", "\u{1F341} Gadalaiki"], ["pronouns", "\u{1F9D1} Personu vietniekv\u0101rdi"]];
+    let topic = null, items = [], index = 0, correct = 0, mode = "practice", streak = 0, best = 0;
+    const el = (tag, text) => {
+      let n2 = document.createElement(tag);
+      if (text) n2.textContent = text;
+      return n2;
+    };
+    const button = (title, fn2) => {
+      let b2 = el("button", title);
+      b2.type = "button";
+      b2.className = "action-button";
+      b2.onclick = fn2;
+      host.append(b2);
+      return b2;
+    };
+    function home() {
+      host.replaceChildren();
+      host.append(el("h2", "\u{1F30D} Ang\u013Cu valodas piedz\u012Bvojums"), el("p", "Dienas, m\u0113ne\u0161i, gadalaiki un vietniekv\u0101rdi."));
+      topics.forEach(([id, title]) => button(title, () => choose(id)));
+    }
+    function choose(id) {
+      topic = id;
+      host.replaceChildren();
+      host.append(el("h2", topics.find((t2) => t2[0] === id)[1]));
+      button("\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
+      button("\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
+      button("\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
+      button("\u2190 Priek\u0161meta t\u0113mas", home);
+    }
+    function start2(m2) {
+      mode = m2;
+      items = shuffle2(bank.filter((q) => q.topic === topic)).slice(0, m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
+      index = correct = streak = best = 0;
+      step();
+    }
+    function step() {
+      if (index === items.length) {
+        void finish();
+        return;
+      }
+      host.replaceChildren();
+      let q = items[index];
+      host.append(el("h2", "Jaut\u0101jums " + (index + 1) + " / " + items.length));
+      let bar = el("div");
+      bar.className = "progress-track";
+      let fill = el("div");
+      fill.className = "progress-fill";
+      fill.style.width = 100 * index / items.length + "%";
+      bar.append(fill);
+      host.append(bar, el("p", "\u{1F525} " + streak + " p\u0113c k\u0101rtas \xB7 Rekords: " + best), el("h3", q.q));
+      let form = el("form");
+      form.className = "latvian-question-form";
+      let inp = el("input");
+      inp.type = "text";
+      inp.required = true;
+      inp.autocomplete = "off";
+      inp.setAttribute("aria-label", "Tava atbilde");
+      form.append(inp);
+      let submit = el("button", "P\u0101rbaud\u012Bt");
+      submit.type = "submit";
+      form.append(submit);
+      host.append(form);
+      let status = el("p");
+      status.setAttribute("role", "status");
+      host.append(status);
+      if (mode === "learn") button("\u{1F4A1} Pal\u012Bdz\u012Bba", () => status.textContent = q.hint);
+      form.onsubmit = (e2) => {
+        e2.preventDefault();
+        let good = inp.value.trim().toLocaleLowerCase("lv-LV") === q.a.toLocaleLowerCase("lv-LV");
+        correct += Number(good);
+        streak = good ? streak + 1 : 0;
+        best = Math.max(best, streak);
+        inp.disabled = submit.disabled = true;
+        status.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F50D} Pareiz\u0101 atbilde: " + q.a;
+        button("N\u0101kamais \u2192", () => {
+          index++;
+          step();
+        });
+      };
+    }
+    async function finish() {
+      let percent = Math.round(correct / items.length * 100);
+      host.replaceChildren();
+      host.append(el("h2", "Rezult\u0101ts: " + percent + "%"), el("p", "Pareizi " + correct + " no " + items.length + " \xB7 Gar\u0101k\u0101 s\u0113rija: " + best));
+      let stat = el("p");
+      host.append(stat);
+      if (canSubmit) try {
+        const id = await saveProgress({ studentRole: "marks", subject: "Ang\u013Cu valoda", activityType: topic + " \xB7 " + mode, score: percent, notes: JSON.stringify({ correct, total: items.length, streak: best }) });
+        stat.textContent = id ? "\u2705 Saglab\u0101ts Firebase" : "\u26A0\uFE0F Nav apstiprin\u0101ta saglab\u0101\u0161ana";
+      } catch {
+        stat.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana neizdev\u0101s";
+      }
+      button("Atk\u0101rtot", () => start2(mode));
+      button("\u2190 T\u0113mas", home);
+    }
+    home();
+  }
+
+  // src/samanta-latvian.js
+  var examples = [["Ka\u0137is gu\u013C uz sola.", "Kur gu\u013C ka\u0137is?", "uz sola"], ["Saule sp\u012Bd.", "Kas sp\u012Bd?", "saule"], ["Liene lasa gr\u0101matu.", "Ko lasa Liene?", "gr\u0101matu"], ["D\u0101rz\u0101 aug roze.", "Kas aug d\u0101rz\u0101?", "roze"], ["Mazs suns skrien.", "Kas skrien?", "suns"], ["T\u0113tis cep maizi.", "Ko cep t\u0113tis?", "maizi"], ["Me\u017E\u0101 dz\u012Bvo lapsa.", "Kur dz\u012Bvo lapsa?", "me\u017E\u0101"], ["Anna dzer pienu.", "Ko dzer Anna?", "pienu"], ["Putns dzied kok\u0101.", "Kur dzied putns?", "kok\u0101"], ["Zivis peld ezer\u0101.", "Kur peld zivis?", "ezer\u0101"], ["M\u0101sa z\u012Bm\u0113 pu\u0137i.", "Ko z\u012Bm\u0113 m\u0101sa?", "pu\u0137i"], ["Pele grau\u017E sieru.", "Ko grau\u017E pele?", "sieru"], ["Sniegs kl\u0101j zemi.", "Kas kl\u0101j zemi?", "sniegs"], ["L\u0101cis gu\u013C al\u0101.", "Kur gu\u013C l\u0101cis?", "al\u0101"], ["Mamma nes somu.", "Ko nes mamma?", "somu"], ["B\u0113rni sp\u0113l\u0113jas park\u0101.", "Kur sp\u0113l\u0113jas b\u0113rni?", "park\u0101"], ["Vilciens brauc \u0101tri.", "Kas brauc \u0101tri?", "vilciens"], ["Skol\u0101 skan zvans.", "Kas skan skol\u0101?", "zvans"]];
+  var partWords = { lietv\u0101rds: ["m\u0101ja", "suns", "zieds", "koks", "laiva", "upe", "skola", "gr\u0101mata", "pele", "saule"], darb\u012Bbas_v\u0101rds: ["skrien", "lasa", "\u0113d", "raksta", "dzied", "lec", "s\u0113\u017E", "brauc", "z\u012Bm\u0113", "peld"], \u012Bpa\u0161\u012Bbas_v\u0101rds: ["mazs", "liels", "gudrs", "gai\u0161s", "za\u013C\u0161", "skaists", "silts", "gar\u0161", "sarkans", "\u0101trs"] };
+  var gaps = [["m_ja", "\u0101"], ["sk_la", "o"], ["p_\u0137e", "u"], ["z_eds", "i"], ["l\u0101_is", "c"], ["gr_mata", "\u0101"], ["s_ule", "a"], ["m_\u017Es", "e"], ["sni_gs", "e"], ["m_\u013C\u0161", "\u012B"], ["r_tenis", "i"], ["z_mulis", "\u012B"], ["b_rns", "\u0113"], ["r_den\u012B", "u"], ["p\u013C_va", "a"], ["dra_gs", "u"], ["m_konis", "\u0101"]];
+  function makeSamantaLatvianBank() {
+    let bank = [];
+    examples.forEach(([sentence, question, answer], i2) => bank.push({ id: "r" + i2, topic: "reading", q: sentence + "\n" + question, a: answer, hint: "Izlasi pirmo teikumu v\u0113lreiz." }));
+    for (const [name4, words2] of Object.entries(partWords)) words2.forEach((word, i2) => bank.push({ id: "p" + name4 + i2, topic: "parts", q: "Kura v\u0101rd\u0161\u0137ira ir v\u0101rds \u201C" + word + "\u201D?", a: name4.replace("_", " "), hint: "Lietv\u0101rds ir lieta; darb\u012Bbas v\u0101rds ir darb\u012Bba; \u012Bpa\u0161\u012Bbas v\u0101rds ir paz\u012Bme." }));
+    gaps.forEach(([word, answer], i2) => bank.push({ id: "g" + i2, topic: "letters", q: "Ievieto tr\u016Bksto\u0161o burtu: " + word, a: answer, hint: "Izrun\u0101 v\u0101rdu l\u0113n\u0101m un padom\u0101 par ska\u0146u." }));
+    return bank;
+  }
+  function renderSamantaLatvian(root, { canSubmit = false, saveProgress = async () => {
+  } } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub samanta-reading";
+    root.append(host);
+    const bank = makeSamantaLatvianBank();
+    const topics = [["reading", "\u{1F4D6} Viegl\u0101 las\u012B\u0161ana"], ["parts", "\u{1F9E9} V\u0101rd\u0161\u0137iras"], ["letters", "\u{1F524} Tr\u016Bksto\u0161ais burts"]];
+    let topic = null, mode = "practice", questions = [], index = 0, correct = 0, streak = 0, maxStreak = 0;
+    const el = (tag, text) => {
+      let n2 = document.createElement(tag);
+      if (text) n2.textContent = text;
+      return n2;
+    };
+    const btn = (text, cb, parent = host, cls = "action-button") => {
+      const b2 = el("button", text);
+      b2.type = "button";
+      b2.className = cls;
+      b2.onclick = cb;
+      parent.append(b2);
+      return b2;
+    };
+    const shuffle6 = (x2) => [...x2].sort(() => Math.random() - 0.5);
+    function view() {
+      host.replaceChildren();
+      host.append(el("h2", "\u{1F338} Latvie\u0161u valodas d\u0101rzs"), el("p", "Lasi, klausies un tren\u0113jies sav\u0101 ritm\u0101."));
+      topics.forEach(([key, title]) => btn(title, () => choose(key)));
+    }
+    function choose(t2) {
+      topic = t2;
+      host.replaceChildren();
+      host.append(el("h2", topics.find((x2) => x2[0] === t2)[1]));
+      btn("\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
+      btn("\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
+      btn("\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
+      btn("\u2190 Visas t\u0113mas", view);
+    }
+    function start2(m2) {
+      mode = m2;
+      questions = shuffle6(bank.filter((q) => q.topic === topic)).slice(0, m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
+      index = correct = streak = maxStreak = 0;
+      step();
+    }
+    function step() {
+      if (index >= questions.length) {
+        void finish();
+        return;
+      }
+      host.replaceChildren();
+      let q = questions[index];
+      host.append(el("h2", "Uzdevums " + (index + 1) + " no " + questions.length));
+      let progress = el("div");
+      progress.className = "progress-track";
+      let fill = el("div");
+      fill.className = "progress-fill";
+      fill.style.width = index / questions.length * 100 + "%";
+      progress.append(fill);
+      host.append(progress);
+      const streakBadge = el("p", "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak);
+      streakBadge.className = "streak-label";
+      host.append(streakBadge);
+      const card = el("section");
+      card.className = "reading-task-card";
+      const taskText = el("div", q.q);
+      taskText.className = "reading-prompt";
+      taskText.style.whiteSpace = "pre-line";
+      card.append(taskText);
+      host.append(card);
+      const status = el("p");
+      status.setAttribute("role", "status");
+      status.className = "reading-feedback";
+      const controls = el("div");
+      controls.className = "reading-controls";
+      const listenBtn = btn("\u{1F50A} Nolas\u012Bt uzdevumu", () => {
+        if (!("speechSynthesis" in window)) {
+          status.textContent = "Balss nolas\u012B\u0161ana \u0161aj\u0101 p\u0101rl\u016Bk\u0101 nav pieejama.";
+          return;
+        }
+        window.speechSynthesis.cancel();
+        let u2 = new SpeechSynthesisUtterance(q.q);
+        u2.lang = "lv-LV";
+        u2.rate = 0.82;
+        const v2 = window.speechSynthesis.getVoices().find((v3) => v3.lang.startsWith("lv"));
+        if (v2) u2.voice = v2;
+        u2.onstart = () => listenBtn.classList.add("audio-playing");
+        u2.onend = () => listenBtn.classList.remove("audio-playing");
+        u2.onerror = () => listenBtn.classList.remove("audio-playing");
+        window.speechSynthesis.speak(u2);
+      }, controls, "reading-listen");
+      btn("\u23F9 Aptur\u0113t", () => {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        listenBtn.classList.remove("audio-playing");
+      }, controls, "reading-stop");
+      card.append(controls);
+      const form = el("form");
+      form.className = "reading-answer-form";
+      const label = el("label", "Tava atbilde");
+      label.className = "reading-answer-label";
+      const input = el("input");
+      input.className = "reading-answer-input";
+      input.id = "samanta-reading-answer";
+      label.htmlFor = input.id;
+      input.required = true;
+      input.autocomplete = "off";
+      input.setAttribute("aria-label", "Tava atbilde");
+      input.maxLength = 80;
+      form.append(label, input);
+      let submit = el("button", "P\u0101rbaud\u012Bt");
+      submit.type = "submit";
+      submit.className = "action-button";
+      form.append(submit);
+      card.append(form, status);
+      if (mode === "learn") btn("\u{1F4A1} Pal\u012Bdz\u012Bba", () => status.textContent = q.hint);
+      form.onsubmit = (e2) => {
+        e2.preventDefault();
+        const answer = input.value.trim().toLocaleLowerCase("lv-LV");
+        const good = answer === q.a.toLocaleLowerCase("lv-LV");
+        correct += Number(good);
+        streak = good ? streak + 1 : 0;
+        maxStreak = Math.max(streak, maxStreak);
+        input.disabled = submit.disabled = true;
+        status.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F50E} Pam\u0113\u0123ini atcer\u0113ties: " + q.a;
+        btn("N\u0101kamais \u2192", () => {
+          index++;
+          step();
+        });
+      };
+    }
+    async function finish() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      const pct = Math.round(100 * correct / questions.length);
+      host.replaceChildren();
+      host.append(el("h2", "Rezult\u0101ts: " + pct + "%"), el("p", "Pareizi " + correct + " no " + questions.length + " \xB7 S\u0113rija: " + maxStreak));
+      let status = el("p");
+      host.append(status);
+      if (canSubmit) try {
+        const id = await saveProgress({ studentRole: "samanta", subject: "Latvie\u0161u valoda", activityType: topic + " \xB7 " + mode, score: pct, notes: JSON.stringify({ correct, total: questions.length, maxStreak }) });
+        status.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts Firebase" : "\u26A0\uFE0F Saglab\u0101\u0161ana nav apstiprin\u0101ta";
+      } catch {
+        status.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana neizdev\u0101s";
+      }
+      btn("M\u0113\u0123in\u0101t v\u0113lreiz", () => start2(mode));
+      btn("\u2190 T\u0113mas", view);
+    }
+    view();
+  }
+
+  // src/samanta-english.js
+  var shuffle3 = (a) => {
+    const b2 = [...a];
+    for (let i2 = b2.length - 1; i2 > 0; i2--) {
+      const j = Math.floor(Math.random() * (i2 + 1));
+      [b2[i2], b2[j]] = [b2[j], b2[i2]];
+    }
+    return b2;
+  };
+  var VOCABULARY = {
+    colors: [
+      { en: "red", lv: "sarkans", icon: "\u{1F534}", hint: "K\u0101 zemenes vai ugunsdz\u0113s\u0113ju auto" },
+      { en: "blue", lv: "zils", icon: "\u{1F535}", hint: "K\u0101 skaidras debesis vai j\u016Bra" },
+      { en: "green", lv: "za\u013C\u0161", icon: "\u{1F7E2}", hint: "K\u0101 z\u0101le un lapas kok\u0101" },
+      { en: "yellow", lv: "dzeltens", icon: "\u{1F7E1}", hint: "K\u0101 silta saul\u012Bte un ban\u0101ns" },
+      { en: "pink", lv: "roz\u0101", icon: "\u{1F338}", hint: "K\u0101 ziedo\u0161as pu\u0137\u012Btes vai flamingo" },
+      { en: "orange", lv: "oran\u017Es", icon: "\u{1F7E0}", hint: "K\u0101 apels\u012Bns vai burk\u0101ns" },
+      { en: "purple", lv: "violets", icon: "\u{1F7E3}", hint: "K\u0101 pl\u016Bmes un mellenes" },
+      { en: "white", lv: "balts", icon: "\u26AA", hint: "K\u0101 pirmais sniegs vai m\u0101ko\u0146i" },
+      { en: "black", lv: "melns", icon: "\u26AB", hint: "K\u0101 nakts debesis bez zvaigzn\u0113m" },
+      { en: "brown", lv: "br\u016Bns", icon: "\u{1F7E4}", hint: "K\u0101 \u0161okol\u0101de vai l\u0101\u010Da ka\u017Eoks" }
+    ],
+    animals: [
+      { en: "cat", lv: "ka\u0137is", icon: "\u{1F431}", hint: "Murr\u0101 un \u0137er pel\u012Btes" },
+      { en: "dog", lv: "suns", icon: "\u{1F436}", hint: "Cilv\u0113ka lab\u0101kais draugs, kas rej" },
+      { en: "rabbit", lv: "trusis", icon: "\u{1F430}", hint: "Lec ar gar\u0101m aus\u012Bm un grau\u017E burk\u0101nu" },
+      { en: "bird", lv: "putns", icon: "\u{1F426}", hint: "Lido sp\u0101rnos un dzied kok\u0101" },
+      { en: "horse", lv: "zirgs", icon: "\u{1F434}", hint: "Skrien rik\u0161iem pa p\u013Cavu" },
+      { en: "bear", lv: "l\u0101cis", icon: "\u{1F43B}", hint: "M\u012Bl medu un ziem\u0101 gu\u013C al\u0101" },
+      { en: "fox", lv: "lapsa", icon: "\u{1F98A}", hint: "K\u016Bmi\u0146\u0161 ar kuplu rudu asti" },
+      { en: "fish", lv: "zivs", icon: "\u{1F41F}", hint: "Peld dzidr\u0101 \u016Bden\u012B un elpo ar \u017Eaun\u0101m" },
+      { en: "duck", lv: "p\u012Ble", icon: "\u{1F986}", hint: "Peld pa d\u012B\u0137i un saka p\u0113k-p\u0113k" },
+      { en: "lion", lv: "lauva", icon: "\u{1F981}", hint: "Zv\u0113ru karalis ar lepnu kr\u0113pi" }
+    ],
+    numbers: [
+      { en: "one", lv: "viens (1)", icon: "1\uFE0F\u20E3", hint: "Pirmais skaitlis" },
+      { en: "two", lv: "divi (2)", icon: "2\uFE0F\u20E3", hint: "P\u0101ris, piem\u0113ram, divi z\u0101baci\u0146i" },
+      { en: "three", lv: "tr\u012Bs (3)", icon: "3\uFE0F\u20E3", hint: "Tr\u012Bs siv\u0113nti\u0146i vai tr\u012Bs v\u0113l\u0113\u0161an\u0101s" },
+      { en: "four", lv: "\u010Detri (4)", icon: "4\uFE0F\u20E3", hint: "\u010Cetras k\u0101jas galdam vai ka\u0137\u012Btim" },
+      { en: "five", lv: "pieci (5)", icon: "5\uFE0F\u20E3", hint: "Pieci pirksti\u0146i uz vienas rokas" },
+      { en: "six", lv: "se\u0161i (6)", icon: "6\uFE0F\u20E3", hint: "Kukai\u0146iem ir 6 k\u0101jas" },
+      { en: "seven", lv: "septi\u0146i (7)", icon: "7\uFE0F\u20E3", hint: "Septi\u0146as kr\u0101sas varav\u012Bksn\u0113" },
+      { en: "eight", lv: "asto\u0146i (8)", icon: "8\uFE0F\u20E3", hint: "Asto\u0146k\u0101jim ir 8 taustek\u013Ci" },
+      { en: "nine", lv: "devi\u0146i (9)", icon: "9\uFE0F\u20E3", hint: "Viens maz\u0101k nek\u0101 desmit" },
+      { en: "ten", lv: "desmit (10)", icon: "\u{1F51F}", hint: "Visi desmit roku pirksti" }
+    ],
+    daily: [
+      { en: "book", lv: "gr\u0101mata", icon: "\u{1F4D6}", hint: "Priek\u0161mets las\u012B\u0161anai un st\u0101stiem" },
+      { en: "apple", lv: "\u0101bols", icon: "\u{1F34E}", hint: "Saldais un sul\u012Bgais auglis" },
+      { en: "sun", lv: "saule", icon: "\u2600\uFE0F", hint: "Sp\u012Bd un silda debesu jum\u0101" },
+      { en: "house", lv: "m\u0101ja", icon: "\u{1F3E0}", hint: "M\u016Bsu m\u0101j\u012Bg\u0101 m\u012Btne" },
+      { en: "friend", lv: "draugs", icon: "\u{1F91D}", hint: "Cilv\u0113ks, ar kuru kop\u0101 priec\u0101jamies" },
+      { en: "star", lv: "zvaigzne", icon: "\u2B50", hint: "Mirdz nakt\u012B pie debes\u012Bm" },
+      { en: "water", lv: "\u016Bdens", icon: "\u{1F4A7}", hint: "Dzeramais un veldz\u0113jo\u0161ais avots" },
+      { en: "tree", lv: "koks", icon: "\u{1F333}", hint: "Aug ar stumbru un za\u013C\u0101m lap\u0101m" }
+    ]
+  };
+  function makeSamantaEnglishBank(topicKey) {
+    const items = VOCABULARY[topicKey] || VOCABULARY.colors;
+    const questions = [];
+    items.forEach((item, idx) => {
+      questions.push({
+        id: topicKey + "-listen-" + idx,
+        type: "listen-choice",
+        promptEn: item.en,
+        promptText: "Paklausies un izv\u0113lies pareizo tulkojumu:",
+        targetLv: item.lv,
+        icon: item.icon,
+        correctAnswer: item.lv,
+        speechText: item.en,
+        hint: item.hint,
+        options: shuffle3([
+          item.lv,
+          ...shuffle3(items.filter((x2) => x2.en !== item.en).map((x2) => x2.lv)).slice(0, 3)
+        ])
+      });
+      questions.push({
+        id: topicKey + "-translate-" + idx,
+        type: "choice",
+        promptEn: item.en,
+        promptText: `K\u0101 angliski ir \u201C${item.lv}\u201D?`,
+        targetLv: item.lv,
+        icon: item.icon,
+        correctAnswer: item.en,
+        speechText: item.en,
+        hint: item.hint,
+        options: shuffle3([
+          item.en,
+          ...shuffle3(items.filter((x2) => x2.en !== item.en).map((x2) => x2.en)).slice(0, 3)
+        ])
+      });
+    });
+    return shuffle3(questions);
+  }
+  function renderSamantaEnglish(root, { canSubmit = false, saveProgress = async () => {
+  } } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub samanta-english";
+    root.append(host);
+    const topics = [
+      ["colors", "\u{1F3A8} Kr\u0101sas", "10 ko\u0161as kr\u0101sas ang\u013Cu valod\u0101"],
+      ["animals", "\u{1F43E} Dz\u012Bvnieki", "M\u012B\u013Cdz\u012Bvnieki un dabas draugi"],
+      ["numbers", "\u{1F522} Skait\u013Ci 1\u201310", "Skait\u0101m no viens l\u012Bdz desmit"],
+      ["daily", "\u{1F392} Skola un ikdiena", "Gr\u0101mata, saule, draugs un \u0101bols"]
+    ];
+    let currentTopic = null;
+    let mode = "practice";
+    let questions = [];
+    let index = 0;
+    let correct = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let mistakes = [];
+    function el(tag, text, cls) {
+      const e2 = document.createElement(tag);
+      if (text !== void 0) e2.textContent = text;
+      if (cls) e2.className = cls;
+      return e2;
+    }
+    function speakEnglish(text, triggerBtn = null) {
+      if (!("speechSynthesis" in window)) return;
+      window.speechSynthesis.cancel();
+      const u2 = new SpeechSynthesisUtterance(text);
+      u2.lang = "en-US";
+      u2.rate = 0.82;
+      u2.pitch = 1.05;
+      const voices = window.speechSynthesis.getVoices();
+      const engVoice = voices.find((v2) => v2.lang.startsWith("en-US") || v2.lang.startsWith("en-GB") || v2.lang.startsWith("en"));
+      if (engVoice) u2.voice = engVoice;
+      if (triggerBtn) {
+        u2.onstart = () => triggerBtn.classList.add("audio-playing");
+        u2.onend = () => triggerBtn.classList.remove("audio-playing");
+        u2.onerror = () => triggerBtn.classList.remove("audio-playing");
+      }
+      window.speechSynthesis.speak(u2);
+    }
+    function viewTopics() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      host.replaceChildren();
+      const head = el("div", void 0, "learning-heading");
+      head.append(
+        el("span", "\u{1F338} SAMANTAS ANG\u013BU VALODA", "eyebrow"),
+        el("h2", "Ang\u013Cu valodas piedz\u012Bvojums ar audio"),
+        el("p", "Klausies izrunu, skaties att\u0113lus un apg\u016Bsti v\u0101rdus sav\u0101 ritm\u0101!")
+      );
+      host.append(head);
+      const grid = el("div", void 0, "topic-grid");
+      for (const [key, title, desc] of topics) {
+        const b2 = el("button", void 0, "topic-tile");
+        b2.type = "button";
+        b2.append(
+          el("span", title.split(" ")[0], "topic-emoji"),
+          el("strong", title.slice(title.indexOf(" ") + 1)),
+          el("small", desc)
+        );
+        b2.onclick = () => chooseTopic(key);
+        grid.append(b2);
+      }
+      host.append(grid);
+      if (mistakes.length) {
+        const alert2 = el("div", "\u{1F3AF} Tev ir " + mistakes.length + " v\u0101rdi, kurus vari patren\u0113t atk\u0101rtoti.", "soft-notice");
+        host.append(alert2);
+        const bMistakes = el("button", "Tren\u0113t manas k\u013C\u016Bdas", "action-button");
+        bMistakes.type = "button";
+        bMistakes.onclick = () => start2("mistakes");
+        host.append(bMistakes);
+      }
+    }
+    function chooseTopic(tKey) {
+      currentTopic = tKey;
+      host.replaceChildren();
+      const meta = topics.find((x2) => x2[0] === tKey);
+      const head = el("div", void 0, "learning-heading");
+      head.append(
+        el("span", "\u{1F338} " + meta[1].toUpperCase(), "eyebrow"),
+        el("h2", meta[1]),
+        el("p", meta[2])
+      );
+      host.append(head);
+      const cluster = el("div", void 0, "button-cluster");
+      const bLearn = el("button", "\u{1F331} M\u0101cos \xB7 8 uzdevumi", "action-button");
+      bLearn.onclick = () => start2("learn");
+      const bPrac = el("button", "\u{1F3AF} Tren\u0113jos \xB7 12 uzdevumi", "action-button");
+      bPrac.onclick = () => start2("practice");
+      const bExam = el("button", "\u{1F3C6} P\u0101rbaudu sevi \xB7 20 uzdevumi", "action-button");
+      bExam.onclick = () => start2("exam");
+      cluster.append(bLearn, bPrac, bExam);
+      host.append(cluster);
+      const bBack = el("button", "\u2190 Visas ang\u013Cu valodas t\u0113mas", "quiet-button");
+      bBack.onclick = viewTopics;
+      host.append(bBack);
+    }
+    function start2(m2) {
+      mode = m2;
+      const all = makeSamantaEnglishBank(currentTopic);
+      if (m2 === "mistakes" && mistakes.length) {
+        questions = shuffle3(mistakes).slice(0, 10);
+      } else {
+        questions = shuffle3(all).slice(0, m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
+      }
+      index = correct = streak = maxStreak = 0;
+      step();
+    }
+    function step() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      if (index >= questions.length) {
+        void finish();
+        return;
+      }
+      host.replaceChildren();
+      const q = questions[index];
+      const head = el("div", void 0, "learning-heading");
+      head.append(
+        el("span", "UZDEVUMS " + (index + 1) + " NO " + questions.length, "eyebrow"),
+        el("h2", q.promptText)
+      );
+      host.append(head);
+      const track = el("div", void 0, "progress-track");
+      const fill = el("div", void 0, "progress-fill");
+      fill.style.width = Math.round(index / questions.length * 100) + "%";
+      track.append(fill);
+      host.append(track);
+      const streakBadge = el("p", "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak, "streak-label");
+      host.append(streakBadge);
+      const card = el("section", void 0, "reading-task-card");
+      const centerDisplay = el("div", void 0, "english-card-center");
+      centerDisplay.style.textAlign = "center";
+      centerDisplay.style.margin = "16px 0 24px";
+      const bigIcon = el("div", q.icon, "english-big-icon");
+      bigIcon.style.fontSize = "clamp(3.5rem, 8vw, 5rem)";
+      bigIcon.style.lineHeight = "1.2";
+      centerDisplay.append(bigIcon);
+      if (q.type === "choice") {
+        const lvWord = el("h3", q.targetLv, "english-target-word");
+        lvWord.style.fontSize = "clamp(1.8rem, 4vw, 2.5rem)";
+        lvWord.style.color = "#382b6b";
+        lvWord.style.margin = "10px 0 6px";
+        centerDisplay.append(lvWord);
+      } else {
+        const engPrompt = el("h3", `\u201C${q.promptEn}\u201D`, "english-target-word");
+        engPrompt.style.fontSize = "clamp(2rem, 4vw, 2.8rem)";
+        engPrompt.style.color = "#382b6b";
+        engPrompt.style.margin = "10px 0 6px";
+        centerDisplay.append(engPrompt);
+      }
+      const audioRow = el("div", void 0, "reading-controls");
+      const bListen = el("button", "\u{1F50A} Klaus\u012Bties izrunu (\u201C" + q.speechText + "\u201D)", "reading-listen");
+      bListen.onclick = () => speakEnglish(q.speechText, bListen);
+      const bStop = el("button", "\u23F9 Aptur\u0113t", "reading-stop");
+      bStop.onclick = () => {
+        if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        bListen.classList.remove("audio-playing");
+      };
+      audioRow.append(bListen, bStop);
+      centerDisplay.append(audioRow);
+      card.append(centerDisplay);
+      if (mode === "learn") {
+        setTimeout(() => speakEnglish(q.speechText, bListen), 300);
+      }
+      const optionsGrid = el("div", void 0, "english-options-grid");
+      optionsGrid.style.display = "grid";
+      optionsGrid.style.gridTemplateColumns = "repeat(auto-fit, minmax(210px, 1fr))";
+      optionsGrid.style.gap = "14px";
+      optionsGrid.style.margin = "20px 0";
+      const status = el("p", "", "reading-feedback");
+      status.setAttribute("role", "status");
+      let answered = false;
+      q.options.forEach((opt) => {
+        const optBtn = el("button", opt, "english-option-button");
+        optBtn.type = "button";
+        optBtn.style.padding = "18px 20px";
+        optBtn.style.fontSize = "1.35rem";
+        optBtn.style.fontWeight = "800";
+        optBtn.style.borderRadius = "18px";
+        optBtn.style.border = "2px solid #e1d8f8";
+        optBtn.style.background = "#ffffff";
+        optBtn.style.color = "#2c2957";
+        optBtn.style.cursor = "pointer";
+        optBtn.style.transition = "all 0.15s ease";
+        optBtn.onclick = () => {
+          if (answered) return;
+          answered = true;
+          const isGood = opt.toLowerCase() === q.correctAnswer.toLowerCase();
+          correct += Number(isGood);
+          streak = isGood ? streak + 1 : 0;
+          maxStreak = Math.max(streak, maxStreak);
+          if (!isGood) {
+            mistakes.push(q);
+            optBtn.style.borderColor = "#e57373";
+            optBtn.style.background = "#ffebee";
+            optBtn.style.color = "#c62828";
+          }
+          optionsGrid.querySelectorAll("button").forEach((b2) => {
+            b2.disabled = true;
+            if (b2.textContent.toLowerCase() === q.correctAnswer.toLowerCase()) {
+              b2.style.borderColor = "#48bb78";
+              b2.style.background = "#e6fffa";
+              b2.style.color = "#1b7454";
+            }
+          });
+          status.textContent = mode === "exam" ? "Atbilde pie\u0146emta." : isGood ? "\u2705 Pareizi! Lieliski!" : `\u{1F50D} Pareiz\u0101 atbilde ir \u201C${q.correctAnswer}\u201D. ${q.hint}`;
+          speakEnglish(q.speechText);
+          const nextBtn = el("button", index + 1 === questions.length ? "Skat\u012Bt rezult\u0101tu \u2192" : "N\u0101kamais v\u0101rds \u2192", "action-button");
+          nextBtn.style.marginTop = "15px";
+          nextBtn.onclick = () => {
+            index++;
+            step();
+          };
+          card.append(nextBtn);
+        };
+        optionsGrid.append(optBtn);
+      });
+      card.append(optionsGrid, status);
+      if (mode === "learn") {
+        const bHint = el("button", "\u{1F4A1} Pavediens", "quiet-button");
+        bHint.onclick = () => {
+          status.textContent = q.hint;
+        };
+        card.append(bHint);
+      }
+      host.append(card);
+    }
+    async function finish() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      const pct = Math.round(correct / questions.length * 100);
+      host.replaceChildren();
+      const head = el("div", void 0, "learning-heading");
+      head.append(
+        el("span", "ANG\u013BU VALODAS REZULT\u0100TS", "eyebrow"),
+        el("h2", "P\u0101rbaude pabeigta!"),
+        el("p", "Katrs v\u0101rds tevi tuvina br\u012Bvai sarunvalodai.")
+      );
+      host.append(head);
+      const scoreCard = el("div", pct + "%", "result-hero");
+      const summary = el("p", `Pareizi ${correct} no ${questions.length} v\u0101rdiem \xB7 Gar\u0101k\u0101 pareizo s\u0113rija: ${maxStreak}`, "result-subtitle");
+      host.append(scoreCard, summary);
+      const saveNotice = el("p", "", "save-status");
+      host.append(saveNotice);
+      if (canSubmit) {
+        try {
+          const id = await saveProgress({
+            studentRole: "samanta",
+            subject: "Ang\u013Cu valoda",
+            activityType: `${topics.find((x2) => x2[0] === currentTopic)?.[1] || currentTopic} \xB7 ${mode}`,
+            score: pct,
+            notes: JSON.stringify({ correct, total: questions.length, maxStreak })
+          });
+          saveNotice.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts Firebase." : "\u26A0\uFE0F Saglab\u0101\u0161ana nav apstiprin\u0101ta.";
+        } catch {
+          saveNotice.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana Firebase neizdev\u0101s.";
+        }
+      } else {
+        saveNotice.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiek ieskait\u012Bts.";
+      }
+      const actions = el("div", void 0, "button-cluster");
+      if (mistakes.length) {
+        const bRepeat = el("button", "\u{1F3AF} Tren\u0113t k\u013C\u016Bdas (" + mistakes.length + ")", "action-button");
+        bRepeat.onclick = () => start2("mistakes");
+        actions.append(bRepeat);
+      }
+      const bAgain = el("button", "M\u0113\u0123in\u0101t v\u0113lreiz", "action-button");
+      bAgain.onclick = () => start2(mode);
+      const bAll = el("button", "\u2190 Visas ang\u013Cu valodas t\u0113mas", "quiet-button");
+      bAll.onclick = viewTopics;
+      actions.append(bAgain, bAll);
+      host.append(actions);
+    }
+    viewTopics();
+  }
+
+  // src/rewards-system.js
+  var DEFAULT_REWARDS = [
+    { id: "rew-icecream", title: "Sald\u0113jums vai iecien\u012Bts gardums", icon: "\u{1F366}", cost: 40, desc: "Izv\u0113lies savu m\u012B\u013C\u0101ko sald\u0113jumu vai na\u0161\u0137i veikal\u0101" },
+    { id: "rew-game-30", title: "30 min\u016Btes papildu sp\u0113\u013Cu / ekr\u0101na laiks", icon: "\u{1F3AE}", cost: 50, desc: "Papildu laiks Roblox, Minecraft vai plan\u0161et\u0113" },
+    { id: "rew-movie-night", title: "\u0122imenes filmu vakars ar popkornu", icon: "\u{1F3AC}", cost: 75, desc: "Tu izv\u0113lies filmu un k\u0101rumus visai \u0123imenei" },
+    { id: "rew-bike-trip", title: "Kop\u012Bgs velobrauciens vai piedz\u012Bvojums park\u0101", icon: "\u{1F6B4}", cost: 80, desc: "Izbraukums ar rite\u0146iem, skrejrite\u0146iem vai pikniks" },
+    { id: "rew-pizza-night", title: "Picas vakars vai vakari\u0146u pas\u016Bt\u012B\u0161ana", icon: "\u{1F355}", cost: 100, desc: "Kop\u012Bgi pas\u016Bt\u0101m vai cepam tavu m\u012B\u013C\u0101ko picu" },
+    { id: "rew-book", title: "Jauna gr\u0101mata vai komikss", icon: "\u{1F4DA}", cost: 120, desc: "Gr\u0101matn\u012Bcas apmekl\u0113jums jaunas las\u0101mvielas izv\u0113lei" },
+    { id: "rew-craft-toy", title: "Rado\u0161ais komplekts vai maza rota\u013Clieta", icon: "\u{1F3A8}", cost: 150, desc: "Jauns lego, z\u012Bm\u0113\u0161anas kr\u0101sas vai hobija lieta" }
+  ];
+  var CLAIMS_STORAGE_KEY = "majas-skola-reward-claims-v1";
+  function getStoredRewardClaims() {
+    try {
+      const raw = localStorage.getItem(CLAIMS_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
+  function saveStoredRewardClaims(claims) {
+    try {
+      localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(claims));
+    } catch {
+    }
+  }
+  function calculateChildPoints(role, progressRecords = []) {
+    const childRecords = progressRecords.filter((r2) => r2.studentRole === role);
+    let totalXP = 0;
+    for (const r2 of childRecords) {
+      const score = Number(r2.score) || 0;
+      if (score >= 90) totalXP += 25;
+      else if (score >= 70) totalXP += 18;
+      else if (score >= 50) totalXP += 10;
+      else totalXP += 5;
+      try {
+        const notes = JSON.parse(r2.notes || "{}");
+        if (notes.pointsPreview) totalXP += Math.min(20, Number(notes.pointsPreview) || 0);
+      } catch {
+      }
+    }
+    const claims = getStoredRewardClaims().filter((c2) => c2.studentRole === role && c2.status !== "rejected");
+    const spentPoints = claims.reduce((acc, c2) => acc + (Number(c2.cost) || 0), 0);
+    const currentBalance = Math.max(0, totalXP - spentPoints);
+    return { totalEarned: totalXP, spent: spentPoints, balance: currentBalance };
+  }
+  function claimReward({ studentRole, rewardId, currentBalance }) {
+    const reward = DEFAULT_REWARDS.find((r2) => r2.id === rewardId);
+    if (!reward) throw new Error("Balva netika atrasta.");
+    if (currentBalance < reward.cost) throw new Error(`Nepiecie\u0161ami v\u0113l ${reward.cost - currentBalance} punkti.`);
+    const newClaim = {
+      id: "claim-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
+      studentRole,
+      studentName: studentRole === "marks" ? "Marks" : studentRole === "samanta" ? "Samanta" : studentRole,
+      rewardId: reward.id,
+      rewardTitle: reward.title,
+      icon: reward.icon,
+      cost: reward.cost,
+      status: "pending",
+      // 'pending' | 'approved' | 'fulfilled' | 'rejected'
+      claimedAt: (/* @__PURE__ */ new Date()).toISOString(),
+      statusUpdatedAt: (/* @__PURE__ */ new Date()).toISOString()
+    };
+    const claims = getStoredRewardClaims();
+    claims.unshift(newClaim);
+    saveStoredRewardClaims(claims);
+    return newClaim;
+  }
+  function updateRewardClaimStatus(claimId, status) {
+    const claims = getStoredRewardClaims();
+    const target = claims.find((c2) => c2.id === claimId);
+    if (target) {
+      target.status = status;
+      target.statusUpdatedAt = (/* @__PURE__ */ new Date()).toISOString();
+      saveStoredRewardClaims(claims);
+      return true;
+    }
+    return false;
+  }
+  function renderRewardShop(container, { studentRole, progressRecords = [], onBack } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub reward-shop-hub";
+    host.style.gridColumn = "1/-1";
+    container.replaceChildren(host);
+    const pointsInfo = calculateChildPoints(studentRole, progressRecords);
+    const head = document.createElement("div");
+    head.className = "learning-heading";
+    head.innerHTML = `
+    <span class="eyebrow">\u{1F381} BALVU VEIKALS UN MOTIV\u0100CIJA</span>
+    <h2>Tavi nopeln\u012Btie punkti un m\u0113r\u0137i</h2>
+    <p>Katrs atrisin\u0101ts uzdevums un katra s\u0113rija kr\u0101j punktus balv\u0101m, kuras apstiprina vec\u0101ks!</p>
+  `;
+    host.append(head);
+    const balanceCard = document.createElement("div");
+    balanceCard.className = "reward-balance-card";
+    balanceCard.style.cssText = "background:linear-gradient(135deg,#6955f7,#443cae);color:white;padding:25px;border-radius:24px;margin-bottom:24px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px;box-shadow:0 15px 35px #5544cb33";
+    balanceCard.innerHTML = `
+    <div>
+      <span style="font-size:0.9rem;text-transform:uppercase;letter-spacing:0.06em;opacity:0.9">Pieejamie punkti (BP)</span>
+      <div style="font-size: clamp(2.5rem, 6vw, 3.8rem);font-weight:900;line-height:1">${pointsInfo.balance} <small style="font-size:1.4rem;font-weight:700">BP</small></div>
+      <small style="opacity:0.85">Kop\u0101 nopeln\u012Bts: ${pointsInfo.totalEarned} BP \xB7 Izt\u0113r\u0113ts balv\u0101m: ${pointsInfo.spent} BP</small>
+    </div>
+    <div style="text-align:right">
+      <span style="display:inline-block;background:rgba(255,255,255,0.2);padding:10px 16px;border-radius:99px;font-weight:800;font-size:0.95rem">
+        ${pointsInfo.balance >= 40 ? "\u{1F389} Vari izv\u0113l\u0113ties balvu!" : "\u2B50 Kr\u0101j punktus treni\u0146os!"}
+      </span>
+    </div>
+  `;
+    host.append(balanceCard);
+    const myClaims = getStoredRewardClaims().filter((c2) => c2.studentRole === studentRole);
+    if (myClaims.length) {
+      const claimsBox = document.createElement("div");
+      claimsBox.className = "my-claims-box";
+      claimsBox.style.cssText = "background:#ffffff;border:2px solid #eae6fb;border-radius:22px;padding:20px;margin-bottom:26px";
+      claimsBox.innerHTML = '<h3 style="margin-top:0">\u{1F4CB} Tavi pieteikumi vec\u0101kam</h3>';
+      const claimsList = document.createElement("div");
+      claimsList.style.cssText = "display:grid;gap:10px";
+      myClaims.forEach((c2) => {
+        const row = document.createElement("div");
+        row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f9f8ff;border-radius:14px;gap:12px;flex-wrap:wrap";
+        const statusBadge = c2.status === "approved" ? '<span style="color:#137333;font-weight:900">\u2705 Apstiprin\u0101ts (Gatavs sa\u0146em\u0161anai!)</span>' : c2.status === "fulfilled" ? '<span style="color:#1a73e8;font-weight:900">\u{1F389} Sa\u0146emts!</span>' : c2.status === "rejected" ? '<span style="color:#d93025;font-weight:900">\u274C Noraid\u012Bts</span>' : '<span style="color:#e37400;font-weight:900">\u23F3 Gaida vec\u0101ka apstiprin\u0101jumu</span>';
+        row.innerHTML = `
+        <div>
+          <strong style="font-size:1.1rem">${c2.icon} ${c2.rewardTitle}</strong>
+          <small style="display:block;color:#67718e">${c2.cost} BP \xB7 Pieteikts: ${new Date(c2.claimedAt).toLocaleDateString("lv-LV")}</small>
+        </div>
+        <div>${statusBadge}</div>
+      `;
+        claimsList.append(row);
+      });
+      claimsBox.append(claimsList);
+      host.append(claimsBox);
+    }
+    const listHeading = document.createElement("h3");
+    listHeading.textContent = "Pieejam\u0101s \u0123imenes balvas:";
+    host.append(listHeading);
+    const grid = document.createElement("div");
+    grid.className = "reward-grid";
+    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0 28px";
+    DEFAULT_REWARDS.forEach((item) => {
+      const card = document.createElement("div");
+      const canAfford = pointsInfo.balance >= item.cost;
+      card.className = "reward-coupon-card";
+      card.style.opacity = canAfford ? "1" : "0.85";
+      if (!canAfford) card.style.borderColor = "#e2dfed";
+      const stampHtml = canAfford ? '<span class="reward-stamp reward-stamp-ready">\u2B50 Gatavs pieteik\u0161anai!</span>' : `<span class="reward-stamp reward-stamp-need">V\u0113l tr\u016Bkst ${item.cost - pointsInfo.balance} BP</span>`;
+      card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+        <div style="font-size:2.8rem;line-height:1">${item.icon}</div>
+        ${stampHtml}
+      </div>
+      <div>
+        <strong style="font-size:1.25rem;display:block;margin:6px 0 4px;color:#282f53">${item.title}</strong>
+        <p style="font-size:0.92rem;color:#636e8b;margin:0">${item.desc}</p>
+      </div>
+      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px dashed #e6e2f5;padding-top:12px">
+        <span style="font-weight:900;font-size:1.2rem;color:#5a49c7">${item.cost} BP</span>
+        <button type="button" class="action-button claim-btn" style="${canAfford ? "" : "background:#e2e2ec;color:#787b99;cursor:not-allowed;box-shadow:none"}">
+          ${canAfford ? "Pieteikt balvu \u{1F3AF}" : `Tr\u016Bkst ${item.cost - pointsInfo.balance} BP`}
+        </button>
+      </div>
+    `;
+      const btn = card.querySelector(".claim-btn");
+      if (canAfford) {
+        btn.onclick = () => {
+          try {
+            claimReward({ studentRole, rewardId: item.id, currentBalance: pointsInfo.balance });
+            alert(`\u{1F389} Apsveicam! Tu pieteici balvu: \u201C${item.title}\u201D!
+Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
+            renderRewardShop(container, { studentRole, progressRecords, onBack });
+          } catch (e2) {
+            alert(e2.message);
+          }
+        };
+      } else {
+        btn.disabled = true;
+      }
+      grid.append(card);
+    });
+    host.append(grid);
+    if (onBack) {
+      const backBtn = document.createElement("button");
+      backBtn.type = "button";
+      backBtn.className = "quiet-button";
+      backBtn.textContent = "\u2190 Atpaka\u013C uz m\u0101c\u012Bb\u0101m";
+      backBtn.onclick = onBack;
+      host.append(backBtn);
+    }
+  }
+  function renderParentRewardManager(container) {
+    const section = document.createElement("section");
+    section.className = "module";
+    section.style.gridColumn = "1/-1";
+    const title = document.createElement("h2");
+    title.textContent = "\u{1F381} Balvu pieteikumu p\u0101rvald\u012Bba";
+    section.append(title);
+    const desc = document.createElement("p");
+    desc.textContent = "\u0160eit redzami Marka un Samantas pieteikumi par nopeln\u012Btajiem m\u0101c\u012Bbu punktiem. Apstiprini un atz\u012Bm\u0113 k\u0101 izpild\u012Btas \u0123imenes balvas!";
+    section.append(desc);
+    const claims = getStoredRewardClaims();
+    if (!claims.length) {
+      const empty = document.createElement("p");
+      empty.textContent = "Pagaid\u0101m nav neviena akt\u012Bva balvu pieteikuma.";
+      section.append(empty);
+      container.append(section);
+      return;
+    }
+    const list = document.createElement("div");
+    list.style.cssText = "display:grid;gap:12px;margin-top:14px";
+    claims.forEach((c2) => {
+      const row = document.createElement("div");
+      row.style.cssText = "border:1px solid #e2e4f3;border-radius:18px;padding:16px 20px;background:#fbfbfe;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px";
+      const info = document.createElement("div");
+      info.innerHTML = `
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:1.8rem">${c2.icon}</span>
+        <div>
+          <strong style="font-size:1.15rem">${c2.studentName}: ${c2.rewardTitle}</strong>
+          <small style="display:block;color:#67718e">${c2.cost} BP \xB7 Pieteikts: ${new Date(c2.claimedAt).toLocaleString("lv-LV")} \xB7 Statuss: <strong>${c2.status}</strong></small>
+        </div>
+      </div>
+    `;
+      const actions = document.createElement("div");
+      actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
+      if (c2.status === "pending") {
+        const bApprove = document.createElement("button");
+        bApprove.type = "button";
+        bApprove.textContent = "\u2705 Apstiprin\u0101t";
+        bApprove.style.cssText = "background:#137333;color:white;border:0;border-radius:10px;padding:8px 14px;font-weight:800";
+        bApprove.onclick = () => {
+          updateRewardClaimStatus(c2.id, "approved");
+          renderParentRewardManager(container);
+        };
+        const bReject = document.createElement("button");
+        bReject.type = "button";
+        bReject.textContent = "\u274C Noraid\u012Bt";
+        bReject.style.cssText = "background:#f28b82;color:#5f2120;border:0;border-radius:10px;padding:8px 14px;font-weight:800";
+        bReject.onclick = () => {
+          updateRewardClaimStatus(c2.id, "rejected");
+          renderParentRewardManager(container);
+        };
+        actions.append(bApprove, bReject);
+      } else if (c2.status === "approved") {
+        const bDone = document.createElement("button");
+        bDone.type = "button";
+        bDone.textContent = "\u{1F389} Atz\u012Bm\u0113t k\u0101 sa\u0146emtu / izpild\u012Btu";
+        bDone.style.cssText = "background:#1a73e8;color:white;border:0;border-radius:10px;padding:8px 14px;font-weight:800";
+        bDone.onclick = () => {
+          updateRewardClaimStatus(c2.id, "fulfilled");
+          renderParentRewardManager(container);
+        };
+        actions.append(bDone);
+      } else if (c2.status === "fulfilled") {
+        const doneLabel = document.createElement("span");
+        doneLabel.textContent = "Izpild\u012Bts \u2705";
+        doneLabel.style.cssText = "color:#137333;font-weight:800;padding:6px 12px;background:#e6f4ea;border-radius:8px";
+        actions.append(doneLabel);
+      } else {
+        const rejectLabel = document.createElement("span");
+        rejectLabel.textContent = "Noraid\u012Bts \u274C";
+        rejectLabel.style.cssText = "color:#d93025;font-weight:800;padding:6px 12px;background:#fce8e6;border-radius:8px";
+        actions.append(rejectLabel);
+      }
+      row.append(info, actions);
+      list.append(row);
+    });
+    section.append(list);
+    container.append(section);
+  }
+
+  // src/personal-theme.js
+  var palettes = {
+    marks: { dragon: ["#6452eb", "#38cab8", "#f0eeff"], night: ["#344f8a", "#67d2e1", "#eaf3ff"], forest: ["#287b65", "#e1a853", "#e9f8ee"] },
+    samanta: { peach: ["#e86996", "#f8b966", "#fff0f4"], ocean: ["#229bad", "#7f83e8", "#e9fbff"], lavender: ["#9161c8", "#ef9dc0", "#f8eeff"] }
+  };
+  var defaults = { marks: "dragon", samanta: "peach" };
+  function applyPersonalTheme(role) {
+    const key = "home-school-theme-" + role;
+    let theme = defaults[role] || "dragon";
+    try {
+      const selected = localStorage.getItem(key);
+      if (palettes[role]?.[selected]) theme = selected;
+    } catch {
+    }
+    const root = document.documentElement;
+    const [primary, accent, tint] = palettes[role]?.[theme] || palettes.marks.dragon;
+    root.style.setProperty("--personal-primary", primary);
+    root.style.setProperty("--personal-accent", accent);
+    root.style.setProperty("--personal-tint", tint);
+    root.dataset.schoolTheme = role;
+    root.dataset.themeVariant = theme;
+    return theme;
+  }
+  function renderThemePicker(parent, role) {
+    if (!palettes[role]) return;
+    const box = document.createElement("section");
+    box.className = "theme-picker";
+    box.setAttribute("aria-label", "Piel\u0101got dizainu");
+    const heading = document.createElement("strong");
+    heading.textContent = "\u{1F3A8} Mana pasaule";
+    box.append(heading);
+    const subtitle = document.createElement("p");
+    subtitle.textContent = "Izv\u0113lies sev pat\u012Bkam\u0101k\u0101s kr\u0101sas.";
+    box.append(subtitle);
+    const variants = document.createElement("div");
+    variants.className = "theme-variants";
+    box.append(variants);
+    const labels = { dragon: "\u{1F409} P\u016B\u0137u sala", night: "\u{1F30C} Zvaig\u017E\u0146u nakts", forest: "\u{1F332} Me\u017Ea eksped\u012Bcija", peach: "\u{1F338} Saulainais d\u0101rzs", ocean: "\u{1F30A} Oke\u0101ns", lavender: "\u{1F984} Lavandas sapnis" };
+    let active = applyPersonalTheme(role);
+    for (const [name4, colors] of Object.entries(palettes[role])) {
+      const b2 = document.createElement("button");
+      b2.type = "button";
+      b2.className = "theme-choice";
+      b2.setAttribute("aria-pressed", String(active === name4));
+      const swatch = document.createElement("span");
+      swatch.className = "theme-swatch";
+      swatch.style.background = "linear-gradient(135deg," + colors[0] + "," + colors[1] + ")";
+      b2.append(swatch, document.createTextNode(labels[name4]));
+      variants.append(b2);
+      b2.onclick = () => {
+        active = name4;
+        try {
+          localStorage.setItem("home-school-theme-" + role, name4);
+        } catch {
+        }
+        applyPersonalTheme(role);
+        for (const child of variants.children) child.setAttribute("aria-pressed", String(child === b2));
+      };
+    }
+    parent.append(box);
+  }
+
+  // src/points-policy.js
+  var REWARD_CAP = 20;
+  function calculatePracticePoints({ correct, total, maxStreak = 0, mode = "practice" } = {}) {
+    if (!Number.isInteger(total) || total <= 0 || !Number.isInteger(correct) || correct < 0 || correct > total) throw new Error("Neder\u012Bgs rezult\u0101ts");
+    const percent = Math.round(100 * correct / total);
+    if (mode === "learn" || mode === "errors" || mode === "mistakes" || mode === "review")
+      return { percent, base: 0, streakBonus: 0, potential: 0, eligible: false, reason: "M\u0101c\u012Bbu vai k\u013C\u016Bdu labo\u0161anas re\u017E\u012Bms" };
+    const bands = [[0, 39, 0, 3], [40, 59, 4, 7], [60, 74, 8, 11], [75, 89, 12, 15], [90, 100, 16, 18]];
+    const band = bands.find(([lo2, hi2]) => percent >= lo2 && percent <= hi2);
+    const [lo, hi, low, high] = band;
+    const base = percent === 0 ? 0 : Math.min(high, Math.floor(low + (percent - lo) * (high - low) / Math.max(1, hi - lo)));
+    const streakBonus = (maxStreak >= 5 ? 1 : 0) + (maxStreak >= 10 ? 1 : 0);
+    const potential = Math.min(REWARD_CAP, base + streakBonus);
+    return { percent, base, streakBonus, potential, eligible: true, cap: REWARD_CAP };
+  }
+  function previewImprovement(bestBefore, potential) {
+    const before = Math.max(0, Math.min(REWARD_CAP, Number(bestBefore) || 0));
+    const after = Math.max(before, Math.min(REWARD_CAP, potential));
+    return { earned: after - before, best: after };
+  }
+
+  // src/samanta-math.js
+  var shuffle4 = (a) => {
+    const b2 = [...a];
+    for (let i2 = b2.length - 1; i2 > 0; i2--) {
+      const j = Math.floor(Math.random() * (i2 + 1));
+      [b2[i2], b2[j]] = [b2[j], b2[i2]];
+    }
+    return b2;
+  };
+  var historyKey = "samanta-math-v1";
+  function history() {
+    try {
+      const x2 = JSON.parse(localStorage.getItem(historyKey) || "[]");
+      return Array.isArray(x2) ? x2.slice(-50) : [];
+    } catch {
+      return [];
+    }
+  }
+  function store(result) {
+    try {
+      localStorage.setItem(historyKey, JSON.stringify([...history(), result].slice(-50)));
+    } catch {
+    }
+  }
+  function makeMathQuestions(type = "mixed", family = 0, count = 12) {
+    const base = [];
+    for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
+      if (family && a !== family && b2 !== family) continue;
+      const product = a * b2;
+      if (type !== "division" && type !== "visual" && type !== "story") {
+        base.push({ key: "m-" + a + "-" + b2, kind: "multiply", a, b: b2, answer: product, prompt: a + " \xD7 " + b2 + " = ?", hint: a + " grupas, katr\u0101 " + b2 + " priek\u0161meti. Kop\u0101 ir " + product + "." });
+        base.push({ key: "missing-m-" + a + "-" + b2, kind: "missing", a, b: b2, answer: b2, prompt: a + " \xD7 \u25A1 = " + product, hint: "Atrodi skaitli, kuru reizinot ar " + a + ", ieg\u016Bst " + product + "." });
+      }
+      if (type !== "multiply" && type !== "visual" && type !== "story") {
+        base.push({ key: "d-" + a + "-" + b2, kind: "divide", a, b: b2, answer: b2, prompt: product + " \xF7 " + a + " = ?", hint: "Ja " + product + " sadala " + a + " vien\u0101d\u0101s grup\u0101s, katr\u0101 ir " + b2 + "." });
+        base.push({ key: "missing-d-" + a + "-" + b2, kind: "missing", a, b: b2, answer: a, prompt: product + " \xF7 \u25A1 = " + b2, hint: "Atrodi dal\u012Bt\u0101ju, kas dod rezult\u0101tu " + b2 + "." });
+      }
+    }
+    if (type === "visual" || type === "story") {
+      const objects = ["\u{1F34E}", "\u2B50", "\u{1F33C}", "\u{1F98B}", "\u{1F7E3}"];
+      const people = ["Samanta", "L\u012Bga", "Anna", "Marta", "Elza"];
+      for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
+        if (family && a !== family && b2 !== family) continue;
+        const icon = objects[(a + b2) % objects.length], person = people[(a + b2) % people.length];
+        if (type === "visual") {
+          base.push({ key: "v-m-" + a + "-" + b2, kind: "visual-multiply", a, b: b2, answer: a * b2, prompt: "Cik priek\u0161metu ir kop\u0101?", icon, hint: a + " grupas pa " + b2 + " ir " + a * b2 + "." });
+          base.push({ key: "v-d-" + a + "-" + b2, kind: "visual-divide", a, b: b2, answer: b2, prompt: "Cik priek\u0161metu ir katr\u0101 grup\u0101?", icon, hint: a * b2 + " priek\u0161metus sadalot " + a + " vien\u0101d\u0101s grup\u0101s, katr\u0101 b\u016Bs " + b2 + "." });
+        } else {
+          base.push({ key: "s-m-" + a + "-" + b2, kind: "story-multiply", a, b: b2, answer: a * b2, prompt: person + " salika " + a + " grozi\u0146us. Katr\u0101 grozi\u0146\u0101 ir " + b2 + " \u0101boli. Cik \u0101bolu ir kop\u0101?", hint: "Saskaiti " + a + " grupas pa " + b2 + " \u0101boliem." });
+          base.push({ key: "s-d-" + a + "-" + b2, kind: "story-divide", a, b: b2, answer: b2, prompt: person + " vien\u0101di sadal\u012Bja " + a * b2 + " uzl\u012Bmes " + a + " draugiem. Cik uzl\u012Bmju sa\u0146\u0113ma katrs draugs?", hint: "Sadal\u0101m " + a * b2 + " ar " + a + "." });
+        }
+      }
+    }
+    return shuffle4(base).slice(0, count);
+  }
+  function renderSamantaMath(container, { canSubmit = false, saveProgress = async () => {
+  } } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub math-hub";
+    host.style.gridColumn = "1/-1";
+    container.append(host);
+    let session = null, errors = [], currentMode = "mixed", family = 0;
+    function el(tag, cls, text) {
+      const e2 = document.createElement(tag);
+      if (cls) e2.className = cls;
+      if (text !== void 0) e2.textContent = text;
+      return e2;
+    }
+    function button(parent, text, action, cls = "action-button") {
+      const b2 = el("button", cls, text);
+      b2.type = "button";
+      b2.onclick = action;
+      parent.append(b2);
+      return b2;
+    }
+    function shell(title, subtitle) {
+      host.replaceChildren();
+      const head = el("div", "learning-heading");
+      head.append(el("span", "eyebrow", "\u2726 SAMANTAS MATEM\u0100TIKAS LABORATORIJA"), el("h2", "", title), el("p", "", subtitle));
+      host.append(head);
+    }
+    function welcome() {
+      shell("Skait\u013Cu piedz\u012Bvojums", "Reizini, dali un k\u013C\u016Bsti arvien dro\u0161\u0101ka! Te vari m\u0113\u0123in\u0101t tik rei\u017Eu, cik v\u0113lies.");
+      const stats = history().filter((x2) => x2.type);
+      if (stats.length) {
+        const last = stats.at(-1), row = el("div", "stat-strip");
+        row.append(el("span", "", "\u{1F3C5} Lab\u0101kais " + Math.max(...stats.map((x2) => x2.percent)) + "%"), el("span", "", "\u{1F4C8} P\u0113d\u0113jais " + last.percent + "%"), el("span", "", "\u2726 Treni\u0146i " + stats.length));
+        host.append(row);
+      }
+      const modeRow = el("div", "topic-grid");
+      host.append(modeRow);
+      for (const [type, icon, title, desc] of [["multiply", "\u2716", "Reizr\u0113\u0137ins", "Skait\u013Ci no 1 l\u012Bdz 10"], ["division", "\u2797", "Dal\u012B\u0161ana", "Dal\u0101m tikai bez atlikuma"], ["mixed", "\u26A1", "Jauktais izaicin\u0101jums", "Reizin\u0101\u0161ana un dal\u012B\u0161ana kop\u0101"], ["visual", "\u{1F9E9}", "Redzu un skaitu", "Uzdevumi ar priek\u0161metu grup\u0101m"], ["story", "\u{1F4D6}", "St\u0101stu uzdevumi", "\u012Asi teksta uzdevumi ar balsi"]]) {
+        const b2 = el("button", "topic-tile");
+        b2.type = "button";
+        b2.append(el("span", "topic-emoji", icon), el("strong", "", title), el("small", "", desc));
+        b2.onclick = () => settings(type);
+        modeRow.append(b2);
+      }
+      if (errors.length) {
+        const alert2 = el("div", "soft-notice", "\u{1F3AF} Tev ir " + errors.length + " jaut\u0101jumi, kurus vari patren\u0113t v\u0113lreiz.");
+        host.append(alert2);
+        button(host, "Tren\u0113t manas k\u013C\u016Bdas", () => start2(currentMode, family, "mistakes"));
+      }
+      const grid = el("div", "table-area");
+      grid.append(el("h3", "", "\u{1F522} Reizin\u0101\u0161anas tabula"));
+      const table = el("div", "times-grid");
+      for (let a = 1; a <= 10; a++) {
+        const line = el("div", "times-line");
+        for (let b2 = 1; b2 <= 10; b2++) {
+          const cell = el("span", "times-cell", String(a * b2));
+          cell.title = a + " \xD7 " + b2;
+          line.append(cell);
+        }
+        table.append(line);
+      }
+      grid.append(table);
+      host.append(grid);
+    }
+    function settings(type) {
+      currentMode = type;
+      shell(type === "multiply" ? "\u2716 Reizr\u0113\u0137ins" : type === "division" ? "\u2797 Dal\u012B\u0161ana" : type === "visual" ? "\u{1F9E9} Redzu un skaitu" : type === "story" ? "\u{1F4D6} St\u0101stu uzdevumi" : "\u26A1 Jauktais izaicin\u0101jums", "Izv\u0113lies, ko v\u0113lies patren\u0113t.");
+      const controls = el("div", "settings-panel");
+      controls.append(el("label", "", "Kuru reizin\u0101\u0161anas tabulu?"));
+      const select = el("select", "select-control");
+      for (let i2 = 0; i2 <= 10; i2++) {
+        const op = el("option", "", i2 === 0 ? "Visas tabulas 1\u201310" : i2 + ". tabula");
+        op.value = i2;
+        select.append(op);
+      }
+      select.value = String(family);
+      select.onchange = () => {
+        family = Number(select.value);
+      };
+      controls.append(select);
+      host.append(controls);
+      const buttons = el("div", "button-cluster");
+      host.append(buttons);
+      button(buttons, "\u{1F331} M\u0101cos \xB7 8 uzdevumi", () => start2(type, Number(select.value), "learn"));
+      button(buttons, "\u{1F3AF} Tren\u0113jos \xB7 12 uzdevumi", () => start2(type, Number(select.value), "practice"));
+      button(buttons, "\u{1F3C6} P\u0101rbaudu sevi \xB7 20 uzdevumi", () => start2(type, Number(select.value), "exam"));
+      button(host, "\u2190 Visas t\u0113mas", welcome, "quiet-button");
+    }
+    function start2(type, fam, mode) {
+      const source = makeMathQuestions(type, fam, mode === "learn" ? 8 : mode === "exam" ? 20 : mode === "mistakes" ? Math.min(10, Math.max(4, errors.length * 2)) : 12);
+      const previous = new Set(errors.map((q) => q.key));
+      const related = mode === "mistakes" ? errors.flatMap((q) => {
+        const all = makeMathQuestions("mixed", 0, 400);
+        return all.filter((x2) => x2.a === q.a && x2.b === q.b && !previous.has(x2.key));
+      }) : [];
+      const distinct = [...new Map(related.map((q) => [q.key, q])).values()];
+      const review = shuffle4(distinct).slice(0, 10);
+      const items = mode === "mistakes" ? review.length ? review : source.filter((q) => !previous.has(q.key)).slice(0, 10) : source;
+      session = { type, fam, mode, items, index: 0, correct: 0, misses: [], answers: [], began: Date.now() };
+      step();
+    }
+    function step() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      const s2 = session;
+      if (s2.index >= s2.items.length) {
+        void finish();
+        return;
+      }
+      const q = s2.items[s2.index];
+      shell("Atrisini uzdevumu", "Jaut\u0101jums " + (s2.index + 1) + " no " + s2.items.length);
+      const bar = el("div", "progress-track");
+      const fill = el("div", "progress-fill");
+      fill.style.width = Math.round(s2.index / s2.items.length * 100) + "%";
+      bar.append(fill);
+      host.append(bar);
+      const streakLabel = el("div", "streak-label", "\u{1F525} " + (s2.streak || 0) + " pareizas atbildes p\u0113c k\u0101rtas \xB7 Rekords: " + (s2.maxStreak || 0));
+      host.append(streakLabel);
+      const card = el("div", "question-stage");
+      card.append(el("span", "eyebrow", s2.mode === "exam" ? "P\u0100RBAUDES RE\u017D\u012AMS" : "TAVS IZAICIN\u0100JUMS"), el("div", q.kind.startsWith("story") ? "story-expression" : "math-expression", q.prompt));
+      if (q.kind.startsWith("visual")) {
+        const grid = el("div", "visual-groups");
+        grid.setAttribute("role", "img");
+        grid.setAttribute("aria-label", q.a + " grupas ar " + q.b + " priek\u0161metiem katr\u0101");
+        for (let i2 = 0; i2 < q.a; i2++) {
+          const group = el("div", "visual-group");
+          for (let j = 0; j < q.b; j++) group.append(el("span", "visual-object", q.icon));
+          grid.append(group);
+        }
+        card.append(grid);
+      }
+      if (q.kind.startsWith("story")) {
+        const controls = el("div", "reading-controls");
+        const read = button(controls, "\u{1F50A} Nolas\u012Bt uzdevumu", () => {
+          if (!("speechSynthesis" in window)) {
+            feedback.textContent = "\u0160aj\u0101 p\u0101rl\u016Bk\u0101 balss nolas\u012B\u0161ana nav pieejama.";
+            return;
+          }
+          window.speechSynthesis.cancel();
+          const speech = new SpeechSynthesisUtterance(q.prompt);
+          speech.lang = "lv-LV";
+          speech.rate = 0.85;
+          speech.pitch = 1;
+          const available = window.speechSynthesis.getVoices().find((v2) => v2.lang.toLowerCase().startsWith("lv"));
+          if (available) speech.voice = available;
+          window.speechSynthesis.speak(speech);
+        }, "quiet-button");
+        read.setAttribute("aria-label", "Nolas\u012Bt teksta uzdevumu ska\u013Ci");
+        button(controls, "\u23F9 Aptur\u0113t", () => {
+          if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        }, "quiet-button");
+        card.append(controls);
+      }
+      const form = el("form", "math-answer-form");
+      const inp = el("input", "big-number-input");
+      inp.type = "number";
+      inp.inputMode = "numeric";
+      inp.min = "0";
+      inp.max = "100";
+      inp.step = "1";
+      inp.required = true;
+      inp.placeholder = "?";
+      inp.autocomplete = "off";
+      inp.setAttribute("aria-label", "Tava atbilde");
+      form.append(inp);
+      const feedback = el("p", "feedback-line");
+      feedback.setAttribute("role", "status");
+      if (s2.mode === "learn") button(card, "\u{1F4A1} Par\u0101di pavedienu", () => {
+        feedback.textContent = q.kind.includes("multiply") ? "Atceries: reizin\u0101\u0161ana ir atk\u0101rtota saskait\u012B\u0161ana." : q.kind.includes("divide") ? "P\u0101rbaudi dal\u012B\u0161anu ar reizin\u0101\u0161anu." : "Dom\u0101, kura darb\u012Bba j\u0101izpilda.";
+      }, "quiet-button");
+      const submit = el("button", "action-button", "P\u0101rbaud\u012Bt");
+      submit.type = "submit";
+      form.append(submit);
+      card.append(form, feedback);
+      const numpad = attachTouchNumpad(card, inp);
+      host.append(card);
+      inp.focus({ preventScroll: true });
+      form.onsubmit = (e2) => {
+        e2.preventDefault();
+        const val = Number(inp.value);
+        if (!Number.isInteger(val) || inp.value === "") return;
+        const good = val === q.answer;
+        s2.correct += Number(good);
+        s2.answers.push({ key: q.key, correct: good });
+        s2.streak = good ? (s2.streak || 0) + 1 : 0;
+        s2.maxStreak = Math.max(s2.maxStreak || 0, s2.streak);
+        if (!good) s2.misses.push(q);
+        inp.disabled = true;
+        submit.disabled = true;
+        numpad.querySelectorAll("button").forEach((b2) => b2.disabled = true);
+        feedback.textContent = s2.mode === "exam" ? "Atbilde pie\u0146emta." : good ? "\u2705 Pareizi! Tu to paveici!" : "\u{1F50D} V\u0113l ne. " + q.hint;
+        button(card, s2.index + 1 === s2.items.length ? "Skat\u012Bt rezult\u0101tu \u2192" : "N\u0101kamais \u2192", () => {
+          s2.index++;
+          step();
+        });
+      };
+    }
+    async function finish() {
+      const s2 = session, pct = Math.round(s2.correct / s2.items.length * 100);
+      errors = s2.misses;
+      currentMode = s2.type;
+      family = s2.fam;
+      shell("Tavs rezult\u0101ts", "Katrs m\u0113\u0123in\u0101jums pal\u012Bdz k\u013C\u016Bt dro\u0161\u0101kai.");
+      host.append(el("div", "result-hero", pct + "%"), el("p", "result-subtitle", s2.correct + " pareizi no " + s2.items.length + " uzdevumiem"));
+      const weak = el("div", "soft-notice", s2.misses.length ? "Visvair\u0101k j\u0101nostiprina " + (s2.type === "multiply" ? "reizin\u0101\u0161ana" : s2.type === "division" ? "dal\u012B\u0161ana" : "da\u017Eas reizin\u0101\u0161anas un dal\u012B\u0161anas darb\u012Bbas") + "." : "\u{1F31F} Visas atbildes pareizas!");
+      host.append(weak);
+      const policy = calculatePracticePoints({ correct: s2.correct, total: s2.items.length, maxStreak: s2.maxStreak || 0, mode: s2.mode });
+      const key = "samanta-math-best-" + s2.type + "-" + s2.fam;
+      let previous = 0;
+      try {
+        previous = Number(localStorage.getItem(key)) || 0;
+      } catch {
+      }
+      const award = previewImprovement(previous, policy.potential);
+      const row = { type: s2.type, mode: s2.mode, percent: pct, correct: s2.correct, total: s2.items.length, date: (/* @__PURE__ */ new Date()).toISOString(), streak: s2.maxStreak || 0, pointsPreview: award.earned, pointsPotential: policy.potential };
+      if (canSubmit) {
+        store(row);
+        try {
+          localStorage.setItem(key, String(award.best));
+        } catch {
+        }
+      }
+      const pts = el("div", "soft-notice", policy.eligible ? "\u{1F3C5} \u0160\u012B m\u0113\u0123in\u0101juma punktu potenci\u0101ls: " + policy.potential + "/20 \xB7 Jauns uzlabojums: +" + award.earned + " treni\u0146a BP \xB7 S\u0113rijas bonuss: " + policy.streakBonus : "\u{1F331} \u0160is ir m\u0101c\u012Bbu re\u017E\u012Bms \u2014 bez balvu punktiem.");
+      host.append(pts);
+      const disclaimer = el("p", "points-disclaimer", "Treni\u0146a BP pagaid\u0101m ir informat\u012Bvi. Balvu makam tos nepieskaita, l\u012Bdz ir dro\u0161a servera v\u0113rt\u0113\u0161ana.");
+      host.append(disclaimer);
+      const status = el("p", "save-status");
+      host.append(status);
+      if (canSubmit) {
+        try {
+          const id = await saveProgress({ studentRole: "samanta", subject: "Matem\u0101tika", activityType: "Reizr\u0113\u0137ins un dal\u012B\u0161ana \xB7 " + s2.type + " \xB7 " + s2.mode, score: pct, notes: JSON.stringify(row) });
+          status.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts." : "\u26A0\uFE0F Saglab\u0101\u0161anu nevar\u0113ja apstiprin\u0101t.";
+        } catch {
+          status.textContent = "\u26A0\uFE0F Firebase saglab\u0101\u0161ana neizdev\u0101s. Rezult\u0101ts paliek \u0161\u012Bs p\u0101rl\u016Bkprogrammas v\u0113stur\u0113.";
+        }
+      } else status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiek ieskait\u012Bts.";
+      const actions = el("div", "button-cluster");
+      host.append(actions);
+      if (s2.misses.length) {
+        button(actions, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(s2.type, s2.fam, "mistakes"));
+        button(actions, "V\u0113l\u0101k", welcome, "quiet-button");
+      }
+      button(actions, "M\u0113\u0123in\u0101t v\u0113lreiz", () => start2(s2.type, s2.fam, s2.mode));
+      button(actions, "\u2190 Uz s\u0101kumu", welcome, "quiet-button");
+    }
+    welcome();
+  }
+
+  // src/latvian-school.js
+  var TOPICS = [
+    { id: "morfemas", name: "V\u0101rda sast\u0101vs un v\u0101rddarin\u0101\u0161ana", icon: "\u{1F50E}" },
+    { id: "sazina", name: "Sazi\u0146a un sazi\u0146as veidi", icon: "\u{1F4AC}" },
+    { id: "vardskiras", name: "V\u0101rd\u0161\u0137iras un v\u0101rda pamatforma", icon: "\u{1F4DA}" }
+  ];
+  var BANK = {
+    morfemas: [
+      ["Kas ir v\u0101rda sakne?", ["V\u0101rda da\u013Ca, kas kop\u012Bga radniec\u012Bgiem v\u0101rdiem", "Vienm\u0113r v\u0101rda p\u0113d\u0113jais burts", "V\u0101rda s\u0101kum\u0101 eso\u0161s pried\u0113klis"], 0, "Sakne izsaka radniec\u012Bgo v\u0101rdu kop\u012Bgo noz\u012Bmi."],
+      ["Kur\u0161 ir saliktenis?", ["saules stars", "saulespu\u0137e", "skaista pu\u0137e"], 1, "Saliktenis veidots no div\u0101m vai vair\u0101k\u0101m sakn\u0113m."],
+      ["Kur\u0161 ir v\u0101rdu savienojums?", ["sniegav\u012Brs", "\u016Bdensroze", "\u016Bdens pudele"], 2, "V\u0101rdu savienojumu raksta atsevi\u0161\u0137os v\u0101rdos."],
+      ["Kur\u0161 v\u0101rds ir radniec\u012Bgs v\u0101rdam \u201Cme\u017Es\u201D?", ["me\u017Eains", "m\u0113ness", "maiss"], 0, "Radniec\u012Bgiem v\u0101rdiem ir kop\u012Bga sakne un saist\u012Bta noz\u012Bme."],
+      ["Kas atrodas pirms saknes v\u0101rd\u0101, ja v\u0101rdam ir pried\u0113klis?", ["galotne", "pried\u0113klis", "pied\u0113klis"], 1, "Pried\u0113klis atrodas pirms saknes."],
+      ["Kur\u0161 apgalvojums ir pareizs?", ["Katram v\u0101rdam ir pried\u0113klis", "Katram v\u0101rdam ir pied\u0113klis", "Ne visiem v\u0101rdiem ir pried\u0113klis"], 2, "Pried\u0113k\u013Ca un pied\u0113k\u013Ca var neb\u016Bt."],
+      ["Izv\u0113lies pareizi darin\u0101tu salikteni no v\u0101rdiem \u201Csaule\u201D un \u201Cpu\u0137e\u201D.", ["saulespu\u0137e", "saule pu\u0137e", "sau\u013Cpu\u0137e"], 0, "Saliktenis ir \u201Csaulespu\u0137e\u201D."]
+    ],
+    sazina: [
+      ["Kura ir mutv\u0101rdu sazi\u0146a?", ["Saruna kl\u0101tien\u0113", "V\u0113stules rakst\u012B\u0161ana", "Plak\u0101ta las\u012B\u0161ana"], 0, "Saruna kl\u0101tien\u0113 ir mutv\u0101rdu sazi\u0146a."],
+      ["Kura ir rakstveida sazi\u0146a?", ["Rokasspiediens", "\u012Aszi\u0146a", "Saruna pa telefonu"], 1, "\u012Aszi\u0146a ir rakstveida sazi\u0146a."],
+      ["Kas pal\u012Bdz saprast sarunas partneri?", ["P\u0101rtraukt vi\u0146u", "Neklaus\u012Bties", "Uzman\u012Bgi klaus\u012Bties"], 2, "Akt\u012Bva klaus\u012B\u0161an\u0101s pal\u012Bdz saprast teikto."],
+      ["K\u0101 piekl\u0101j\u012Bgi pajaut\u0101t, ja nedzird\u0113ji?", ["Vai, l\u016Bdzu, vari atk\u0101rtot?", "Run\u0101 norm\u0101li!", "T\u0101 nav mana probl\u0113ma!"], 0, "Piekl\u0101j\u012Bgs l\u016Bgums veicina labu sazi\u0146u."],
+      ["Kas ir neverb\u0101l\u0101 sazi\u0146a?", ["E-pasta teksts", "Sejas izteiksme", "Gr\u0101matas apraksts"], 1, "M\u012Bmika un \u017Eesti var nodot inform\u0101ciju bez v\u0101rdiem."],
+      ["Kur\u0161 ir piem\u0113rots sazi\u0146as veids steidzamai sarunai?", ["V\u0113stule pa pastu", "Plak\u0101ts", "T\u0101lru\u0146a zvans"], 2, "Steidzamai inform\u0101cijai parasti noder tie\u0161s zvans."]
+    ],
+    vardskiras: [
+      ["Kura v\u0101rd\u0161\u0137ira nosauc priek\u0161metus un dz\u012Bvas b\u016Btnes?", ["Lietv\u0101rds", "Darb\u012Bbas v\u0101rds", "\u012Apa\u0161\u012Bbas v\u0101rds"], 0, "Lietv\u0101rds atbild, piem\u0113ram, uz jaut\u0101jumu kas?"],
+      ["Kur\u0161 v\u0101rds ir darb\u012Bbas v\u0101rds?", ["skaists", "skrien", "koks"], 1, "Darb\u012Bbas v\u0101rds nosauc darb\u012Bbu vai st\u0101vokli."],
+      ["Kur\u0161 v\u0101rds ir \u012Bpa\u0161\u012Bbas v\u0101rds?", ["m\u0101ja", "las\u012Bt", "gudrs"], 2, "\u012Apa\u0161\u012Bbas v\u0101rds nosauc paz\u012Bmi."],
+      ["K\u0101da ir v\u0101rda \u201Cskr\u0113ja\u201D nenoteiksme?", ["skriet", "skr\u0113ju", "skrie\u0161ana"], 0, "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme."],
+      ["Kura ir lietv\u0101rda \u201Ckokiem\u201D pamatforma?", ["kokos", "koks", "koki"], 1, "Lietv\u0101rda pamatforma ir vienskait\u013Ca nominat\u012Bvs, ja tas lietojams."],
+      ["Kura ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cskaist\u0101kam\u201D pamatforma?", ["skaisti", "skaist\u0101k", "skaists"], 2, "\u012Apa\u0161\u012Bbas v\u0101rda pamatforma ir v\u012Brie\u0161u dzimtes vienskait\u013Ca nominat\u012Bvs."]
+    ]
+  };
+  BANK.morfemas.push(...[["Kura v\u0101rda sast\u0101vda\u013Ca atrodas pa\u0161\u0101s v\u0101rda beig\u0101s un lokot main\u0101s?", ["Galotne", "Sakne", "Pried\u0113klis", "Pied\u0113klis"], 0, "Galotne main\u0101s, v\u0101rdu lokot: m\u0101ja, m\u0101jas, m\u0101jai."], ["J\u0101nis strauji _______ no m\u0101jas pagalm\u0101.", ["izskr\u0113ja", "ieskr\u0113ja", "uzskr\u0113ja", "pieskr\u0113ja"], 0, "Pried\u0113klis iz- nor\u0101da kust\u012Bbu uz \u0101ru."], ["Skol\u0113ns uzman\u012Bgi _______ klas\u0113.", ["ieg\u0101ja", "aizg\u0101ja", "nog\u0101ja", "izg\u0101ja"], 0, "Ie- nor\u0101da kust\u012Bbu uz iek\u0161u."], ["V\u0101ver\u012Bte veikli _______ augst\u0101 priedes zar\u0101.", ["uzk\u0101pa", "nok\u0101pa", "aizk\u0101pa", "iek\u0101pa"], 0, "Uz- nor\u0101da kust\u012Bbu aug\u0161up."], ["Autobuss _______ pie pieturas.", ["piebrauca", "aizbrauca", "p\u0101rbrauca", "izbrauca"], 0, "Pie- nor\u0101da tuvo\u0161anos."], ["Skolot\u0101ja l\u016Bdza _______ k\u013C\u016Bdaino v\u0101rdu pareizi.", ["p\u0101rrakst\u012Bt", "aizrakst\u012Bt", "norakst\u012Bt", "ierakst\u012Bt"], 0, "P\u0101r- \u0161eit noz\u012Bm\u0113 darb\u012Bbu no jauna."], ["Vakar\u0101 t\u0113tis _______ no t\u0101l\u0101 komand\u0113juma.", ["atbrauca", "aizbrauca", "izbrauca", "uzbrauca"], 0, "At- nor\u0101da atgrie\u0161anos."], ["K\u0101 sauc v\u0101rda da\u013Cu, kas ir kop\u012Bga radniec\u012Bgiem v\u0101rdiem?", ["Sakne", "Galotne", "Pried\u0113klis", "Pied\u0113klis"], 0, "Sakne glab\u0101 radniec\u012Bgo v\u0101rdu kop\u012Bgo noz\u012Bmi."], ["K\u0101 sauc v\u0101rda da\u013Cu, kas atrodas PIRMS saknes?", ["Pried\u0113klis", "Pied\u0113klis", "Galotne", "Sakne"], 0, "Pried\u0113klis atrodas pirms saknes."], ["Kas ir SALIKTENIS?", ["V\u0101rds no div\u0101m vai vair\u0101k\u0101m sakn\u0113m", "Divi atsevi\u0161\u0137i v\u0101rdi", "V\u0101rds tikai ar pried\u0113kli", "V\u0101rds bez saknes"], 0, "Salikten\u012B apvienotas vismaz divas saknes."], ["Kas veido v\u0101rda IZSKA\u0145U?", ["Pied\u0113klis ar galotni vai tikai galotne", "Pried\u0113klis un sakne", "Tikai pried\u0113klis", "Patska\u0146i"], 0, "Izska\u0146a ir v\u0101rda beigu da\u013Ca aiz saknes."]]);
+  BANK.sazina.push(...[["Kas ir SAZI\u0145A?", ["Inform\u0101cijas, domu un j\u016Btu apmai\u0146a", "Tikai telefona zvans", "Gr\u0101matas las\u012B\u0161ana vienatn\u0113", "Klus\u0113\u0161ana"], 0, "Sazi\u0146\u0101 cilv\u0113ki nodod un sa\u0146em inform\u0101ciju."], ["K\u0101 sauc cilv\u0113ku, kur\u0161 NODO zi\u0146u?", ["S\u016Bt\u012Bt\u0101js", "Sa\u0146\u0113m\u0113js", "V\u0113rot\u0101js", "Tulks"], 0, "S\u016Bt\u012Bt\u0101js nodod zi\u0146u, sa\u0146\u0113m\u0113js to uztver."], ["K\u0101 sauc cilv\u0113ku, kur\u0161 uztver zi\u0146u?", ["Sa\u0146\u0113m\u0113js", "S\u016Bt\u012Bt\u0101js", "Zi\u0146nesis", "Autors"], 0, "Zi\u0146as uztv\u0113r\u0113js ir sa\u0146\u0113m\u0113js."], ["Roberts zvana mammai. Kas ir s\u016Bt\u012Bt\u0101js?", ["Roberts", "Mamma", "Telefons", "Abi tikai sa\u0146\u0113m\u0113ji"], 0, "Roberts pasaka zi\u0146u, mamma to uzklausa."], ["Kas sazi\u0146\u0101 ir ZI\u0145A?", ["Nodot\u0101 inform\u0101cija", "Tikai SMS", "Tuk\u0161a aploksne", "Baterijas uzl\u0101de"], 0, "Zi\u0146a ir inform\u0101cija, ko nodod citam."], ["Kura ir MUTV\u0100RDU sazi\u0146a?", ["Saruna starpbr\u012Bd\u012B", "Apsveikuma kart\u012Bte", "E-pasts", "Ce\u013Ca z\u012Bme"], 0, "Mutv\u0101rdu sazi\u0146\u0101 run\u0101 un klaus\u0101s."], ["Kura ir RAKSTVEIDA sazi\u0146a?", ["\u012Aszi\u0146a draugam", "Telefonsaruna", "Mutiska uzst\u0101\u0161an\u0101s", "Piemieg\u0161ana ar aci"], 0, "Rakstveida sazi\u0146\u0101 izmanto uzrakst\u012Btu tekstu."], ["K\u0101da priek\u0161roc\u012Bba ir rakstveida sazi\u0146ai?", ["Tekstu var p\u0101rlas\u012Bt v\u0113l\u0101k", "T\u0101 vienm\u0113r ir ska\u013C\u0101ka", "Nav j\u0101dom\u0101 par v\u0101rdiem", "To saprot visi dz\u012Bvnieki"], 0, "Rakst\u012Btais saglab\u0101jas un ir p\u0101rlas\u0101ms."], ["Kas ir NEVERB\u0100L\u0100 sazi\u0146a?", ["M\u012Bmika, \u017Eesti un poza", "Sve\u0161valoda", "Tikai dators", "\u010Cukst\u0113\u0161ana"], 0, "Neverb\u0101l\u0101 sazi\u0146a notiek bez v\u0101rdiem."], ["Kas ir M\u012AMIKA?", ["Sejas izteiksme", "Roku vicin\u0101\u0161ana", "Ska\u013Ca run\u0101\u0161ana", "Rakst\u012B\u0161ana"], 0, "M\u012Bmika ir sejas izteiksme."], ["Kas ir \u017DESTS?", ["Roku vai galvas kust\u012Bba ar noz\u012Bmi", "Kliedziens", "Rakst\u012Bts teikums", "Friz\u016Bra"], 0, "\u017Desti pal\u012Bdz nodot inform\u0101ciju."], ["Ko noz\u012Bm\u0113 pirksts pie l\u016Bp\u0101m?", ["L\u016Bgums klus\u0113t", "Aicin\u0101jums dzied\u0101t", "J\u0101dodas \u0113st", "J\u0101atver logs"], 0, "Tas ir \u017Eests, kas aicina iev\u0113rot klusumu."]]);
+  BANK.vardskiras.push(...[["K\u0101da ir v\u0101rda \u201Cskol\u0113niem\u201D pamatforma?", ["skol\u0113ns", "skol\u0101", "skol\u0113ni", "skolot"], 0, "Lietv\u0101rda pamatforma ir vienskait\u013Ca nominat\u012Bvs."], ["K\u0101da ir v\u0101rda \u201Clas\u012Bja\u201D pamatforma?", ["las\u012Bt", "las\u012Bjums", "lasa", "las\u012Bt\u0101js"], 0, "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme."], ["K\u0101da ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cza\u013Caj\u0101m\u201D pamatforma?", ["za\u013C\u0161", "za\u013Ca", "za\u013Cums", "za\u013Cot"], 0, "Pamatforma ir v\u012Brie\u0161u dzimtes vienskait\u013Ca nominat\u012Bvs."], ["Zem lielajiem OZOLIEM auga s\u0113nes. K\u0101da ir izcelt\u0101 v\u0101rda pamatforma?", ["ozols", "ozolains", "ozoli", "ozoli\u0146\u0161"], 0, "Ozoliem \u2192 ozols."], ["K\u0101da ir v\u0101rda \u201Cskr\u0113j\u0101m\u201D pamatforma?", ["skriet", "skr\u0113jiens", "skrienam", "\u0101trs"], 0, "Darb\u012Bbas v\u0101rda nenoteiksme ir skriet."], ["K\u0101da ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cgudrajai\u201D pamatforma?", ["gudrs", "gudr\u012Bba", "gudri", "gudrot"], 0, "Gudrajai \u2192 gudrs."], ["K\u0101da ir v\u0101rda \u201Cpriec\u0101jamies\u201D pamatforma?", ["priec\u0101ties", "prieks", "priec\u012Bgs", "priec\u012Bgi"], 0, "Atgriezenisk\u0101 nenoteiksme ir priec\u0101ties."], ["K\u0101da ir v\u0101rda \u201Csnieg\u0101\u201D pamatforma?", ["sniegs", "sniegainais", "sniegot", "snieg\u0101"], 0, "Snieg\u0101 \u2192 sniegs; tas ir lietv\u0101rds."], ["K\u0101da ir lietv\u0101rda \u201Cm\u0101j\u0101m\u201D pamatforma?", ["m\u0101ja", "m\u0101jas", "m\u0101j\u012Bgs", "m\u0101jot"], 0, "M\u0101j\u0101m \u2192 m\u0101ja."], ["K\u0101du jaut\u0101jumu uzdod lietv\u0101rda pamatformai?", ["Kas?", "Ko dar\u012Bt?", "K\u0101ds?", "Kad?"], 0, "Lietv\u0101rda pamatforma atbild uz jaut\u0101jumu kas?."], ["K\u0101du jaut\u0101jumu uzdod darb\u012Bbas v\u0101rda nenoteiksmei?", ["Ko dar\u012Bt?", "Kas?", "K\u0101ds?", "Cik?"], 0, "Nenoteiksme atbild uz jaut\u0101jumu ko dar\u012Bt?."]]);
+  var EXTENDED = {
+    morfemas: [
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus radniec\u012Bgos v\u0101rdus v\u0101rdam \u201Cme\u017Es\u201D.", options: ["me\u017Ei\u0146\u0161", "me\u017Eains", "m\u0113ness", "me\u017Emala", "maiss"], answers: ["me\u017Ei\u0146\u0161", "me\u017Eains", "me\u017Emala"], explanation: "Radniec\u012Bgiem v\u0101rdiem ir kop\u012Bga sakne un saist\u012Bta noz\u012Bme." },
+      { kind: "multi", prompt: "Kuri no \u0161iem ir salikte\u0146i?", options: ["saulespu\u0137e", "skolas soma", "sniegav\u012Brs", "\u016Bdens pudele", "\u016Bdensroze"], answers: ["saulespu\u0137e", "sniegav\u012Brs", "\u016Bdensroze"], explanation: "Saliktenim ir vismaz divas saknes, un to raksta vien\u0101 v\u0101rd\u0101." },
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 pareizos apgalvojumus par v\u0101rda sast\u0101vu.", options: ["Katram v\u0101rdam ir sakne.", "Katram v\u0101rdam ir pried\u0113klis.", "Pied\u0113klis var atrasties aiz saknes.", "Visi radniec\u012Bgie v\u0101rdi noz\u012Bm\u0113 vienu un to pa\u0161u."], answers: ["Katram v\u0101rdam ir sakne.", "Pied\u0113klis var atrasties aiz saknes."], explanation: "Pried\u0113k\u013Ca un pied\u0113k\u013Ca var neb\u016Bt; radniec\u012Bgiem v\u0101rdiem ir saist\u012Bta, nevis vien\u0101da noz\u012Bme." },
+      { kind: "text", prompt: "Uzraksti salikteni, ko veido v\u0101rdi \u201Csaule\u201D un \u201Cpu\u0137e\u201D.", answers: ["saulespu\u0137e"], explanation: "Saule + pu\u0137e \u2192 saulespu\u0137e." },
+      { kind: "text", prompt: "K\u0101 sauc v\u0101rda da\u013Cu, kas atrodas pirms saknes?", answers: ["pried\u0113klis"], explanation: "Pirms saknes var atrasties pried\u0113klis." }
+    ],
+    sazina: [
+      { kind: "multi", prompt: "Kuri ir rakstveida sazi\u0146as piem\u0113ri?", options: ["E-pasts", "\u012Aszi\u0146a", "Telefonsaruna", "V\u0113stule", "Saruna kl\u0101tien\u0113"], answers: ["E-pasts", "\u012Aszi\u0146a", "V\u0113stule"], explanation: "Rakstveida sazi\u0146\u0101 izmanto rakst\u012Btu tekstu." },
+      { kind: "multi", prompt: "Kas pal\u012Bdz veidot piekl\u0101j\u012Bgu sarunu?", options: ["Uzklaus\u012Bt otru", "Nep\u0101rtraukt run\u0101t\u0101ju", "Izsmiet k\u013C\u016Bdas", "Uzdot preciz\u0113jo\u0161u jaut\u0101jumu"], answers: ["Uzklaus\u012Bt otru", "Nep\u0101rtraukt run\u0101t\u0101ju", "Uzdot preciz\u0113jo\u0161u jaut\u0101jumu"], explanation: "Piekl\u0101j\u012Bga sazi\u0146a prasa savstarp\u0113ju cie\u0146u." },
+      { kind: "text", prompt: "K\u0101 sauc cilv\u0113ku, kur\u0161 sa\u0146em zi\u0146u?", answers: ["sa\u0146\u0113m\u0113js"], explanation: "Zi\u0146as sa\u0146\u0113m\u0113js uztver s\u016Bt\u012Bt\u0101ja nodoto inform\u0101ciju." },
+      { kind: "text", prompt: "K\u0101 sauc sejas izteiksmi, kas pal\u012Bdz sazin\u0101ties bez v\u0101rdiem?", answers: ["m\u012Bmika"], explanation: "M\u012Bmika ir neverb\u0101l\u0101s sazi\u0146as l\u012Bdzeklis." }
+    ],
+    vardskiras: [
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus darb\u012Bbas v\u0101rdus.", options: ["skrien", "las\u012Bt", "skaists", "dom\u0101ja", "m\u0101ja"], answers: ["skrien", "las\u012Bt", "dom\u0101ja"], explanation: "Darb\u012Bbas v\u0101rdi nosauc darb\u012Bbu vai st\u0101vokli." },
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus \u012Bpa\u0161\u012Bbas v\u0101rdus.", options: ["gudrs", "za\u013Ca", "\u0101tri", "skaists", "skola"], answers: ["gudrs", "za\u013Ca", "skaists"], explanation: "\u012Apa\u0161\u012Bbas v\u0101rdi nosauc paz\u012Bmi." },
+      { kind: "text", prompt: "Uzraksti darb\u012Bbas v\u0101rda \u201Cskr\u0113ja\u201D pamatformu.", answers: ["skriet"], explanation: "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme." },
+      { kind: "text", prompt: "Uzraksti lietv\u0101rda \u201Ckokiem\u201D pamatformu.", answers: ["koks"], explanation: "Lietv\u0101rda pamatforma parasti ir vienskait\u013Ca nominat\u012Bvs." }
+    ]
+  };
+  var normalize = (s2) => String(s2).trim().toLocaleLowerCase("lv-LV").replace(/\s+/g, " ");
+  var shuffle5 = (a) => {
+    let b2 = [...a];
+    for (let i2 = b2.length - 1; i2 > 0; i2--) {
+      const j = Math.floor(Math.random() * (i2 + 1));
+      [b2[i2], b2[j]] = [b2[j], b2[i2]];
+    }
+    return b2;
+  };
+  function renderLatvianSchool(container, { canSubmit = false, saveProgress = async () => {
+  }, askAI = null } = {}) {
+    const host = document.createElement("section");
+    host.className = "module learning-hub latvian-hub";
+    host.style.gridColumn = "1/-1";
+    host.innerHTML = '<div class="learning-heading"><span class="eyebrow">\u2726 MARKA VALODAS LABORATORIJA</span><h2>\u{1F4D5} V\u0101rdu piedz\u012Bvojums</h2><p>Atkl\u0101j v\u0101rdu nosl\u0113pumus, p\u0101rbaudi sevi un audz\u0113 prasmes! Izv\u0113lies t\u0113mu.</p></div>';
+    container.append(host);
+    const nav = document.createElement("div");
+    nav.className = "topic-grid";
+    host.append(nav);
+    const content = document.createElement("div");
+    host.append(content);
+    const historyKey2 = (topic) => "marks-lv-history-" + topic.id;
+    function readHistory(topic) {
+      if (!canSubmit) return [];
+      try {
+        const val = JSON.parse(localStorage.getItem(historyKey2(topic)) || "[]");
+        return Array.isArray(val) ? val.slice(-30) : [];
+      } catch {
+        return [];
+      }
+    }
+    function saveHistory(topic, row) {
+      if (!canSubmit) return;
+      try {
+        localStorage.setItem(historyKey2(topic), JSON.stringify([...readHistory(topic), row].slice(-30)));
+      } catch {
+      }
+    }
+    function skillOf(topic, q) {
+      const p2 = q.prompt.toLocaleLowerCase("lv-LV");
+      if (topic.id === "sazina") {
+        if (/žest|mīmik|neverbāl|sejas/.test(p2)) return "Neverb\u0101l\u0101 sazi\u0146a";
+        if (/pieklāj|uzklaus|sarun|saprast/.test(p2)) return "Sarun\u0101\u0161an\u0101s prasmes";
+        return "Sazi\u0146as veidi un j\u0113dzieni";
+      }
+      if (topic.id === "vardskiras") {
+        if (/pamatform|nenoteiksm/.test(p2)) return "V\u0101rda pamatforma";
+        return "V\u0101rd\u0161\u0137iru atpaz\u012B\u0161ana";
+      }
+      if (/salikten|vārdu savienojum/.test(p2)) return "Salikte\u0146i";
+      if (/radniecīg|sakn/.test(p2)) return "Sakne un radniec\u012Bgie v\u0101rdi";
+      if (/priedēkl|ieskrēj|izskrēj|brauca|kāpa|pārrakst/.test(p2)) return "Pried\u0113k\u013Ci";
+      if (/izskaņ|piedēkl|galotn/.test(p2)) return "V\u0101rda sast\u0101vs";
+      return "V\u0101rda sast\u0101vs un v\u0101rddarin\u0101\u0161ana";
+    }
+    function aiButton(parent, label, payload) {
+      if (!canSubmit || typeof askAI !== "function") return;
+      const button = addButton(parent, label, async () => {
+        button.disabled = true;
+        button.textContent = "\u{1F916} Dom\u0101ju\u2026";
+        const output = document.createElement("p");
+        output.setAttribute("role", "status");
+        parent.append(output);
+        try {
+          output.textContent = await askAI(payload);
+        } catch (e2) {
+          output.textContent = "MI treneris pa\u0161laik nav pieejams. Turpin\u0101m parasto treni\u0146u.";
+          console.warn("[Marka skola] MI:", e2?.message || "unknown");
+        } finally {
+          button.disabled = false;
+          button.textContent = label;
+        }
+      });
+    }
+    const pending = /* @__PURE__ */ new Map();
+    function pendingKey(topic) {
+      return "marks-lv-errors-" + topic.id;
+    }
+    function loadPending(topic) {
+      if (pending.has(topic.id)) return pending.get(topic.id);
+      if (!canSubmit) return [];
+      try {
+        const raw = JSON.parse(localStorage.getItem(pendingKey(topic)) || "[]");
+        const valid = Array.isArray(raw) ? raw.filter((prompt) => typeof prompt === "string").slice(0, 30) : [];
+        const all = [...BANK[topic.id].map((q) => q[0]), ...(EXTENDED[topic.id] || []).map((q) => q.prompt)];
+        const found = valid.filter((prompt) => all.includes(prompt)).map((prompt) => ({ prompt }));
+        pending.set(topic.id, found);
+        return found;
+      } catch {
+        return [];
+      }
+    }
+    function remember(topic, missed) {
+      if (!canSubmit) return;
+      const questions = missed.slice(0, 30);
+      pending.set(topic.id, questions);
+      try {
+        if (questions.length) localStorage.setItem(pendingKey(topic), JSON.stringify(questions.map((q) => q.prompt)));
+        else localStorage.removeItem(pendingKey(topic));
+      } catch {
+      }
+    }
+    function addButton(parent, title, onClick) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.textContent = title;
+      button.style.margin = "8px";
+      button.onclick = onClick;
+      parent.append(button);
+      return button;
+    }
+    for (const topic of TOPICS) {
+      const b2 = document.createElement("button");
+      b2.type = "button";
+      b2.className = "topic-tile";
+      b2.innerHTML = '<span class="topic-emoji">' + topic.icon + "</span><strong>" + topic.name + "</strong><small>Atv\u0113rt trena\u017Eieri \u2192</small>";
+      b2.onclick = () => choose(topic);
+      nav.append(b2);
+    }
+    function choose(topic) {
+      content.replaceChildren();
+      const h = document.createElement("h3");
+      h.textContent = "\u2726 " + topic.name;
+      content.append(h);
+      const past = readHistory(topic);
+      if (past.length) {
+        const best = Math.max(...past.map((p2) => p2.percent || 0));
+        const last = past[past.length - 1];
+        const summary = document.createElement("p");
+        summary.textContent = "\u{1F4C8} Mans progress \xB7 P\u0113d\u0113jais: " + last.percent + "% \xB7 Lab\u0101kais: " + best + "% \xB7 M\u0113\u0123in\u0101jumi: " + past.length;
+        content.append(summary);
+        const recent = past.slice(-5).map((p2) => p2.percent + "%").join(" \u2192 ");
+        const line = document.createElement("small");
+        line.textContent = "P\u0113d\u0113jie rezult\u0101ti: " + recent;
+        content.append(line);
+      }
+      const missed = loadPending(topic);
+      if (missed.length) {
+        const note = document.createElement("p");
+        note.textContent = "\u{1F409} V\u0113l vari nostiprin\u0101t " + missed.length + " jaut\u0101jumus, kuros k\u013C\u016Bd\u012Bjies.";
+        content.append(note);
+        addButton(content, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(topic, "errors", missed));
+      }
+      for (const [key, label] of [["learn", "\u{1F4D6} M\u0101cos"], ["practice", "\u{1F3AF} Tren\u0113jos"], ["exam", "\u{1F4DD} P\u0101rbaudu sevi"]]) {
+        const b2 = document.createElement("button");
+        b2.type = "button";
+        b2.textContent = label;
+        b2.className = "action-button";
+        b2.style.margin = "5px";
+        b2.onclick = () => start2(topic, key);
+        content.append(b2);
+      }
+    }
+    function start2(topic, mode, previousMisses = []) {
+      const base = BANK[topic.id].map((q) => ({ kind: "single", prompt: q[0], options: q[1].map((label, i2) => ({ label, correct: i2 === q[2] })), explanation: q[3] }));
+      const extras = EXTENDED[topic.id] || [];
+      const all = [...base, ...extras];
+      const targetedSkills = new Set(previousMisses.map((q) => skillOf(topic, q)));
+      const fresh = all.filter((q) => !previousMisses.some((old) => old.prompt === q.prompt));
+      const targeted = fresh.filter((q) => targetedSkills.has(skillOf(topic, q)));
+      const source = mode === "errors" ? [...shuffle5(targeted), ...shuffle5(fresh.filter((q) => !targeted.includes(q)))] : shuffle5(all);
+      const wanted = mode === "errors" ? Math.min(10, Math.max(4, previousMisses.length * 2)) : mode === "exam" ? 20 : mode === "practice" ? 12 : 8;
+      let items = source.slice(0, Math.min(wanted, source.length)).map((q) => ({ ...q, options: shuffle5(q.options || []) }));
+      let index = 0, correct = 0, streak = 0, maxStreak = 0;
+      const results = [];
+      const missed = [];
+      const skillStats = {};
+      render();
+      function render() {
+        content.replaceChildren();
+        if (index === items.length) {
+          void finish();
+          return;
+        }
+        const progress = document.createElement("div");
+        progress.className = "progress-track";
+        const fill = document.createElement("div");
+        fill.className = "progress-fill";
+        fill.style.width = Math.round(index / items.length * 100) + "%";
+        progress.append(fill);
+        content.append(progress);
+        const streakTag = document.createElement("p");
+        streakTag.className = "streak-label";
+        streakTag.textContent = "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak;
+        content.append(streakTag);
+        const q = items[index], h = document.createElement("h3");
+        h.className = "latvian-question";
+        h.textContent = index + 1 + "/" + items.length + " \xB7 " + q.prompt;
+        content.append(h);
+        const form = document.createElement("form");
+        form.className = "latvian-question-form";
+        content.append(form);
+        const feedback = document.createElement("p");
+        feedback.setAttribute("role", "status");
+        let input;
+        if (q.kind === "text") {
+          input = document.createElement("input");
+          input.type = "text";
+          input.required = true;
+          input.autocomplete = "off";
+          input.maxLength = 100;
+          input.style.cssText = "display:block;max-width:400px;width:100%;padding:12px;font:inherit;margin:12px 0;border:1px solid #aebdd0;border-radius:9px";
+          form.append(input);
+        } else {
+          if (q.kind === "multi") {
+            const hint = document.createElement("p");
+            hint.textContent = "Iesp\u0113jamas vair\u0101kas pareiz\u0101s atbildes.";
+            form.append(hint);
+          }
+          q.options.forEach((o2, i2) => {
+            const label = document.createElement("label");
+            label.style.cssText = "display:block;padding:10px;cursor:pointer";
+            const control = document.createElement("input");
+            control.type = q.kind === "multi" ? "checkbox" : "radio";
+            control.name = "choice";
+            control.value = String(i2);
+            label.append(control, document.createTextNode(" " + (typeof o2 === "string" ? o2 : o2.label)));
+            form.append(label);
+          });
+        }
+        if (mode === "learn") {
+          const hint = document.createElement("button");
+          hint.type = "button";
+          hint.textContent = "\u{1F4A1} Pal\u012Bdz\u012Bba";
+          hint.onclick = () => {
+            feedback.textContent = "Izlasi uzdevumu v\u0113lreiz. Sal\u012Bdzini variantu noz\u012Bmi un atceries t\u0113mas pamatprincipu.";
+          };
+          form.append(hint);
+        }
+        const btn = document.createElement("button");
+        btn.type = "submit";
+        btn.textContent = "P\u0101rbaud\u012Bt";
+        btn.style.margin = "8px";
+        form.append(btn);
+        content.append(feedback);
+        form.onsubmit = (e2) => {
+          e2.preventDefault();
+          let good = false;
+          if (q.kind === "text") {
+            good = q.answers.some((a) => normalize(a) === normalize(input.value));
+          } else if (q.kind === "multi") {
+            const selected = [...form.querySelectorAll("input:checked")].map((el) => q.options[Number(el.value)]);
+            if (selected.length === 0) {
+              feedback.textContent = "Izv\u0113lies vismaz vienu atbildi.";
+              return;
+            }
+            good = selected.length === q.answers.length && selected.every((x2) => q.answers.includes(x2));
+          } else {
+            const selection = form.querySelector("input:checked");
+            if (!selection) {
+              feedback.textContent = "Izv\u0113lies atbildi.";
+              return;
+            }
+            good = q.options[Number(selection.value)].correct;
+          }
+          correct += Number(good);
+          streak = good ? streak + 1 : 0;
+          maxStreak = Math.max(maxStreak, streak);
+          results.push(good);
+          if (!good) missed.push(q);
+          const skill = skillOf(topic, q);
+          const stats = skillStats[skill] || (skillStats[skill] = { correct: 0, total: 0 });
+          stats.total++;
+          stats.correct += Number(good);
+          if (!good && mode !== "exam") {
+            aiButton(content, "\u{1F916} Pal\u012Bdzi saprast", { mode: "hint", skill, question: q.prompt, studentAnswer: q.kind === "text" ? input.value : q.kind === "multi" ? [...form.querySelectorAll("input:checked")].map((el) => q.options[Number(el.value)]).join(", ") : String(q.options[Number(form.querySelector("input:checked")?.value)]?.label || ""), explanation: q.explanation, attempt: 1 });
+          }
+          form.querySelectorAll("input,button").forEach((el) => el.disabled = true);
+          feedback.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F504} V\u0113l ne. " + q.explanation;
+          const next = document.createElement("button");
+          next.className = "action-button";
+          next.type = "button";
+          next.textContent = index + 1 === items.length ? "Rezult\u0101ts" : "N\u0101kamais \u2192";
+          next.onclick = () => {
+            index++;
+            render();
+          };
+          content.append(next);
+        };
+      }
+      async function finish() {
+        const pct = Math.round(correct / items.length * 100);
+        const h = document.createElement("h3");
+        h.textContent = topic.name + ": " + pct + "% (" + correct + "/" + items.length + ")";
+        content.append(h);
+        const breakdown = Object.entries(skillStats).map(([skill, stat]) => ({ skill, percent: Math.round(100 * stat.correct / stat.total), correct: stat.correct, total: stat.total })).sort((a, b2) => a.percent - b2.percent);
+        if (breakdown.length) {
+          const heading = document.createElement("h4");
+          heading.textContent = "Prasmju p\u0101rskats";
+          content.append(heading);
+          for (const skill of breakdown) {
+            const line = document.createElement("p");
+            line.textContent = (skill.percent >= 80 ? "\u{1F7E2} " : skill.percent >= 60 ? "\u{1F7E1} " : "\u{1F7E0} ") + skill.skill + ": " + skill.percent + "% (" + skill.correct + "/" + skill.total + ")";
+            content.append(line);
+          }
+          if (breakdown[0].percent < 80) {
+            const suggestion = document.createElement("p");
+            suggestion.textContent = "Ieteikums: v\u0113l patren\u0113 \u201C" + breakdown[0].skill + "\u201D.";
+            content.append(suggestion);
+          }
+        }
+        const policy = calculatePracticePoints({ correct, total: items.length, maxStreak, mode });
+        const bestKey = "marks-lv-best-points-" + topic.id;
+        let bestBefore = 0;
+        try {
+          bestBefore = Number(localStorage.getItem(bestKey)) || 0;
+        } catch {
+        }
+        const award = previewImprovement(bestBefore, policy.potential);
+        if (canSubmit) try {
+          localStorage.setItem(bestKey, String(award.best));
+        } catch {
+        }
+        const points = document.createElement("div");
+        points.className = "soft-notice";
+        points.textContent = policy.eligible ? "\u{1F3C5} Punktu potenci\u0101ls " + policy.potential + "/20 \xB7 Uzlabojums +" + award.earned + " treni\u0146a BP \xB7 S\u0113rijas bonuss " + policy.streakBonus : "\u{1F331} M\u0101c\u012Bbu re\u017E\u012Bm\u0101 balvu punktus neieg\u016Bst.";
+        content.append(points);
+        const note = document.createElement("p");
+        note.className = "points-disclaimer";
+        note.textContent = "Treni\u0146a BP pa\u0161laik ir informat\u012Bvi un netiek pieskait\u012Bti balvu makam, l\u012Bdz ieviesta dro\u0161a servera p\u0101rbaude.";
+        content.append(note);
+        saveHistory(topic, { date: (/* @__PURE__ */ new Date()).toISOString(), mode, percent: pct, correct, total: items.length, skills: breakdown, maxStreak, pointsPotential: policy.potential, pointsPreview: award.earned });
+        if (breakdown.length) aiButton(content, "\u{1F916} MI trenera ieteikums", { mode: "result", skill: breakdown[0].skill, percent: pct });
+        if (mode !== "errors") remember(topic, missed);
+        else if (missed.length) remember(topic, missed);
+        else remember(topic, []);
+        if (missed.length) {
+          const callout = document.createElement("div");
+          callout.style.cssText = "border:1px solid #b7cfe3;border-radius:12px;padding:14px;margin:14px 0;background:#f3f8fd";
+          const title = document.createElement("strong");
+          title.textContent = "\u{1F409} V\u0113l viens neliels izaicin\u0101jums?";
+          callout.append(title);
+          const desc = document.createElement("p");
+          desc.textContent = "Tev bija " + missed.length + " nepareizas atbildes. Pam\u0113\u0123ini l\u012Bdz\u012Bgus uzdevumus ar citiem piem\u0113riem!";
+          callout.append(desc);
+          addButton(callout, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(topic, "errors", missed));
+          addButton(callout, "V\u0113l\u0101k", () => choose(topic));
+          content.append(callout);
+        } else if (mode === "errors") {
+          const done = document.createElement("p");
+          done.textContent = "\u{1F389} Labi! \u0160aj\u0101 k\u013C\u016Bdu treni\u0146\u0101 visi uzdevumi izpild\u012Bti pareizi.";
+          content.append(done);
+        }
+        const status = document.createElement("p");
+        content.append(status);
+        if (canSubmit) {
+          try {
+            await saveProgress({ studentRole: "marks", activityType: topic.name + " \xB7 " + mode, subject: "Latvie\u0161u valoda", score: pct, notes: JSON.stringify({ topicId: topic.id, mode, correct, total: items.length, skills: breakdown }) });
+            status.textContent = "\u2705 Rezult\u0101ts saglab\u0101ts Firebase.";
+          } catch {
+            status.textContent = "\u26A0\uFE0F Rezult\u0101tu neizdev\u0101s saglab\u0101t.";
+          }
+        } else status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums: rezult\u0101ts nav saglab\u0101ts.";
+        const again = document.createElement("button");
+        again.type = "button";
+        again.textContent = "Tren\u0113ties v\u0113lreiz";
+        again.onclick = () => start2(topic, mode);
+        content.append(again);
+        const back = document.createElement("button");
+        back.type = "button";
+        back.textContent = "Atpaka\u013C uz re\u017E\u012Bmiem";
+        back.style.margin = "8px";
+        back.onclick = () => choose(topic);
+        content.append(back);
+      }
+    }
+  }
+
   // node_modules/@firebase/util/dist/postinstall.mjs
   var getDefaultsFromPostinstall = () => void 0;
 
@@ -8519,7 +10500,7 @@
   var EventType;
   var ErrorCode;
   var Stat;
-  var Event;
+  var Event2;
   var getStatEventTarget;
   var createWebChannelTransport;
   (function() {
@@ -10538,7 +12519,7 @@
     getStatEventTarget = webchannel_blob_es2018.getStatEventTarget = function() {
       return jb();
     };
-    Event = webchannel_blob_es2018.Event = I2;
+    Event2 = webchannel_blob_es2018.Event = I2;
     Stat = webchannel_blob_es2018.Stat = { jb: 0, mb: 1, nb: 2, Hb: 3, Mb: 4, Jb: 5, Kb: 6, Ib: 7, Gb: 8, Lb: 9, PROXY: 10, NOPROXY: 11, Eb: 12, Ab: 13, Bb: 14, zb: 15, Cb: 16, Db: 17, fb: 18, eb: 19, gb: 20 };
     ub.NO_ERROR = 0;
     ub.TIMEOUT = 8;
@@ -20273,10 +22254,6 @@
     const n2 = e2.filters.concat([t2]);
     return new __PRIVATE_QueryImpl(e2.path, e2.collectionGroup, e2.explicitOrderBy.slice(), n2, e2.limit, e2.limitType, e2.startAt, e2.endAt);
   }
-  function __PRIVATE_queryWithAddedOrderBy(e2, t2) {
-    const n2 = e2.explicitOrderBy.concat([t2]);
-    return new __PRIVATE_QueryImpl(e2.path, e2.collectionGroup, n2, e2.filters.slice(), e2.limit, e2.limitType, e2.startAt, e2.endAt);
-  }
   function __PRIVATE_queryWithLimit(e2, t2, n2) {
     return new __PRIVATE_QueryImpl(e2.path, e2.collectionGroup, e2.explicitOrderBy.slice(), e2.filters.slice(), t2, n2, e2.startAt, e2.endAt);
   }
@@ -22277,7 +24254,7 @@
     static Mn() {
       if (!___PRIVATE_WebChannelConnection.Nn) {
         const e2 = getStatEventTarget();
-        __PRIVATE_unguardedEventListen(e2, Event.STAT_EVENT, ((e3) => {
+        __PRIVATE_unguardedEventListen(e2, Event2.STAT_EVENT, ((e3) => {
           e3.stat === Stat.PROXY ? __PRIVATE_logDebug(Gt, "STAT_EVENT: detected buffering proxy") : e3.stat === Stat.NOPROXY && __PRIVATE_logDebug(Gt, "STAT_EVENT: detected no buffering proxy");
         })), ___PRIVATE_WebChannelConnection.Nn = true;
       }
@@ -32474,31 +34451,6 @@ This typically indicates that your device does not have a healthy Internet conne
       return "and" === this.type ? "and" : "or";
     }
   };
-  var QueryOrderByConstraint = class _QueryOrderByConstraint extends QueryConstraint {
-    /**
-     * @internal
-     */
-    constructor(e2, t2) {
-      super(), this._field = e2, this._direction = t2, /** The type of this query constraint */
-      this.type = "orderBy";
-    }
-    static _create(e2, t2) {
-      return new _QueryOrderByConstraint(e2, t2);
-    }
-    _apply(e$1) {
-      const t2 = (function __PRIVATE_newQueryOrderBy(e$12, t3, n2) {
-        if (null !== e$12.startAt) throw new e(ta.INVALID_ARGUMENT, "Invalid query. You must not call startAt() or startAfter() before calling orderBy().");
-        if (null !== e$12.endAt) throw new e(ta.INVALID_ARGUMENT, "Invalid query. You must not call endAt() or endBefore() before calling orderBy().");
-        const r2 = new OrderBy(t3, n2);
-        return r2;
-      })(e$1._query, this._field, this._direction);
-      return new Query(e$1.firestore, e$1.converter, __PRIVATE_queryWithAddedOrderBy(e$1._query, t2));
-    }
-  };
-  function orderBy(e2, t2 = "asc") {
-    const n2 = t2, r2 = K("orderBy", e2);
-    return QueryOrderByConstraint._create(r2, n2);
-  }
   function __PRIVATE_parseDocumentIdValue(e$1, t2, n2) {
     if ("string" == typeof (n2 = getModularInstance(n2))) {
       if ("" === n2) throw new e(ta.INVALID_ARGUMENT, "Invalid query. When querying with documentId(), you must provide a valid document ID, but it was an empty string.");
@@ -32571,6 +34523,9 @@ This typically indicates that your device does not have a healthy Internet conne
     // performing validation.
     (t2 = getModularInstance(t2)) || t2 instanceof FieldPath2 ? __PRIVATE_parseUpdateVarargs(a, "updateDoc", e2._key, t2, n2, r2) : __PRIVATE_parseUpdateData(a, "updateDoc", e2._key, t2);
     return executeWrite(s2, [o2.toMutation(e2._key, Precondition.exists(true))]);
+  }
+  function deleteDoc(e2) {
+    return executeWrite(ra(e2.firestore, da), [new __PRIVATE_DeleteMutation(e2._key, Precondition.none())]);
   }
   function addDoc(e2, t2) {
     const n2 = ra(e2.firestore, da), r2 = doc(e2), s2 = __PRIVATE_applyFirestoreDataConverter(e2.converter, t2), a = la(e2.firestore);
@@ -32745,6 +34700,10 @@ This typically indicates that your device does not have a healthy Internet conne
     if (!db) return null;
     return collection(db, "homeSchool", "data", "progress");
   }
+  function getProgressDocRef(progressId) {
+    if (!db || !progressId) return null;
+    return doc(db, "homeSchool", "data", "progress", progressId);
+  }
   async function getUserProfile(uid) {
     if (!db || !uid) return null;
     const path = `homeSchool/data/users/${uid}`;
@@ -32762,30 +34721,23 @@ This typically indicates that your device does not have a healthy Internet conne
   async function getTasks(role) {
     if (!db) return [];
     const path = "homeSchool/data/tasks";
+    const colRef = getTasksColRef();
     try {
-      const colRef = getTasksColRef();
-      let q;
       if (role === ROLES.PARENT || !role) {
-        q = query(colRef, orderBy("createdAt", "desc"));
-      } else {
-        q = query(
-          colRef,
-          where("assignedTo", "in", [role, "both"]),
-          orderBy("createdAt", "desc")
-        );
+        const snap = await getDocs(colRef);
+        return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b2) => (b2.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
       }
-      const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const [own, shared] = await Promise.all([
+        getDocs(query(colRef, where("assignedTo", "==", role))),
+        getDocs(query(colRef, where("assignedTo", "==", "both")))
+      ]);
+      const map = /* @__PURE__ */ new Map();
+      for (const snap of [own, shared]) for (const d of snap.docs) map.set(d.id, { id: d.id, ...d.data() });
+      return [...map.values()].sort((a, b2) => (b2.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
     } catch (error) {
-      try {
-        const snap = await getDocs(getTasksColRef());
-        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        if (role === ROLES.PARENT || !role) return all;
-        return all.filter((t2) => t2.assignedTo === role || t2.assignedTo === "both");
-      } catch (fallbackError) {
-        handleFirestoreError(fallbackError, OperationType2.LIST, path);
-        return [];
-      }
+      console.warn("[M\u0101jas skola] Uzdevumu vaic\u0101jums:", error?.code || "unknown");
+      handleFirestoreError(error, OperationType2.LIST, path);
+      return [];
     }
   }
   async function createTask({ title, subject, assignedTo, description, dueDate, createdByUid }) {
@@ -32828,6 +34780,10 @@ This typically indicates that your device does not have a healthy Internet conne
     if (!db) return null;
     const path = "homeSchool/data/progress";
     const effectiveUid = currentUid || auth?.currentUser?.uid || null;
+    if (!effectiveUid || auth?.currentUser?.uid !== effectiveUid) return null;
+    if (studentRole !== ROLES.MARKS && studentRole !== ROLES.SAMANTA) return null;
+    const profile = await getUserProfile(effectiveUid);
+    if (profile?.role !== studentRole) return null;
     try {
       const progressPayload = {
         studentUid: effectiveUid,
@@ -32851,29 +34807,31 @@ This typically indicates that your device does not have a healthy Internet conne
     const path = "homeSchool/data/progress";
     try {
       const colRef = getProgressColRef();
-      let q;
-      if (role === ROLES.PARENT) {
-        q = query(colRef, orderBy("recordedAt", "desc"));
-      } else if (userUid) {
-        q = query(colRef, where("studentUid", "==", userUid), orderBy("recordedAt", "desc"));
-      } else if (role) {
-        q = query(colRef, where("studentRole", "==", role), orderBy("recordedAt", "desc"));
-      } else {
-        return [];
-      }
+      if (role !== ROLES.PARENT && !userUid) return [];
+      const q = role === ROLES.PARENT ? colRef : query(colRef, where("studentUid", "==", userUid));
       const snap = await getDocs(q);
-      return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b2) => (b2.recordedAt?.seconds || 0) - (a.recordedAt?.seconds || 0));
     } catch (error) {
-      try {
-        const snap = await getDocs(getProgressColRef());
-        const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-        if (role === ROLES.PARENT) return all;
-        return all.filter((p2) => p2.studentUid === userUid || p2.studentRole === role);
-      } catch (fallbackError) {
-        handleFirestoreError(fallbackError, OperationType2.LIST, path);
-        return [];
-      }
+      console.warn("[M\u0101jas skola] Progresa vaic\u0101jums:", error?.code || "unknown");
+      handleFirestoreError(error, OperationType2.LIST, path);
+      return [];
     }
+  }
+  async function deleteParentTestProgress(progressIds) {
+    const parent = auth?.currentUser;
+    if (!parent || !db || !Array.isArray(progressIds)) throw new Error("Nepiecie\u0161ama vec\u0101ka pieteik\u0161an\u0101s.");
+    const profile = await getUserProfile(parent.uid);
+    if (profile?.role !== ROLES.PARENT) throw new Error("Dz\u0113\u0161ana pieejama tikai vec\u0101kam.");
+    let count = 0;
+    for (const id of progressIds) {
+      if (typeof id !== "string" || !id || id.length > 200) continue;
+      const ref = getProgressDocRef(id);
+      const snap = await getDoc(ref);
+      if (!snap.exists() || snap.data().studentUid !== parent.uid) continue;
+      await deleteDoc(ref);
+      count++;
+    }
+    return count;
   }
 
   // src/main.js
@@ -32918,6 +34876,19 @@ This typically indicates that your device does not have a healthy Internet conne
       bar.append(out);
     }
   }
+  function loginErrorMessage(err) {
+    const code = err?.code || "";
+    if (code === "auth/invalid-api-key") return "Firebase API atsl\u0113ga nav der\u012Bga. P\u0101rbaudi FIREBASE_API_KEY iestat\u012Bjumus.";
+    if (code === "auth/invalid-credential" || code === "auth/wrong-password" || code === "auth/user-not-found") return "Nepareiza parole vai konta dati.";
+    if (code === "auth/operation-not-allowed") return "Firebase Email/Password pieteik\u0161an\u0101s nav iesp\u0113jota.";
+    if (code === "auth/unauthorized-domain") return "Preview dom\u0113ns nav at\u013Cauts Firebase Authentication iestat\u012Bjumos.";
+    if (code === "auth/too-many-requests") return "P\u0101r\u0101k daudz pieteik\u0161an\u0101s m\u0113\u0123in\u0101jumu. M\u0113\u0123ini v\u0113l\u0101k.";
+    if (code === "permission-denied" || code === "firestore/permission-denied") return "Firestore liedz piek\u013Cuvi profilam. P\u0101rbaudi profila ties\u012Bbas.";
+    if (code === "auth/network-request-failed") return "Neizdev\u0101s savienoties ar Firebase. P\u0101rbaudi internetu.";
+    if (code === "auth/user-disabled") return "\u0160is Firebase konts ir atsp\u0113jots.";
+    if (code.startsWith("auth/")) return "Firebase pieteik\u0161an\u0101s k\u013C\u016Bda (" + code + ").";
+    return err?.message || "Pieteik\u0161an\u0101s neizdev\u0101s.";
+  }
   async function login(e2) {
     e2.preventDefault();
     const btn = $2("login-form").querySelector("[type=submit]");
@@ -32939,10 +34910,78 @@ This typically indicates that your device does not have a healthy Internet conne
       $2("login-password").value = "";
       await showSchool(state.role);
     } catch (err) {
-      message(err.message?.includes("auth/") ? "Konts v\u0113l nav aktiviz\u0113ts." : err.message || "Pieteik\u0161an\u0101s neizdev\u0101s.");
+      message(loginErrorMessage(err));
     } finally {
       btn.disabled = false;
     }
+  }
+  function render7DayAnalytics(container, allProgress) {
+    const section = document.createElement("section");
+    section.className = "module";
+    section.style.gridColumn = "1/-1";
+    const title = document.createElement("h2");
+    title.textContent = "\u{1F4CA} 7 dienu m\u0101c\u012Bbu anal\u012Btika un kopsavilkums";
+    section.append(title);
+    const desc = document.createElement("p");
+    desc.textContent = "Abu b\u0113rnu aktivit\u0101te p\u0113d\u0113j\u0101 ned\u0113\u013C\u0101 (treni\u0146u skaits, vid\u0113jais rezult\u0101ts un apg\u016Bt\u0101s t\u0113mas).";
+    section.append(desc);
+    const sevenDaysAgo = Date.now() - 7 * 24 * 60 * 60 * 1e3;
+    const recent = allProgress.filter((p2) => {
+      const t2 = p2.recordedAt?.seconds ? p2.recordedAt.seconds * 1e3 : p2.date ? new Date(p2.date).getTime() : 0;
+      return t2 >= sevenDaysAgo;
+    });
+    const mRecent = recent.filter((p2) => p2.studentRole === "marks");
+    const sRecent = recent.filter((p2) => p2.studentRole === "samanta");
+    const mAvg = mRecent.length ? Math.round(mRecent.reduce((acc, p2) => acc + (Number(p2.score) || 0), 0) / mRecent.length) : null;
+    const sAvg = sRecent.length ? Math.round(sRecent.reduce((acc, p2) => acc + (Number(p2.score) || 0), 0) / sRecent.length) : null;
+    const grid = document.createElement("div");
+    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0";
+    const mCard = document.createElement("div");
+    mCard.style.cssText = "background:#f6f7ff;border:2px solid #dedbf8;border-radius:20px;padding:20px";
+    mCard.innerHTML = `<h3 style="margin-top:0">\u{1F409} Marks (7 dienas)</h3>
+  <p style="margin:6px 0"><strong>Pabeigti treni\u0146i:</strong> ${mRecent.length}</p>
+  <p style="margin:6px 0"><strong>Vid\u0113jais rezult\u0101ts:</strong> ${mAvg !== null ? mAvg + "%" : "Nav ierakstu p\u0113d\u0113j\u0101s 7 dien\u0101s"}</p>
+  <p style="margin:6px 0;font-size:0.92rem;color:#67718e">T\u0113mas: ${mRecent.map((p2) => p2.activityType || p2.subject).slice(0, 5).join(", ") || "Pagaid\u0101m nav"}</p>`;
+    const sCard = document.createElement("div");
+    sCard.style.cssText = "background:#fff8fc;border:2px solid #fadbe9;border-radius:20px;padding:20px";
+    sCard.innerHTML = `<h3 style="margin-top:0">\u{1F338} Samanta (7 dienas)</h3>
+  <p style="margin:6px 0"><strong>Pabeigti treni\u0146i:</strong> ${sRecent.length}</p>
+  <p style="margin:6px 0"><strong>Vid\u0113jais rezult\u0101ts:</strong> ${sAvg !== null ? sAvg + "%" : "Nav ierakstu p\u0113d\u0113j\u0101s 7 dien\u0101s"}</p>
+  <p style="margin:6px 0;font-size:0.92rem;color:#67718e">T\u0113mas: ${sRecent.map((p2) => p2.activityType || p2.subject).slice(0, 5).join(", ") || "Pagaid\u0101m nav"}</p>`;
+    grid.append(mCard, sCard);
+    section.append(grid);
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "action-button";
+    copyBtn.textContent = "\u{1F4CB} Kop\u0113t 7 dienu p\u0101rskatu starpliktuv\u0113";
+    copyBtn.onclick = async () => {
+      const report = [
+        "--- M\u0100JAS SKOLA: 7 DIENU P\u0100RSKATS ---",
+        `Izveidots: ${(/* @__PURE__ */ new Date()).toLocaleDateString("lv-LV")} plkst. ${(/* @__PURE__ */ new Date()).toLocaleTimeString("lv-LV")}`,
+        "",
+        `\u{1F409} MARKS:`,
+        `- Treni\u0146u skaits: ${mRecent.length}`,
+        `- Vid\u0113jais v\u0113rt\u0113jums: ${mAvg !== null ? mAvg + "%" : "Nav datu"}`,
+        `- Galven\u0101s t\u0113mas: ${mRecent.map((p2) => p2.activityType || p2.subject).join(", ") || "Nav"}`,
+        "",
+        `\u{1F338} SAMANTA:`,
+        `- Treni\u0146u skaits: ${sRecent.length}`,
+        `- Vid\u0113jais v\u0113rt\u0113jums: ${sAvg !== null ? sAvg + "%" : "Nav datu"}`,
+        `- Galven\u0101s t\u0113mas: ${sRecent.map((p2) => p2.activityType || p2.subject).join(", ") || "Nav"}`,
+        "--------------------------------------"
+      ].join("\n");
+      try {
+        await navigator.clipboard.writeText(report);
+        copyBtn.textContent = "\u2705 Nokop\u0113ts starpliktuv\u0113!";
+        setTimeout(() => {
+          copyBtn.textContent = "\u{1F4CB} Kop\u0113t 7 dienu p\u0101rskatu starpliktuv\u0113";
+        }, 2500);
+      } catch {
+        alert(report);
+      }
+    };
+    section.append(copyBtn);
+    container.append(section);
   }
   async function showSchool(role) {
     if (!state.user || !state.role) {
@@ -32962,13 +35001,194 @@ This typically indicates that your device does not have a healthy Internet conne
     const area = $2("modules");
     area.replaceChildren();
     let tasks = [], progress = [];
+    applyPersonalTheme(role);
+    if (role === "marks" || role === "samanta") {
+      const hero = document.createElement("section");
+      hero.className = "world-hero world-hero-" + role;
+      hero.style.gridColumn = "1/-1";
+      const art = document.createElement("img");
+      art.src = role === "marks" ? "/public/dragon-world.svg" : "/public/garden-world.svg";
+      art.alt = role === "marks" ? "P\u016B\u0137u sala ar pasaku pili, kalniem un p\u016B\u0137i" : "Saulains d\u0101rzs ar nami\u0146u, varav\u012Bksni un ziediem";
+      art.className = "world-hero-art";
+      const overlay = document.createElement("div");
+      overlay.className = "world-hero-content";
+      const k2 = document.createElement("span");
+      k2.className = "world-kicker";
+      k2.textContent = role === "marks" ? "\u{1F409} TAVA PIEDZ\u012AVOJUMU PASAULE" : "\u{1F338} TAVA M\u0100C\u012ABU PASAULE";
+      const title = document.createElement("h2");
+      title.textContent = role === "marks" ? "Laipni l\u016Bgts P\u016B\u0137u sal\u0101!" : "Laipni l\u016Bgta Saulainaj\u0101 d\u0101rz\u0101!";
+      const desc = document.createElement("p");
+      desc.textContent = role === "marks" ? "Katrs atrisin\u0101ts uzdevums ir v\u0113l viens solis tav\u0101 piedz\u012Bvojum\u0101." : "Te m\u0101c\u012Bties var sav\u0101 ritm\u0101 \u2014 ar att\u0113liem, klaus\u012B\u0161anos un maziem sasniegumiem.";
+      overlay.append(k2, title, desc);
+      hero.append(art, overlay);
+      area.append(hero);
+      renderThemePicker(area, role);
+    }
+    if (role === "marks" || role === "samanta") {
+      let renderSubjects = function() {
+        subjectRoot.replaceChildren();
+        const head = document.createElement("div");
+        head.className = "subject-intro";
+        const eyebrow = document.createElement("span");
+        eyebrow.className = "eyebrow";
+        eyebrow.textContent = "IZV\u0112LIES M\u0100C\u012ABU PRIEK\u0160METU";
+        const title = document.createElement("h2");
+        title.textContent = "Ko \u0161odien m\u0101c\u012Bsimies?";
+        const caption = document.createElement("p");
+        caption.textContent = "Izv\u0113lies savu m\u0101c\u012Bbu priek\u0161metu. Pieejam\u0101s t\u0113mas atv\u0113rsies n\u0101kamaj\u0101 sol\u012B.";
+        head.append(eyebrow, title, caption);
+        subjectRoot.append(head);
+        const tiles = document.createElement("div");
+        tiles.className = "subject-grid";
+        for (const subject of available) {
+          const button = document.createElement("button");
+          button.type = "button";
+          button.className = "subject-card subject-" + subject.kind;
+          button.disabled = !subject.active;
+          const symbol = document.createElement("span");
+          symbol.className = "subject-symbol";
+          symbol.textContent = subject.icon;
+          const name4 = document.createElement("strong");
+          name4.textContent = subject.name;
+          const desc = document.createElement("span");
+          desc.className = "subject-description";
+          desc.textContent = subject.description;
+          const state2 = document.createElement("span");
+          state2.className = "subject-status";
+          state2.textContent = subject.active ? "Atv\u0113rt priek\u0161metu \u2192" : "V\u0113l nav pieejams";
+          button.append(symbol, name4, desc, state2);
+          if (subject.active) button.onclick = () => openSubject(subject.id);
+          tiles.append(button);
+        }
+        const shopTile = document.createElement("button");
+        shopTile.type = "button";
+        shopTile.className = "subject-card";
+        shopTile.style.cssText = "background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px";
+        const points = calculateChildPoints(role, progress);
+        shopTile.innerHTML = `<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">\u{1F381}</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un m\u0113r\u0137i</strong><span style="color:#6553a9;font-weight:700">Tev ir ${points.balance} BP! Izv\u0113lies \u0123imenes balvu.</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atv\u0113rt veikalu \u2192</span>`;
+        shopTile.onclick = () => {
+          subjectRoot.replaceChildren();
+          const nav = document.createElement("div");
+          nav.className = "subject-backbar";
+          const back = document.createElement("button");
+          back.type = "button";
+          back.className = "subject-back";
+          back.textContent = "\u2190 Visi priek\u0161meti";
+          back.onclick = renderSubjects;
+          nav.append(back);
+          subjectRoot.append(nav);
+          const shopContainer = document.createElement("div");
+          subjectRoot.append(shopContainer);
+          renderRewardShop(shopContainer, { studentRole: role, progressRecords: progress, onBack: renderSubjects });
+        };
+        tiles.append(shopTile);
+        subjectRoot.append(tiles);
+        const hero = area.querySelector(".world-hero");
+        if (hero) hero.hidden = false;
+        const picker = area.querySelector(".theme-picker");
+        if (picker) picker.hidden = false;
+      };
+      const subjectRoot = document.createElement("section");
+      subjectRoot.className = "subjects-root";
+      subjectRoot.style.gridColumn = "1/-1";
+      area.append(subjectRoot);
+      const available = role === "marks" ? [
+        { id: "latviesu", icon: "\u{1F4D5}", name: "Latvie\u0161u valoda", description: "V\u0101rdu piedz\u012Bvojums \xB7 3 t\u0113mas", active: true, kind: "language" },
+        { id: "matematika", icon: "\u{1F9EE}", name: "Matem\u0101tika", description: "Reizr\u0113\u0137ins, dal\u012B\u0161ana, saist\u012Btais pieraksts un teksta misijas", active: true, kind: "math" },
+        { id: "anglu", icon: "\u{1F30E}", name: "Ang\u013Cu valoda", description: "Dienas, m\u0113ne\u0161i, gadalaiki un vietniekv\u0101rdi", active: true, kind: "english" }
+      ] : [
+        { id: "matematika", icon: "\u{1F9EE}", name: "Matem\u0101tika", description: "Reizr\u0113\u0137ins, dal\u012B\u0161ana, att\u0113li un st\u0101sti", active: true, kind: "math" },
+        { id: "latviesu", icon: "\u{1F4DA}", name: "Latvie\u0161u valoda", description: "Las\u012B\u0161ana, v\u0101rd\u0161\u0137iras un burti", active: true, kind: "language" },
+        { id: "anglu", icon: "\u{1F30E}", name: "Ang\u013Cu valoda", description: "V\u0101rdi, kr\u0101sas, dz\u012Bvnieki un audio izruna", active: true, kind: "english" }
+      ];
+      const openSubject = (id) => {
+        subjectRoot.replaceChildren();
+        const nav = document.createElement("div");
+        nav.className = "subject-backbar";
+        const back = document.createElement("button");
+        back.type = "button";
+        back.className = "subject-back";
+        back.textContent = "\u2190 Visi priek\u0161meti";
+        back.onclick = renderSubjects;
+        nav.append(back);
+        subjectRoot.append(nav);
+        const trainer = document.createElement("div");
+        trainer.className = "subject-trainer";
+        subjectRoot.append(trainer);
+        if (id === "latviesu" && role === "marks") {
+          renderLatvianSchool(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
+            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+            if (!saved) throw new Error("Firestore neapstiprin\u0101ja saglab\u0101\u0161anu");
+            return saved;
+          }, askAI: async (payload) => {
+            const token = await state.user.getIdToken();
+            const response = await fetch("/api/marka-ai", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token }, body: JSON.stringify(payload) });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || "MI treneris nav pieejams");
+            return data.reply;
+          } });
+        } else if (id === "matematika" && role === "marks") {
+          renderMarksMath(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
+            const id2 = await recordProgress({ ...data, currentUid: state.user.uid });
+            if (!id2) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+            return id2;
+          } });
+        } else if (id === "matematika" && role === "samanta") {
+          renderSamantaMath(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
+            const id2 = await recordProgress({ ...data, currentUid: state.user.uid });
+            if (!id2) throw Error("Firestore saglab\u0101\u0161ana nav apstiprin\u0101ta");
+            return id2;
+          } });
+        } else if (id === "anglu" && role === "marks") {
+          renderMarksEnglish(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
+            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+            if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+            return saved;
+          } });
+        } else if (id === "anglu" && role === "samanta") {
+          renderSamantaEnglish(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
+            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+            if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+            return saved;
+          } });
+        } else if (id === "latviesu" && role === "samanta") {
+          renderSamantaLatvian(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
+            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+            if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+            return saved;
+          } });
+        }
+        const hero = area.querySelector(".world-hero");
+        if (hero) hero.hidden = true;
+        const picker = area.querySelector(".theme-picker");
+        if (picker) picker.hidden = true;
+        subjectRoot.scrollIntoView({ behavior: "smooth", block: "start" });
+      };
+      renderSubjects();
+    }
+    const loadErrors = [];
     try {
-      tasks = await getTasks(role);
-      progress = await getProgressHistory({ role: state.role === ROLES.PARENT ? "vecaks" : role, userUid: state.user.uid });
-      if (state.role === ROLES.PARENT && role !== ROLES.PARENT) progress = progress.filter((p2) => p2.studentRole === role);
+      tasks = await getTasks(state.role === ROLES.PARENT ? ROLES.PARENT : role);
+      if (state.role === ROLES.PARENT && role !== ROLES.PARENT) tasks = tasks.filter((t2) => t2.assignedTo === role || t2.assignedTo === "both");
     } catch (err) {
-      area.innerHTML = '<div class="module">Neizdev\u0101s iel\u0101d\u0113t datus. P\u0101rbaudi Firestore piek\u013Cuves noteikumus.</div>';
-      return;
+      loadErrors.push("uzdevumus");
+      console.warn("[M\u0101jas skola] Uzdevumu iel\u0101des k\u013C\u016Bdas kods:", err?.code || "unknown");
+    }
+    try {
+      progress = await getProgressHistory({ role: state.role === ROLES.PARENT ? "vecaks" : role, userUid: state.user.uid });
+      if (state.role === ROLES.PARENT) progress = progress.filter((p2) => p2.studentUid !== state.user.uid);
+      if (state.role === ROLES.PARENT && role !== ROLES.PARENT) progress = progress.filter((p2) => p2.studentRole === role);
+      if (state.role !== ROLES.PARENT) progress = progress.filter((p2) => p2.studentUid === state.user.uid);
+    } catch (err) {
+      loadErrors.push("rezult\u0101tus");
+      console.warn("[M\u0101jas skola] Progresa iel\u0101des k\u013C\u016Bdas kods:", err?.code || "unknown");
+    }
+    if (loadErrors.length) {
+      const notice = document.createElement("div");
+      notice.className = "module";
+      notice.style.gridColumn = "1/-1";
+      notice.textContent = "Pagaid\u0101m neizdev\u0101s iel\u0101d\u0113t " + loadErrors.join(" un ") + ". M\u0101c\u012Bbu trena\u017Eieri joproj\u0101m ir pieejami.";
+      area.append(notice);
     }
     if (state.role === ROLES.PARENT) {
       const nav = document.createElement("div");
@@ -32983,6 +35203,51 @@ This typically indicates that your device does not have a healthy Internet conne
         nav.append(b2);
       }
       area.append(nav);
+    }
+    if (role === ROLES.PARENT) {
+      render7DayAnalytics(area, progress);
+      renderParentRewardManager(area);
+      const panel = document.createElement("section");
+      panel.className = "module";
+      panel.style.gridColumn = "1/-1";
+      const title = document.createElement("h2");
+      title.textContent = "\u{1F9F9} Test\u0113\u0161anas rezult\u0101tu sak\u0101rto\u0161ana";
+      panel.append(title);
+      const info = document.createElement("p");
+      info.textContent = "Var izdz\u0113st tikai rezult\u0101tus, kuru \u012Bpa\u0161nieks ir \u0161is vec\u0101ka konts. Marka un Samantas ieraksti netiek skarti.";
+      panel.append(info);
+      const remove = document.createElement("button");
+      remove.type = "button";
+      remove.textContent = "P\u0101rbaud\u012Bt un dz\u0113st manus testa rezult\u0101tus";
+      panel.append(remove);
+      const status = document.createElement("p");
+      status.setAttribute("role", "status");
+      panel.append(status);
+      remove.addEventListener("click", async () => {
+        remove.disabled = true;
+        status.textContent = "P\u0101rbaudu vec\u0101ka testa ierakstus\u2026";
+        try {
+          const all = await getProgressHistory({ role: ROLES.PARENT, userUid: state.user.uid });
+          const own = all.filter((p2) => p2.studentUid === state.user.uid && p2.id);
+          if (!own.length) {
+            status.textContent = "\u0160\u012B vec\u0101ka konta testa ieraksti nav atrasti.";
+            return;
+          }
+          const approved = window.confirm("Atrasti " + own.length + " ieraksti, kas saglab\u0101ti ar vec\u0101ka kontu. Dz\u0113st tikai \u0161os ierakstus? B\u0113rnu rezult\u0101ti netiks dz\u0113sti.");
+          if (!approved) {
+            status.textContent = "Dz\u0113\u0161ana atcelta.";
+            return;
+          }
+          const removed = await deleteParentTestProgress(own.map((p2) => p2.id));
+          status.textContent = "Izdz\u0113sti " + removed + " vec\u0101ka testa ieraksti. B\u0113rnu ieraksti saglab\u0101ti.";
+          await showSchool(ROLES.PARENT);
+        } catch (e2) {
+          status.textContent = "Dz\u0113\u0161ana neizdev\u0101s: " + (e2?.message || "P\u0101rbaudi Firestore at\u013Caujas.");
+        } finally {
+          remove.disabled = false;
+        }
+      });
+      area.append(panel);
     }
     if (role === ROLES.PARENT) {
       const form = document.createElement("form");
@@ -33031,8 +35296,21 @@ This typically indicates that your device does not have a healthy Internet conne
     progressBox.innerHTML = "<h2>Rezult\u0101ti</h2>";
     if (!progress.length) progressBox.append(Object.assign(document.createElement("p"), { textContent: "Rezult\u0101tu v\u0113l nav." }));
     for (const p2 of progress) {
-      const row = document.createElement("p");
-      row.textContent = (p2.studentRole || "") + " \xB7 " + (p2.activityType || "") + " \xB7 " + (p2.score ?? "") + " punkti";
+      const row = document.createElement("div");
+      row.style.cssText = "padding:10px 0;border-bottom:1px solid #dce3eb";
+      const header2 = document.createElement("strong");
+      header2.textContent = (p2.studentRole === "marks" ? "Marks" : p2.studentRole === "samanta" ? "Samanta" : "") + " \xB7 " + (p2.activityType || "Treni\u0146\u0161") + " \xB7 " + (typeof p2.score === "number" ? p2.score + "%" : "Rezult\u0101ts nav zin\u0101ms");
+      row.append(header2);
+      try {
+        const details = JSON.parse(p2.notes || "null");
+        if (details && Array.isArray(details.skills) && details.skills.length) {
+          const weak = details.skills.filter((skill) => skill.percent < 80).sort((a, b2) => a.percent - b2.percent);
+          const info = document.createElement("p");
+          info.textContent = "Uzdevumi: " + (details.correct ?? 0) + "/" + (details.total ?? 0) + (weak.length ? " \xB7 J\u0101patren\u0113: " + weak.map((x2) => x2.skill + " " + x2.percent + "%").join(", ") : " \xB7 P\u0101rbaud\u012Bt\u0101s prasmes apg\u016Btas labi");
+          row.append(info);
+        }
+      } catch {
+      }
       progressBox.append(row);
     }
     area.append(progressBox);
@@ -33064,7 +35342,11 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   async function start() {
     $2("login-form").addEventListener("submit", login);
-    $2("home").addEventListener("click", showWelcome);
+    $2("home").addEventListener("click", () => {
+      if (state.user && state.role) {
+        void showSchool(state.view || state.role);
+      } else showWelcome();
+    });
     $2("back").addEventListener("click", showWelcome);
     try {
       const fb = await initFirebase();

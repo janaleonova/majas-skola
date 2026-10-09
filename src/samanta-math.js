@@ -1,4 +1,5 @@
 import {calculatePracticePoints,previewImprovement} from './points-policy.js';
+import {attachTouchNumpad} from './touch-numpad.js';
 // Samantas skola — pilns reizrēķina un dalīšanas trenažieris 1–10.
 const pick=a=>a[Math.floor(Math.random()*a.length)];
 const shuffle=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
@@ -104,11 +105,14 @@ export function renderSamantaMath(container,{canSubmit=false,saveProgress=async(
   const form=el('form','math-answer-form');const inp=el('input','big-number-input');inp.type='number';inp.inputMode='numeric';inp.min='0';inp.max='100';inp.step='1';inp.required=true;inp.placeholder='?';inp.autocomplete='off';inp.setAttribute('aria-label','Tava atbilde');form.append(inp);
   const feedback=el('p','feedback-line');feedback.setAttribute('role','status');
   if(s.mode==='learn')button(card,'💡 Parādi pavedienu',()=>{feedback.textContent=q.kind.includes('multiply')?'Atceries: reizināšana ir atkārtota saskaitīšana.':q.kind.includes('divide')?'Pārbaudi dalīšanu ar reizināšanu.':'Domā, kura darbība jāizpilda.';},'quiet-button');
-  const submit=el('button','action-button','Pārbaudīt');submit.type='submit';form.append(submit);card.append(form,feedback);host.append(card);
+  const submit=el('button','action-button','Pārbaudīt');submit.type='submit';form.append(submit);card.append(form,feedback);
+  const numpad=attachTouchNumpad(card,inp);
+  host.append(card);
   inp.focus({preventScroll:true});
   form.onsubmit=e=>{e.preventDefault();const val=Number(inp.value);if(!Number.isInteger(val)||inp.value==='')return;
    const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});s.streak=good?(s.streak||0)+1:0;s.maxStreak=Math.max(s.maxStreak||0,s.streak);if(!good)s.misses.push(q);
    inp.disabled=true;submit.disabled=true;
+   numpad.querySelectorAll('button').forEach(b=>b.disabled=true);
    feedback.textContent=s.mode==='exam'?'Atbilde pieņemta.':good?'✅ Pareizi! Tu to paveici!':'🔍 Vēl ne. '+q.hint;
    button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Nākamais →',()=>{s.index++;step();});
   };

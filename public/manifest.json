@@ -1,0 +1,20 @@
+{
+  "name": "Mājas skola",
+  "short_name": "MājasSkola",
+  "description": "Mājas skola — Marka, Samantas un vecāku mācību vide ar individuāliem priekšmetiem, trenažieriem un motivāciju.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f5f7ff",
+  "theme_color": "#13273e",
+  "lang": "lv",
+  "icons": [
+    {
+      "src": "/public/icon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

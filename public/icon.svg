@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4f46e5"/>
+      <stop offset="50%" stop-color="#3b82f6"/>
+      <stop offset="100%" stop-color="#06b6d4"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="12" stdDeviation="16" flood-color="#0f172a" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#bg)"/>
+  <g filter="url(#shadow)" transform="translate(56, 56)">
+    <!-- House roof -->
+    <path d="M200 40 L40 180 L76 180 L76 340 L324 340 L324 180 L360 180 Z" fill="#ffffff" opacity="0.95"/>
+    <path d="M200 18 L16 172 L44 196 L200 68 L356 196 L384 172 Z" fill="#ffdd57"/>
+    <!-- Door / Open Book -->
+    <path d="M140 230 C170 215 200 230 200 230 C200 230 230 215 260 230 L260 310 C230 295 200 310 200 310 C200 310 170 295 140 310 Z" fill="#4f46e5"/>
+    <line x1="200" y1="230" x2="200" y2="310" stroke="#ffdd57" stroke-width="4"/>
+    <!-- Sparkles -->
+    <circle cx="200" cy="130" r="16" fill="#ffdd57"/>
+    <polygon points="200,90 206,114 230,120 206,126 200,150 194,126 170,120 194,114" fill="#ffdd57"/>
+    <polygon points="310,100 314,114 328,118 314,122 310,136 306,122 292,118 306,114" fill="#ffffff"/>
+  </g>
+</svg>
