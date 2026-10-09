@@ -2,6 +2,7 @@ import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import {createMathSession,gradeMathSession} from './server/math-review.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -117,6 +118,41 @@ app.post('/api/marka-ai',express.json({limit:'8kb'}),async(req,res)=>{
   res.json({reply:reply.slice(0,1100)});
  }catch(e){res.status(503).json({error:'MI treneris pašlaik nav pieejams.'});}
 });
+
+// Server-side checking for Marks math. No spendable BP credits.
+const mathAttempts=new Map();
+app.use('/api/math/',express.json({limit:'10kb'}));
+async function verifyMarksSession(req,res){
+ const authorization=req.headers.authorization||'';
+ const token=authorization.startsWith('Bearer ')?authorization.slice(7):'';
+ if(!token||token.length>5000)return null;
+ try{
+  const verify=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(process.env.FIREBASE_API_KEY||''),{
+   method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:token})
+  });
+  if(!verify.ok)return null;
+  const uid=(await verify.json()).users?.[0]?.localId;
+  return uid==='w4nbeq1UguRFrvdwVSFOkk46zXA2'?uid:null;
+ }catch{return null}
+}
+app.post('/api/math/session',async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const uid=await verifyMarksSession(req,res);
+ if(!uid)return res.status(403).json({error:'Piekļuve tikai Marka kontam.'});
+ const now=Date.now(),history=(mathAttempts.get(uid)||[]).filter(t=>now-t<3600000);
+ if(history.length>=60)return res.status(429).json({error:'Pārāk daudz mēģinājumu stundā.'});
+ history.push(now);mathAttempts.set(uid,history);
+ try{return res.json(createMathSession({uid,topic:req.body?.topic,mode:req.body?.mode}));}
+ catch{return res.status(400).json({error:'Nederīgs matemātikas treniņš.'})}
+});
+app.post('/api/math/grade',async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const uid=await verifyMarksSession(req,res);
+ if(!uid)return res.status(403).json({error:'Piekļuve tikai Marka kontam.'});
+ try{return res.json(gradeMathSession({uid,token:req.body?.token,answers:req.body?.answers}));}
+ catch(e){return res.status(400).json({error:e.message||'Neizdevās novērtēt.'})}
+});
+
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
