@@ -127,7 +127,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  try{
    progress=await getProgressHistory({role:state.role===ROLES.PARENT?'vecaks':role,userUid:state.user.uid});
    // Never count a parent's preview recordings as either child's achievements.
-   progress=progress.filter(p=>p.studentUid!== 'j6nmqLJj0CaJ0fo4eAQ6u6qgPal2');
+   if(state.role===ROLES.PARENT)progress=progress.filter(p=>p.studentUid!==state.user.uid);
    if(state.role===ROLES.PARENT && role!==ROLES.PARENT)progress=progress.filter(p=>p.studentRole===role);
    if(state.role!==ROLES.PARENT)progress=progress.filter(p=>p.studentUid===state.user.uid);
  }catch(err){loadErrors.push('rezultātus');console.warn('[Mājas skola] Progresa ielādes kļūdas kods:',err?.code||'unknown');}
