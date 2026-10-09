@@ -5,7 +5,7 @@ import { applyPersonalTheme,renderThemePicker } from './personal-theme.js';
 import { renderSamantaMath } from './samanta-math.js';
 import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
-import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,ROLES} from './firebase/homeSchoolService.js';
+import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
 const $=id=>document.getElementById(id);
 const schools={marks:['🐉 Marka skola','Mācību spēles un progress'],samanta:['🎨 Samantas skola','Uzdevumi un sasniegumi'],vecaks:['📋 Vecāka panelis','Abu bērnu mācību pārskats']};
@@ -135,6 +135,28 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  if(state.role===ROLES.PARENT){const nav=document.createElement('div');nav.className='module';nav.style.gridColumn='1/-1';
  nav.innerHTML='<h2>Pārslēgt vidi</h2><p>Vecākam pieejami abi bērnu skati.</p>';
  for(const child of ['marks','samanta','vecaks']){const b=document.createElement('button');b.textContent=schools[child][0];b.style.margin='5px';b.addEventListener('click',()=>showSchool(child));nav.append(b)}area.append(nav)}
+ if(role===ROLES.PARENT){
+  const panel=document.createElement('section');panel.className='module';panel.style.gridColumn='1/-1';
+  const title=document.createElement('h2');title.textContent='🧹 Testēšanas rezultātu sakārtošana';panel.append(title);
+  const info=document.createElement('p');info.textContent='Var izdzēst tikai rezultātus, kuru īpašnieks ir šis vecāka konts. Marka un Samantas ieraksti netiek skarti.';panel.append(info);
+  const remove=document.createElement('button');remove.type='button';remove.textContent='Pārbaudīt un dzēst manus testa rezultātus';panel.append(remove);
+  const status=document.createElement('p');status.setAttribute('role','status');panel.append(status);
+  remove.addEventListener('click',async()=>{
+   remove.disabled=true;status.textContent='Pārbaudu vecāka testa ierakstus…';
+   try{
+    const all=await getProgressHistory({role:ROLES.PARENT,userUid:state.user.uid});
+    const own=all.filter(p=>p.studentUid===state.user.uid&&p.id);
+    if(!own.length){status.textContent='Šī vecāka konta testa ieraksti nav atrasti.';return;}
+    const approved=window.confirm('Atrasti '+own.length+' ieraksti, kas saglabāti ar vecāka kontu. Dzēst tikai šos ierakstus? Bērnu rezultāti netiks dzēsti.');
+    if(!approved){status.textContent='Dzēšana atcelta.';return;}
+    const removed=await deleteParentTestProgress(own.map(p=>p.id));
+    status.textContent='Izdzēsti '+removed+' vecāka testa ieraksti. Bērnu ieraksti saglabāti.';
+    await showSchool(ROLES.PARENT);
+   }catch(e){status.textContent='Dzēšana neizdevās: '+(e?.message||'Pārbaudi Firestore atļaujas.');}
+   finally{remove.disabled=false;}
+  });
+  area.append(panel);
+ }
  if(role===ROLES.PARENT){const form=document.createElement('form');form.className='module';form.innerHTML='<h2>Jauns uzdevums</h2><label>Nosaukums <input name="title" required maxlength="120"></label><label> Priekšmets <input name="subject" required maxlength="80"></label><label> Kam <select name="assigned"><option value="marks">Markam</option><option value="samanta">Samantai</option><option value="both">Abiem</option></select></label><button type="submit">Saglabāt</button>';
  form.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(form);try{await createTask({title:fd.get('title'),subject:fd.get('subject'),assignedTo:fd.get('assigned'),createdByUid:state.user.uid});await showSchool(role)}catch(err){alert('Saglabāt neizdevās: '+err.message)}});area.append(form)}
  const taskBox=document.createElement('div');taskBox.className='module';taskBox.innerHTML='<h2>Uzdevumi</h2>';
