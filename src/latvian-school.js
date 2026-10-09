@@ -60,15 +60,16 @@ const EXTENDED={
 };
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
-export function renderLatvianSchool(container,{canSubmit=false,saveProgress=async()=>{},askAI=null}={}){
+export function renderLatvianSchool(container,{canSubmit=false,currentUid='',saveProgress=async()=>{},askAI=null}={}){
+ const prefix=canSubmit&&currentUid?'majas-skola:'+currentUid+':marks-lv:':null;
  const host=document.createElement('section');host.className='module learning-hub latvian-hub';host.style.gridColumn='1/-1';
  host.innerHTML='<div class="learning-heading"><span class="eyebrow">✦ MARKA VALODAS LABORATORIJA</span><h2>📕 Vārdu piedzīvojums</h2><p>Atklāj vārdu noslēpumus, pārbaudi sevi un audzē prasmes! Izvēlies tēmu.</p></div>';
  container.append(host);
  const nav=document.createElement('div');nav.className='topic-grid';host.append(nav);
  const content=document.createElement('div');host.append(content);
- const historyKey=topic=>'marks-lv-history-'+topic.id;
- function readHistory(topic){if(!canSubmit)return [];try{const val=JSON.parse(localStorage.getItem(historyKey(topic))||'[]');return Array.isArray(val)?val.slice(-30):[];}catch{return [];}}
- function saveHistory(topic,row){if(!canSubmit)return;try{localStorage.setItem(historyKey(topic),JSON.stringify([...readHistory(topic),row].slice(-30)));}catch{}}
+ const historyKey=topic=>prefix+'history-'+topic.id;
+ function readHistory(topic){if(!prefix)return [];try{const val=JSON.parse(localStorage.getItem(historyKey(topic))||'[]');return Array.isArray(val)?val.slice(-30):[];}catch{return [];}}
+ function saveHistory(topic,row){if(!prefix)return;try{localStorage.setItem(historyKey(topic),JSON.stringify([...readHistory(topic),row].slice(-30)));}catch{}}
  function skillOf(topic,q){
   const p=q.prompt.toLocaleLowerCase('lv-LV');
   if(topic.id==='sazina'){
@@ -97,7 +98,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
   });
  }
  const pending=new Map();
- function pendingKey(topic){return 'marks-lv-errors-'+topic.id;}
+ function pendingKey(topic){return prefix+'errors-'+topic.id;}
  function loadPending(topic){
    if(pending.has(topic.id))return pending.get(topic.id);
    if(!canSubmit)return [];
@@ -184,14 +185,13 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     if(breakdown[0].percent<80){const suggestion=document.createElement('p');suggestion.textContent='Ieteikums: vēl patrenē “'+breakdown[0].skill+'”.';content.append(suggestion);}
    }
    const policy=calculatePracticePoints({correct,total:items.length,maxStreak,mode});
-   const bestKey='marks-lv-best-points-'+topic.id;let bestBefore=0;try{bestBefore=Number(localStorage.getItem(bestKey))||0;}catch{}
+   const bestKey=prefix+'best-'+topic.id;let bestBefore=0;if(prefix)try{bestBefore=Number(localStorage.getItem(bestKey))||0;}catch{}
    const award=previewImprovement(bestBefore,policy.potential);
-   if(canSubmit)try{localStorage.setItem(bestKey,String(award.best));}catch{}
    const points=document.createElement('div');points.className='soft-notice';
    points.textContent=policy.eligible?'🏅 Punktu potenciāls '+policy.potential+'/20 · Uzlabojums +'+award.earned+' treniņa BP · Sērijas bonuss '+policy.streakBonus:'🌱 Mācību režīmā balvu punktus neiegūst.';
    content.append(points);
    const note=document.createElement('p');note.className='points-disclaimer';note.textContent='Treniņa BP pašlaik ir informatīvi un netiek pieskaitīti balvu makam, līdz ieviesta droša servera pārbaude.';content.append(note);
-   saveHistory(topic,{date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown,maxStreak,pointsPotential:policy.potential,pointsPreview:award.earned});
+   const practiceRow={date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown,maxStreak,pointsPotential:policy.potential,pointsPreview:award.earned};
    if(breakdown.length)aiButton(content,'🤖 MI trenera ieteikums',{mode:'result',skill:breakdown[0].skill,percent:pct});
    if(mode!=='errors')remember(topic,missed);
    else if(missed.length)remember(topic,missed);
@@ -206,7 +206,7 @@ export function renderLatvianSchool(container,{canSubmit=false,saveProgress=asyn
     const done=document.createElement('p');done.textContent='🎉 Labi! Šajā kļūdu treniņā visi uzdevumi izpildīti pareizi.';content.append(done);
    }
    const status=document.createElement('p');content.append(status);
-   if(canSubmit){try{await saveProgress({studentRole:'marks',activityType:topic.name+' · '+mode,subject:'Latviešu valoda',score:pct,notes:JSON.stringify({topicId:topic.id,mode,correct,total:items.length,skills:breakdown})});status.textContent='✅ Rezultāts saglabāts Firebase.';}catch{status.textContent='⚠️ Rezultātu neizdevās saglabāt.';}}
+   if(canSubmit){try{const id=await saveProgress({studentRole:'marks',activityType:topic.name+' · '+mode,subject:'Latviešu valoda',score:pct,notes:JSON.stringify({topicId:topic.id,mode,correct,total:items.length,skills:breakdown})});if(!id)throw Error('Nav apstiprināta saglabāšana');saveHistory(topic,practiceRow);if(prefix)try{localStorage.setItem(bestKey,String(award.best));}catch{};status.textContent='✅ Rezultāts saglabāts Firebase.';}catch{status.textContent='⚠️ Rezultātu neizdevās saglabāt.';}}
    else status.textContent='Vecāka priekšskatījums: rezultāts nav saglabāts.';
    const again=document.createElement('button');again.type='button';again.textContent='Trenēties vēlreiz';again.onclick=()=>start(topic,mode);content.append(again);
    const back=document.createElement('button');back.type='button';back.textContent='Atpakaļ uz režīmiem';back.style.margin='8px';back.onclick=()=>choose(topic);content.append(back);
