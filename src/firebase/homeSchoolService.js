@@ -336,3 +336,21 @@ export async function getProgressHistory({ role, userUid }) {
     return [];
   }
 }
+
+/** Deletes only progress records whose owner is the authenticated parent. */
+export async function deleteParentTestProgress(progressIds){
+  const parent=auth?.currentUser;
+  if(!parent||!db||!Array.isArray(progressIds))throw new Error('Nepieciešama vecāka pieteikšanās.');
+  const profile=await getUserProfile(parent.uid);
+  if(profile?.role!==ROLES.PARENT)throw new Error('Dzēšana pieejama tikai vecākam.');
+  let count=0;
+  for(const id of progressIds){
+    if(typeof id!=='string'||!id||id.length>200)continue;
+    const ref=getProgressDocRef(id);
+    const snap=await getDoc(ref);
+    if(!snap.exists()||snap.data().studentUid!==parent.uid)continue;
+    await deleteDoc(ref);
+    count++;
+  }
+  return count;
+}
