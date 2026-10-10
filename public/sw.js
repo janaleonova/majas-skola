@@ -1,5 +1,5 @@
 // Mājas skola — Service Worker pamats (PWA atbalsts)
-const CACHE_NAME = 'majas-skola-shell-v1';
+const CACHE_NAME = 'majas-skola-shell-v2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -41,7 +41,19 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-first / stale-while-revalidate for static shell assets
+  // Fetch the latest page and JS bundle first: old cached code must not hide UI fixes.
+  if (url.pathname === '/' || url.pathname === '/index.html' || url.pathname === '/public/bundle.js') {
+    event.respondWith(fetch(event.request).then(response => {
+      if (response && response.ok) {
+        const copy=response.clone();
+        event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.put(event.request,copy)));
+      }
+      return response;
+    }).catch(() => caches.match(event.request)));
+    return;
+  }
+
+  // Cache-first / stale-while-revalidate for unchanged visual assets
   event.respondWith(
     caches.match(event.request).then(cached => {
       if (cached) {
