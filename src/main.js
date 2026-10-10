@@ -113,7 +113,7 @@ function render7DayAnalytics(container,allProgress){
 async function showSchool(role){if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
- const area=$('modules');area.replaceChildren();let tasks=[],progress=[];
+ const area=$('modules');area.replaceChildren();let tasks=[],progress=[];let refreshChildDashboard=null;
  applyPersonalTheme(role);
  if(role==='marks'||role==='samanta'){
   const hero=document.createElement('section');hero.className='world-hero world-hero-'+role;hero.style.gridColumn='1/-1';
@@ -212,6 +212,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const hero=area.querySelector('.world-hero');if(hero)hero.hidden=false;
    const picker=area.querySelector('.theme-picker');if(picker)picker.hidden=false;
   }
+  refreshChildDashboard=renderSubjects;
   renderSubjects();
  }
  // Independent data loading: Firestore errors must never remove learning modules.
@@ -227,6 +228,8 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    if(state.role===ROLES.PARENT && role!==ROLES.PARENT)progress=progress.filter(p=>p.studentRole===role);
    if(state.role!==ROLES.PARENT)progress=progress.filter(p=>p.studentUid===state.user.uid);
  }catch(err){loadErrors.push('rezultātus');console.warn('[Mājas skola] Progresa ielādes kļūdas kods:',err?.code||'unknown');}
+ // Baseline buttons depend on Firebase history, so refresh after history loads.
+ if(refreshChildDashboard)refreshChildDashboard();
  if(loadErrors.length){const notice=document.createElement('div');notice.className='module';notice.style.gridColumn='1/-1';notice.textContent='Pagaidām neizdevās ielādēt '+loadErrors.join(' un ')+'. Mācību trenažieri joprojām ir pieejami.';area.append(notice);}
  if(state.role===ROLES.PARENT){const nav=document.createElement('div');nav.className='module';nav.style.gridColumn='1/-1';
  nav.innerHTML='<h2>Pārslēgt vidi</h2><p>Vecākam pieejami abi bērnu skati.</p>';
