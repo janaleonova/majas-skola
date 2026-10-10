@@ -1,3 +1,4 @@
+import {startChildPresence,renderParentPresence} from './activity-presence.js';
 import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
 import {renderMarksMath} from './marks-math.js';
 import {renderMarksEnglish} from './marks-english.js';
@@ -10,6 +11,8 @@ import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,resetChildProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
+let stopPresence=null;
+let currentActivity='Sākumekrāns';
 let appBackAction=null;
 let activeLearning=false;
 function confirmLeaveLearning(){return !activeLearning || window.confirm('Aktivitāte vēl nav pabeigta. Ja tagad iziesi, šī mēģinājuma nesaglabātās atbildes pazudīs. Vai tiešām iziet?');}
@@ -32,7 +35,7 @@ const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;'
 function message(s){$('login-message').textContent=s||''}
 function showLogin(){if(!state.ready){message('Firebase vēl nav konfigurēts.');return}
  $('login-form').hidden=false;$('login-password').value='';message('');$('login-password').focus();}
-function showWelcome(){state.view=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=!state.user;$('login-form').hidden=Boolean(state.user);}
+function showWelcome(){currentActivity='Sākumekrāns';state.view=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=!state.user;$('login-form').hidden=Boolean(state.user);}
 function header(){let bar=$('header-auth-bar');if(!bar){bar=document.createElement('div');bar.id='header-auth-bar';document.querySelector('header').append(bar)}
  bar.replaceChildren();if(state.user){const out=document.createElement('button');out.textContent='Iziet';out.addEventListener('click',async()=>{if(!confirmLeaveLearning())return;activeLearning=false;await signOut(auth);showWelcome()});bar.append(out);}}
 function loginErrorMessage(err){
@@ -126,7 +129,7 @@ function render7DayAnalytics(container,allProgress){
  };
  section.append(copyBtn);container.append(section);
 }
-async function showSchool(role){if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
+async function showSchool(role){currentActivity='Sākumekrāns';if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
  installBackNavigation();appBackAction=()=>{void showSchool(role);};
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
@@ -153,6 +156,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
+   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',anglu:'Angļu valoda'})[id]||'Priekšmets';
    activeLearning=true;
    area.classList.add('learning-active');
    appBackAction=()=>renderSubjects();
@@ -201,6 +205,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    subjectRoot.scrollIntoView({behavior:'smooth',block:'start'});
   };
   function renderSubjects(){
+   currentActivity='Priekšmetu izvēle';
    activeLearning=false;
    area.classList.remove('learning-active');
    appBackAction=()=>{void showSchool(role);};
@@ -217,6 +222,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const dxDesc=document.createElement('p');dxDesc.textContent=diagnosticDone?'Sākuma rezultāts jau ir vēsturē. Vari apskatīt un atkārtot kā treniņu.':'12 īsi uzdevumi: matemātika, lasīšana un angļu valoda. Sāc bez steigas! Pēc misijas — neliels ģimenes pārsteigums.';
    const dxButton=document.createElement('button');dxButton.className='action-button';dxButton.type='button';dxButton.textContent=diagnosticDone?'Atkārtot kā treniņu →':'Sākt pirmo misiju →';
    dxButton.onclick=()=>{
+    currentActivity='Pirmā ekspedīcija';
     activeLearning=true;
     area.classList.add('learning-active');
     appBackAction=()=>renderSubjects();
@@ -291,6 +297,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const points=calculateChildPoints(role,progress);
    shopTile.innerHTML=`<div class="shop-summary-left"><span class="shop-summary-icon">🎁</span><div class="shop-summary-text"><strong class="shop-summary-title">Balvu veikals un mērķi</strong><span class="shop-summary-desc">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status shop-summary-btn">Atvērt veikalu →</span>`;
    shopTile.onclick=()=>{
+    currentActivity='Balvu veikals';
     activeLearning=false;
     area.classList.add('learning-active');
     appBackAction=()=>renderSubjects();
@@ -329,6 +336,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
  for(const child of ['marks','samanta','vecaks']){const b=document.createElement('button');b.textContent=schools[child][0];b.style.margin='5px';b.addEventListener('click',()=>showSchool(child));nav.append(b)}area.append(nav)}
  if(role===ROLES.PARENT){
   render7DayAnalytics(area,progress);
+  renderParentPresence(area);
   const familyPoints=document.createElement('section');familyPoints.className='module';familyPoints.style.gridColumn='1/-1';
   const fpHeading=document.createElement('h2');fpHeading.textContent='🎬 Šodienas ceļš uz kino vakaru';familyPoints.append(fpHeading);
   for(const [childRole,label] of [['marks','Marks'],['samanta','Samanta']]){
@@ -415,11 +423,13 @@ async function start(){
  try{
    const fb=await initFirebase();state.ready=Boolean(fb.isConfigured);
    if(state.ready)onAuthStateChanged(auth,async user=>{
+     if(stopPresence){stopPresence();stopPresence=null;}
      state.user=user;state.role=null;
      if(user){
        try{const profile=await getUserProfile(user.uid);
          if(profile?.approved && ['marks','samanta','vecaks'].includes(profile.role)){
            state.role=profile.role;await showSchool(profile.role);
+           if(profile.role==='marks'||profile.role==='samanta')stopPresence=startChildPresence({role:profile.role,activity:()=>currentActivity,onError:error=>console.warn('[LEVEL UP] Aktivitātes sinhronizācija:',error.code||error.message)});
          }else{await signOut(auth);showWelcome();}
        }catch(e){await signOut(auth);showWelcome();}
      }else showWelcome();
