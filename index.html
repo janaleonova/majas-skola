@@ -410,6 +410,53 @@ html[data-school-theme="marks"] #school .subject-trainer .action-button{color:#f
  html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage .numpad-key-submit{background:#059669}
  html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage .numpad-key:focus-visible{outline:3px solid #ffcf57;outline-offset:1px}
 }
+
+/* Compact, still readable arithmetic screen on Samsung phones. */
+@media (max-width:700px) and (orientation:portrait){
+ #school:has(.subject-trainer .math-hub .question-stage) .modules,
+ #school:has(.subject-trainer .marks-math .question-stage) .modules{margin-top:6px;gap:8px}
+ #school:has(.subject-trainer .math-hub .question-stage) #school-title,
+ #school:has(.subject-trainer .marks-math .question-stage) #school-title{font-size:1.25rem!important;margin:5px 0!important}
+ #school:has(.subject-trainer .math-hub .question-stage) #school-intro,
+ #school:has(.subject-trainer .marks-math .question-stage) #school-intro{display:none}
+ #school .subject-trainer .math-hub,
+ #school .subject-trainer .marks-math{padding:11px!important;border-radius:15px}
+ #school .subject-trainer .math-hub .learning-heading,
+ #school .subject-trainer .marks-math .learning-heading{padding:0 0 5px!important}
+ #school .subject-trainer .math-hub .learning-heading h2,
+ #school .subject-trainer .marks-math .learning-heading h2{font-size:1.18rem!important;margin:3px 0!important}
+ #school .subject-trainer .math-hub .learning-heading p,
+ #school .subject-trainer .marks-math .learning-heading p{font-size:.82rem!important;margin:0!important}
+ #school .subject-trainer .math-hub .learning-heading .eyebrow,
+ #school .subject-trainer .marks-math .learning-heading span:first-child{font-size:.66rem!important;padding:3px 7px}
+ #school .subject-trainer .math-hub .progress-track,
+ #school .subject-trainer .marks-math .progress-track{height:6px;margin:5px 0}
+ #school .subject-trainer .math-hub .streak-label,
+ #school .subject-trainer .marks-math .streak-label{font-size:.76rem;margin:4px 0}
+ #school .subject-trainer .math-hub .question-stage,
+ #school .subject-trainer .marks-math .question-stage{padding:10px!important;border-radius:14px}
+ #school .subject-trainer .math-hub .math-expression,
+ #school .subject-trainer .marks-math .math-expression{font-size:clamp(1.65rem,7vw,2.5rem)!important;line-height:1.15;margin:4px 0 7px!important}
+ #school .subject-trainer .math-hub .math-answer-form,
+ #school .subject-trainer .marks-math .math-answer-form{flex-direction:row!important;gap:7px;margin:5px 0}
+ #school .subject-trainer .math-hub .big-number-input,
+ #school .subject-trainer .marks-math .big-number-input{width:38%!important;min-height:43px;font-size:1.25rem!important;padding:5px}
+ #school .subject-trainer .math-hub .math-answer-form>.action-button,
+ #school .subject-trainer .marks-math .math-answer-form>.action-button{width:auto!important;flex:1;min-height:43px!important;padding:7px!important;font-size:.93rem!important}
+ #school .subject-trainer .math-hub .touch-numpad,
+ #school .subject-trainer .marks-math .touch-numpad{margin:7px auto 2px;max-width:300px}
+ #school .subject-trainer .math-hub .numpad-grid,
+ #school .subject-trainer .marks-math .numpad-grid{gap:5px}
+ #school .subject-trainer .math-hub .numpad-key,
+ #school .subject-trainer .marks-math .numpad-key{min-height:clamp(38px,5.4vh,48px);border-radius:10px;font-size:1.25rem}
+ #school .subject-trainer .math-hub .feedback-line,
+ #school .subject-trainer .marks-math p[role="status"]{margin:4px 0;font-size:.88rem}
+ #school .subject-backbar{margin:0 0 7px}
+ #school .subject-back{padding:7px 12px;min-height:37px;font-size:.85rem}
+}
+.answer-feedback{border-radius:12px;padding:9px 12px;font-size:1.1rem;font-weight:850;line-height:1.35}
+.answer-feedback-good{background:#dafbe7;color:#125a33!important}
+.answer-feedback-error{background:#fff0e6;color:#813618!important}
 </style>
 </head>
 <body>
