@@ -123,6 +123,7 @@ function render7DayAnalytics(container,allProgress){
  section.append(copyBtn);container.append(section);
 }
 async function showSchool(role){if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
+ installBackNavigation();appBackAction=()=>{void showSchool(role);};
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
  const area=$('modules');area.replaceChildren();let tasks=[],progress=[];let refreshChildDashboard=null;
@@ -148,6 +149,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
+   appBackAction=()=>renderSubjects();
    subjectRoot.replaceChildren();
    const nav=document.createElement('div');nav.className='subject-backbar';
    const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=()=>{const hero=area.querySelector('.world-hero');if(hero)hero.hidden=false;const picker=area.querySelector('.theme-picker');if(picker)picker.hidden=false;renderSubjects();};nav.append(back);subjectRoot.append(nav);
@@ -185,6 +187,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    subjectRoot.scrollIntoView({behavior:'smooth',block:'start'});
   };
   function renderSubjects(){
+   appBackAction=()=>{void showSchool(role);};
    subjectRoot.replaceChildren();
    const head=document.createElement('div');head.className='subject-intro';
    const eyebrow=document.createElement('span');eyebrow.className='eyebrow';eyebrow.textContent=role==='marks'?'TAVS MISIJU PANELIS':'IZVĒLIES MĀCĪBU PRIEKŠMETU';
@@ -198,6 +201,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const dxDesc=document.createElement('p');dxDesc.textContent=diagnosticDone?'Sākuma rezultāts jau ir vēsturē. Vari apskatīt un atkārtot kā treniņu.':'12 īsi uzdevumi: matemātika, lasīšana un angļu valoda. Sāc bez steigas! Pēc misijas — neliels ģimenes pārsteigums.';
    const dxButton=document.createElement('button');dxButton.className='action-button';dxButton.type='button';dxButton.textContent=diagnosticDone?'Atkārtot kā treniņu →':'Sākt pirmo misiju →';
    dxButton.onclick=()=>{
+    appBackAction=()=>renderSubjects();
     subjectRoot.replaceChildren();const diagContainer=document.createElement('div');subjectRoot.append(diagContainer);
     renderFirstDiagnostic(diagContainer,{role,alreadyCompleted:diagnosticDone,canSubmit:state.role===role,
       saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;},
@@ -223,6 +227,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const points=calculateChildPoints(role,progress);
    shopTile.innerHTML=`<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">🎁</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un mērķi</strong><span style="color:#6553a9;font-weight:700">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atvērt veikalu →</span>`;
    shopTile.onclick=()=>{
+    appBackAction=()=>renderSubjects();
     subjectRoot.replaceChildren();
     const nav=document.createElement('div');nav.className='subject-backbar';
     const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=renderSubjects;nav.append(back);subjectRoot.append(nav);
@@ -340,7 +345,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
 async function start(){
  $('login-form').addEventListener('submit',login);
  $('home').addEventListener('click',()=>{if(state.user && state.role){void showSchool(state.view||state.role);}else showWelcome();});
- $('back').addEventListener('click',showWelcome);
+ $('back').addEventListener('click',()=>{if(state.user&&state.role){void showSchool(state.view||state.role);}else showWelcome();});
  try{
    const fb=await initFirebase();state.ready=Boolean(fb.isConfigured);
    if(state.ready)onAuthStateChanged(auth,async user=>{
