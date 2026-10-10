@@ -348,6 +348,33 @@ html[data-school-theme="marks"] #school .modules>.module:not(.learning-hub) h2{c
 html[data-school-theme="marks"] #school .modules>.module:not(.learning-hub) p{color:#b9c9e6}
 @media(max-width:900px){html[data-school-theme="marks"] #school .levelup-marks-missions{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:650px){html[data-school-theme="marks"] #school .levelup-marks-missions{grid-template-columns:1fr}html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card{min-height:145px}html[data-school-theme="marks"] #school .world-hero-marks{min-height:330px}html[data-school-theme="marks"] #school .world-hero-marks::after{background:linear-gradient(0deg,#080e27e8,#0a163398 57%,#0b164555)}html[data-school-theme="marks"] #school .world-hero-marks .world-hero-content{min-height:330px;padding:25px}html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"]{flex-direction:column;align-items:flex-start}html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"] .subject-status{margin-left:0!important}}
+
+/* Readable world selector and visibly different teen palettes */
+html[data-school-theme="marks"] #school .theme-picker{position:relative;background:#f5f8ff!important;color:#16213e!important;border:2px solid #88a4d6!important;box-shadow:0 15px 35px #030b2361!important}
+html[data-school-theme="marks"] #school .theme-picker>strong{display:block;color:#14264b!important;font-size:clamp(1.5rem,4vw,1.9rem);text-shadow:none!important}
+html[data-school-theme="marks"] #school .theme-picker>p{color:#33415c!important;font-size:1rem;line-height:1.5}
+html[data-school-theme="marks"] #school .theme-selected{display:inline-block;background:#e3edff;color:#122f60;border-radius:11px;padding:9px 13px;margin:2px 0 17px;font-size:1rem;font-weight:900}
+html[data-school-theme="marks"] #school .theme-choice{width:auto;min-height:65px;background:white;color:#1e2c48;border:2px solid #c9d3e6;border-radius:16px;text-align:left;font-weight:900;font-size:1rem}
+html[data-school-theme="marks"] #school .theme-choice[aria-pressed="true"]{border:3px solid var(--personal-primary);background:color-mix(in srgb,var(--personal-tint) 65%,white);box-shadow:0 0 0 3px color-mix(in srgb,var(--personal-primary) 25%,transparent),0 7px 18px #11245228}
+html[data-school-theme="marks"] #school .theme-choice[aria-pressed="true"]::after{content:"✓ IZVĒLĒTS";margin-left:auto;background:#18375d;color:white;border-radius:8px;padding:6px 9px;font-size:.72rem;letter-spacing:.02em}
+html[data-school-theme="marks"] #school .theme-swatch{width:41px;height:41px;flex:none}
+html[data-school-theme="marks"] #school .world-hero-marks{border-color:var(--personal-primary)!important;box-shadow:0 16px 54px color-mix(in srgb,var(--personal-primary) 44%,transparent)!important}
+html[data-school-theme="marks"] #school .world-hero-marks::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(120deg,color-mix(in srgb,var(--personal-primary) 25%,transparent),transparent 67%);mix-blend-mode:screen}
+html[data-school-theme="marks"] #school .world-hero-marks .world-hero-content{z-index:2}
+html[data-school-theme="marks"] #school .world-hero-marks .world-kicker{border-color:var(--personal-accent)!important;background:color-mix(in srgb,var(--personal-primary) 36%,#10203d)!important;color:#fff!important}
+html[data-school-theme="marks"] #school .subjects-root{border-color:var(--personal-primary)!important;background:linear-gradient(145deg,color-mix(in srgb,var(--personal-primary) 20%,#101831),#11172e 80%)!important}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card{border-color:var(--personal-primary)!important;background:linear-gradient(155deg,color-mix(in srgb,var(--personal-primary) 33%,#142038),#111a34)!important}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-status{background:var(--personal-accent)!important;color:#091b32!important}
+html[data-school-theme="marks"] #school .levelup-marks-status{border-color:var(--personal-accent)!important;background:color-mix(in srgb,var(--personal-primary) 35%,#102342)!important;color:#fff!important}
+html[data-school-theme="marks"][data-theme-variant="dragon"] body{background:radial-gradient(circle at 88% 12%,#3a2e89 0%,transparent 42%),linear-gradient(150deg,#080e22,#1c1644)!important}
+html[data-school-theme="marks"][data-theme-variant="night"] body{background:radial-gradient(circle at 80% 9%,#285b84 0%,transparent 44%),linear-gradient(150deg,#08142a,#142c45)!important}
+html[data-school-theme="marks"][data-theme-variant="forest"] body{background:radial-gradient(circle at 85% 10%,#275a49 0%,transparent 45%),linear-gradient(150deg,#0b1b26,#16392f)!important}
+@media(max-width:700px){
+ html[data-school-theme="marks"] #school .theme-picker{padding:19px!important;border-radius:24px}
+ html[data-school-theme="marks"] #school .theme-choice{width:100%;padding:13px 16px;gap:12px}
+ html[data-school-theme="marks"] #school .theme-choice[aria-pressed="true"]::after{font-size:.65rem;padding:5px 7px}
+ html[data-school-theme="marks"] #school .theme-picker>strong{font-size:1.55rem}
+}
 </style>
 </head>
 <body>
