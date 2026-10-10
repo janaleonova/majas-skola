@@ -115,8 +115,11 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
    const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});s.streak=good?(s.streak||0)+1:0;s.maxStreak=Math.max(s.maxStreak||0,s.streak);if(!good)s.misses.push(q);
    inp.disabled=true;submit.disabled=true;
    numpad.querySelectorAll('button').forEach(b=>b.disabled=true);
-   feedback.textContent=good?'✅ Pareizi! Tu to paveici!':s.mode==='exam'?'Atbilde pieņemta. Pareizo atbildi redzēsi rezultātu pārskatā.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;
-   button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Nākamais →',()=>{s.index++;step();});
+   feedback.textContent=good?'🎉 Pareizi! Malacis!':s.mode==='exam'?'Atbilde pieņemta. Pareizo atbildi redzēsi rezultātu pārskatā.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;
+   feedback.className='feedback-line answer-feedback '+(good?'answer-feedback-good':'answer-feedback-error');
+   const advance=()=>{if(!card.isConnected)return;s.index++;step();};
+   button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Turpināt uzreiz →',advance);
+   if(good||s.mode!=='exam')setTimeout(advance,good?1150:3000);
   };
  }
  async function finish(){const s=session,pct=Math.round(s.correct/s.items.length*100);errors=s.misses;currentMode=s.type;family=s.fam;
