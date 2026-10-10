@@ -513,6 +513,30 @@ html[data-school-theme="marks"] #school .subject-trainer .action-button{color:#f
  #school .modules>.module:not(.learning-hub){grid-column:span 6!important;min-width:0!important}
  #school .modules>.module:not(.learning-hub):has(.topic-grid){grid-column:1/-1!important}
 }
+
+/* Phone usability: keep the results and touch keypad compact, not the text tiny. */
+@media (max-width:700px){
+ #school .subject-trainer .marks-math .result-hero,
+ #school .subject-trainer .math-hub .result-hero{font-size:clamp(2.2rem,9vw,3.4rem)!important;padding:12px!important;margin:10px 0!important;line-height:1.1!important}
+ #school .subject-trainer .marks-math .learning-heading,
+ #school .subject-trainer .math-hub .learning-heading{padding:4px 0 10px!important}
+ #school .subject-trainer .marks-math .learning-heading h2,
+ #school .subject-trainer .math-hub .learning-heading h2{font-size:1.5rem!important;line-height:1.22!important}
+ #school .subject-trainer .marks-math .learning-heading p,
+ #school .subject-trainer .math-hub .learning-heading p{line-height:1.4!important;margin:3px 0!important}
+ #school .subject-trainer .marks-math>.action-button,
+ #school .subject-trainer .math-hub>.action-button{display:block;width:100%;max-width:340px;margin:7px auto!important;padding:11px 13px!important;min-height:44px!important}
+ #school .subject-trainer .marks-math .question-stage .big-number-input[readonly],
+ #school .subject-trainer .math-hub .question-stage .big-number-input[readonly]{caret-color:transparent;touch-action:manipulation}
+}
+@media (orientation:landscape) and (min-width:600px) and (max-height:650px){
+ #school .subject-trainer .marks-math .result-hero,
+ #school .subject-trainer .math-hub .result-hero{font-size:2.8rem!important;max-width:360px!important;margin:8px auto!important;padding:10px!important}
+ #school .subject-trainer .marks-math>.action-button,
+ #school .subject-trainer .math-hub>.action-button{display:inline-flex!important;width:auto!important;min-height:40px!important;margin:5px!important}
+ #school .subject-trainer .marks-math>.result-hero~p,
+ #school .subject-trainer .math-hub>.result-hero~p{line-height:1.35!important;margin:7px 0!important}
+}
 </style>
 </head>
 <body>
