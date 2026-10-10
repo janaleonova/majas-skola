@@ -1,13 +1,13 @@
 {
-  "name": "Mājas skola",
-  "short_name": "MājasSkola",
-  "description": "Mājas skola — Marka, Samantas un vecāku mācību vide ar individuāliem priekšmetiem, trenažieriem un motivāciju.",
+  "name": "LEVEL UP!",
+  "short_name": "LEVEL UP",
+  "description": "LEVEL UP! — personīgās mācību misijas, prasmes un sasniegumi.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
-  "background_color": "#f5f7ff",
-  "theme_color": "#13273e",
+  "background_color": "#0a1026",
+  "theme_color": "#101a36",
   "lang": "lv",
   "icons": [
     {
