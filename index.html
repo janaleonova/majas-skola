@@ -537,6 +537,18 @@ html[data-school-theme="marks"] #school .subject-trainer .action-button{color:#f
  #school .subject-trainer .marks-math>.result-hero~p,
  #school .subject-trainer .math-hub>.result-hero~p{line-height:1.35!important;margin:7px 0!important}
 }
+
+/* Focus view: while learning, do not place Tasks/Results underneath the live question. */
+#school .modules.learning-active > :not(.subjects-root){display:none!important}
+#school .modules.learning-active > .subjects-root{grid-column:1/-1!important;min-width:0}
+#school .modules.learning-active .subject-trainer{width:100%;min-width:0}
+#school .modules.learning-active .marks-math .question-stage,
+#school .modules.learning-active .math-hub .question-stage{display:block;visibility:visible;min-height:0;overflow:visible}
+@media(max-width:700px){
+ #school .modules.learning-active{margin-top:5px!important}
+ #school .modules.learning-active .subjects-root{padding:9px!important}
+ #school .modules.learning-active .subject-trainer .learning-hub{margin:0!important}
+}
 </style>
 </head>
 <body>
