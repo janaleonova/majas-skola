@@ -360,3 +360,26 @@ export async function deleteParentTestProgress(progressIds){
   }
   return count;
 }
+
+/**
+ * Parent-only reset of progress owned by exactly one child. This never touches
+ * user profiles, tasks, settings or unrelated Datorika HUB collections.
+ * Firestore Security Rules must independently permit parent deletion.
+ */
+export async function resetChildProgress(childRole,expectedCount){
+ const parent=auth?.currentUser;
+ if(!db||!parent)throw new Error('Nepieciešama vecāka pieteikšanās.');
+ if(childRole!==ROLES.MARKS&&childRole!==ROLES.SAMANTA)throw new Error('Nepareiza bērna izvēle.');
+ const profile=await getUserProfile(parent.uid);
+ if(profile?.role!==ROLES.PARENT)throw new Error('Atiestatīšana pieejama tikai vecākam.');
+ const childUid=childRole===ROLES.MARKS?'w4nbeq1UguRFrvdwVSFOkk46zXA2':'txTRitErw8c4NRK87v1JFrFkoPa2';
+ const docs=await getDocs(query(getProgressColRef(),where('studentUid','==',childUid)));
+ if(typeof expectedCount!=='number'||docs.size!==expectedCount)
+  throw new Error('Ierakstu skaits ir mainījies. Atjauno lapu un apstiprini vēlreiz.');
+ // Check every record's role and ownership before any deletion.
+ for(const d of docs.docs)if(d.data().studentUid!==childUid||d.data().studentRole!==childRole)
+  throw new Error('Atrasts neatbilstošs ieraksts. Dzēšana pārtraukta.');
+ let deleted=0;
+ for(const d of docs.docs){await deleteDoc(d.ref);deleted++;}
+ return deleted;
+}
