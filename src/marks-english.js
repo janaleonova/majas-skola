@@ -16,8 +16,36 @@ export function renderMarksEnglish(root,{canSubmit=false,saveProgress=async()=>{
  function home(){host.replaceChildren();host.append(el('h2','🌍 Angļu valodas piedzīvojums'),el('p','Dienas, mēneši, gadalaiki un vietniekvārdi.'));topics.forEach(([id,title])=>button(title,()=>choose(id)));}
  function choose(id){topic=id;host.replaceChildren();host.append(el('h2',topics.find(t=>t[0]===id)[1]));button('🌱 Mācos · 8',()=>start('learn'));button('🎯 Trenējos · 12',()=>start('practice'));button('🏆 Pārbaudu sevi · 20',()=>start('exam'));button('← Priekšmeta tēmas',home);}
  function start(m){mode=m;items=shuffle(bank.filter(q=>q.topic===topic)).slice(0,m==='learn'?8:m==='exam'?20:12);index=correct=streak=best=0;misses=[];step();}
- function step(){if(index===items.length){void finish();return;}host.replaceChildren();let q=items[index];host.append(el('h2','Jautājums '+(index+1)+' / '+items.length));let bar=el('div');bar.className='progress-track';let fill=el('div');fill.className='progress-fill';fill.style.width=(100*index/items.length)+'%';bar.append(fill);host.append(bar,el('p','🔥 '+streak+' pēc kārtas · Rekords: '+best),el('h3',q.q));let form=el('form');form.className='latvian-question-form';let inp=el('input');inp.type='text';inp.required=true;inp.autocomplete='off';inp.setAttribute('aria-label','Tava atbilde');form.append(inp);let submit=el('button','Pārbaudīt');submit.type='submit';form.append(submit);host.append(form);let status=el('p');status.setAttribute('role','status');host.append(status);if(mode==='learn')button('💡 Palīdzība',()=>status.textContent=q.hint);
- form.onsubmit=e=>{e.preventDefault();let good=isCorrectEnglishAnswer(q,inp.value);correct+=Number(good);if(!good)misses.push({question:q.q,answer:q.a});streak=good?streak+1:0;best=Math.max(best,streak);inp.disabled=submit.disabled=true;status.textContent=mode==='exam'?'Atbilde saglabāta.':good?'✅ Pareizi!':'🔍 Pareizā atbilde: '+q.a;button('Nākamais →',()=>{index++;step()});};}
+ function step(){
+  if(index>=items.length){void finish();return;}
+  host.replaceChildren();const q=items[index];
+  host.append(el('h2','Jautājums '+(index+1)+' / '+items.length));
+  const bar=el('div');bar.className='progress-track';const fill=el('div');fill.className='progress-fill';fill.style.width=(100*index/items.length)+'%';bar.append(fill);host.append(bar);
+  host.append(el('p','🔥 '+streak+' pēc kārtas · Rekords: '+best),el('h3',q.q));
+  const hint=el('p','Raksti savā tempā. Tastatūras Enter neatbild jautājuma vietā.');host.append(hint);
+  const form=el('form');form.className='latvian-question-form';
+  const inp=el('input');inp.type='text';inp.required=true;inp.autocomplete='off';inp.enterKeyHint='done';inp.setAttribute('aria-label','Tava atbilde');form.append(inp);
+  const submit=el('button','Pārbaudīt atbildi');submit.type='submit';submit.className='action-button';form.append(submit);host.append(form);
+  const status=el('p');status.setAttribute('role','status');host.append(status);
+  if(mode==='learn')button('💡 Palīdzība',()=>status.textContent=q.hint);
+  // Enter on the phone keyboard must not submit an unfinished answer.
+  inp.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();inp.blur();}});
+  let checked=false,advanced=false;
+  form.addEventListener('submit',event=>{
+   event.preventDefault();
+   if(checked||!inp.value.trim())return;
+   checked=true;
+   const good=isCorrectEnglishAnswer(q,inp.value);
+   correct+=Number(good);if(!good)misses.push({question:q.q,answer:q.a});
+   streak=good?streak+1:0;best=Math.max(best,streak);
+   inp.readOnly=true;submit.disabled=true;
+   status.textContent=mode==='exam'?'Atbilde iesniegta.':good?'🎉 Pareizi! Lieliski!':'🔍 Pareizā atbilde: '+q.a;
+   const next=button(index+1===items.length?'Skatīt rezultātu →':'Nākamais jautājums →',()=>{
+    if(advanced)return;advanced=true;index++;step();
+   });
+   next.style.marginTop='12px';
+  });
+ }
  async function finish(){let percent=Math.round(correct/items.length*100);host.replaceChildren();host.append(el('h2','Rezultāts: '+percent+'%'),el('p','Pareizi '+correct+' no '+items.length+' · Garākā sērija: '+best));if(misses.length){const review=el('div');review.className='soft-notice';review.append(el('h3','Pareizās atbildes'));for(const miss of misses)review.append(el('p',miss.question+' → '+miss.answer));host.append(review);}let stat=el('p');host.append(stat);if(canSubmit)try{const id=await saveProgress({studentRole:'marks',subject:'Angļu valoda',activityType:topic+' · '+mode,score:percent,notes:JSON.stringify({correct,total:items.length,streak:best})});stat.textContent=id?'✅ Saglabāts Firebase':'⚠️ Nav apstiprināta saglabāšana';}catch{stat.textContent='⚠️ Saglabāšana neizdevās';}button('Atkārtot',()=>start(mode));button('← Tēmas',home);}
  home();
 }
