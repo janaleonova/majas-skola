@@ -42,10 +42,11 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
  function history(){if(!storagePrefix)return [];try{const x=JSON.parse(localStorage.getItem(historyKey)||'[]');return Array.isArray(x)?x.slice(-50):[];}catch{return [];}}
  function store(result){if(!storagePrefix)return;try{localStorage.setItem(historyKey,JSON.stringify([...history(),result].slice(-50)));}catch{}}
  const host=document.createElement('section');host.className='module learning-hub math-hub';host.style.gridColumn='1/-1';container.append(host);
- let session=null,errors=[],currentMode='mixed',family=0;
+ let session=null,errors=[],currentMode='mixed',family=0,answerTimer=null;
+ const stopAnswerTimer=()=>{if(answerTimer!==null){clearTimeout(answerTimer);answerTimer=null;}};
  function el(tag,cls,text){const e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
  function button(parent,text,action,cls='action-button'){const b=el('button',cls,text);b.type='button';b.onclick=action;parent.append(b);return b;}
- function shell(title,subtitle){host.replaceChildren();const head=el('div','learning-heading');head.append(el('span','eyebrow','✦ SAMANTAS MATEMĀTIKAS LABORATORIJA'),el('h2','',title),el('p','',subtitle));host.append(head);}
+ function shell(title,subtitle){stopAnswerTimer();host.replaceChildren();const head=el('div','learning-heading');head.append(el('span','eyebrow','✦ SAMANTAS MATEMĀTIKAS LABORATORIJA'),el('h2','',title),el('p','',subtitle));host.append(head);}
  function welcome(){
   shell('Skaitļu piedzīvojums','Reizini, dali un kļūsti arvien drošāka! Te vari mēģināt tik reižu, cik vēlies.');
   const stats=history().filter(x=>x.type);if(stats.length){
@@ -110,16 +111,16 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
   const submit=el('button','action-button','Pārbaudīt');submit.type='submit';form.append(submit);card.append(form,feedback);
   const numpad=attachTouchNumpad(card,inp);
   host.append(card);
-  inp.focus({preventScroll:true});
-  form.onsubmit=e=>{e.preventDefault();const val=Number(inp.value);if(!Number.isInteger(val)||inp.value==='')return;
+  // Do not focus the answer automatically on phones: it may open Samsung's keyboard.
+  let answered=false,advanced=false;form.onsubmit=e=>{e.preventDefault();if(answered||!card.isConnected)return;const val=Number(inp.value);if(!Number.isInteger(val)||inp.value==='')return;answered=true;
    const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});s.streak=good?(s.streak||0)+1:0;s.maxStreak=Math.max(s.maxStreak||0,s.streak);if(!good)s.misses.push(q);
    inp.disabled=true;submit.disabled=true;
    numpad.querySelectorAll('button').forEach(b=>b.disabled=true);
    feedback.textContent=good?'🎉 Pareizi! Malacis!':s.mode==='exam'?'Atbilde pieņemta. Pareizo atbildi redzēsi rezultātu pārskatā.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;
    feedback.className='feedback-line answer-feedback '+(good?'answer-feedback-good':'answer-feedback-error');
-   const advance=()=>{if(!card.isConnected)return;s.index++;step();};
+   const advance=()=>{if(advanced||!card.isConnected)return;advanced=true;stopAnswerTimer();s.index++;step();};
    button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Turpināt uzreiz →',advance);
-   if(good||s.mode!=='exam')setTimeout(advance,good?1150:3000);
+   if(good||s.mode!=='exam')answerTimer=setTimeout(advance,good?1150:3000);
   };
  }
  async function finish(){const s=session,pct=Math.round(s.correct/s.items.length*100);errors=s.misses;currentMode=s.type;family=s.fam;
