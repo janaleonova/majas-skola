@@ -307,6 +307,47 @@ html{scroll-padding-top:86px}
 @media(max-width:980px){
  #school:has(.world-hero) .modules > .module:not(.learning-hub){grid-column:1 / -1;}
 }
+
+/* LEVEL UP — Marks' teen-oriented RPG dashboard. Samanta and parent remain unchanged. */
+html[data-school-theme="marks"] #school{color:#eaf3ff}
+html[data-school-theme="marks"] #school-title{color:#eaf3ff;letter-spacing:.01em}
+html[data-school-theme="marks"] #school-intro{color:#aec6ed}
+html[data-school-theme="marks"] body,
+html[data-school-theme="marks"]{background:radial-gradient(circle at 88% 15%,#243d70 0,transparent 31%),linear-gradient(150deg,#080e22 0%,#121b38 53%,#17102f 100%);background-attachment:fixed}
+html[data-school-theme="marks"] #school .world-hero-marks{border:1px solid #6688ce5c;border-radius:28px;min-height:470px;background:#121a31;box-shadow:0 24px 70px #02071ac0,inset 0 0 0 1px #ffffff12}
+html[data-school-theme="marks"] #school .world-hero-marks::after{background:linear-gradient(90deg,#080e27ee 0%,#0b1434ca 33%,#0d17342b 73%,#0a12331c)}
+html[data-school-theme="marks"] #school .world-hero-marks .world-hero-art{object-position:70% center}
+html[data-school-theme="marks"] #school .world-hero-marks .world-hero-content{padding:clamp(30px,5.5vw,75px);padding-top:85px;padding-bottom:90px;max-width:700px}
+html[data-school-theme="marks"] #school .world-hero-marks h2{font-size:clamp(2.2rem,5vw,4.6rem);max-width:630px;letter-spacing:-.025em;text-shadow:0 6px 30px #050816}
+html[data-school-theme="marks"] #school .world-hero-marks .world-kicker{background:#0c204eab;border:1px solid #82c6ff8f;letter-spacing:.15em;color:#b9efff}
+html[data-school-theme="marks"] #school .subjects-root{border:1px solid #6879b452;border-radius:26px;background:linear-gradient(150deg,#111d3be8,#171835eb);padding:clamp(16px,2.7vw,32px);box-shadow:0 25px 70px #05081b7c}
+html[data-school-theme="marks"] #school .subject-intro{padding:0 0 15px}
+html[data-school-theme="marks"] #school .subject-intro h2{color:#f3f8ff;font-size:clamp(1.6rem,3vw,2.3rem)}
+html[data-school-theme="marks"] #school .subject-intro p{color:#b9c5e3}
+html[data-school-theme="marks"] #school .subject-intro .eyebrow{color:#8fe3ff}
+html[data-school-theme="marks"] #school .levelup-marks-status{display:inline-flex;align-items:center;padding:10px 15px;border-radius:999px;background:#1a33579c;border:1px solid #4d759b99;color:#b6e9ff;font-size:.84rem;font-weight:800;margin-bottom:23px;letter-spacing:.015em}
+html[data-school-theme="marks"] #school .levelup-marks-missions{grid-template-columns:repeat(3,minmax(0,1fr));gap:15px}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card{min-width:0;min-height:212px;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;text-align:left;gap:14px;padding:22px;background:linear-gradient(150deg,#21335a,#131d39)!important;border:1px solid #668bcb77!important;border-radius:20px;box-shadow:0 10px 30px #080e279c;transition:transform .18s,border-color .18s,box-shadow .18s}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card:not(:disabled):hover{transform:translateY(-3px);border-color:#6ed9ff!important;box-shadow:0 14px 33px #0a1b49a8}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card:focus-visible{outline:3px solid #73e8fa;outline-offset:3px}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card strong{font-size:clamp(1.2rem,1.8vw,1.55rem);color:#f5f8ff;line-height:1.25}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-description{color:#b9cae9;line-height:1.45}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-symbol{font-size:2.2rem;filter:drop-shadow(0 0 16px #679eff7f)}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-status{background:#70e9ab;color:#092d35;border-radius:12px;padding:11px 15px;font-weight:900;margin-top:auto;align-self:flex-start}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"]{grid-column:1/-1;min-height:130px;flex-direction:row;align-items:center;background:linear-gradient(110deg,#292447,#132647)!important;flex-wrap:wrap}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"] strong{color:#f6edff}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"] span{color:inherit}
+html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"] .subject-status{margin-left:auto!important}
+html[data-school-theme="marks"] #school .levelup-marks-note{font-size:.88rem;color:#a4b6d3;padding:6px 0 0}
+html[data-school-theme="marks"] #school .subjects-root>.card{background:linear-gradient(125deg,#25335d,#1a2449)!important;border:1px solid #7f94d4!important;color:#edf6ff;border-radius:20px!important;margin:6px 0 24px!important;box-shadow:0 12px 25px #070d2996}
+html[data-school-theme="marks"] #school .subjects-root>.card h3{color:#fff}
+html[data-school-theme="marks"] #school .subjects-root>.card p{color:#c5d6f5}
+html[data-school-theme="marks"] #school .subjects-root>.card button{background:#72e5aa;color:#092e3a;border:0}
+html[data-school-theme="marks"] #school .modules>.module:not(.learning-hub){background:#141e39;color:#e5efff;border:1px solid #4e669b69}
+html[data-school-theme="marks"] #school .modules>.module:not(.learning-hub) h2{color:#f3f8ff}
+html[data-school-theme="marks"] #school .modules>.module:not(.learning-hub) p{color:#b9c9e6}
+@media(max-width:900px){html[data-school-theme="marks"] #school .levelup-marks-missions{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:650px){html[data-school-theme="marks"] #school .levelup-marks-missions{grid-template-columns:1fr}html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card{min-height:145px}html[data-school-theme="marks"] #school .world-hero-marks{min-height:330px}html[data-school-theme="marks"] #school .world-hero-marks::after{background:linear-gradient(0deg,#080e27e8,#0a163398 57%,#0b164555)}html[data-school-theme="marks"] #school .world-hero-marks .world-hero-content{min-height:330px;padding:25px}html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"]{flex-direction:column;align-items:flex-start}html[data-school-theme="marks"] #school .levelup-marks-missions .subject-card[style*="grid-column"] .subject-status{margin-left:0!important}}
 </style>
 </head>
 <body>
