@@ -115,7 +115,7 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
    const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});s.streak=good?(s.streak||0)+1:0;s.maxStreak=Math.max(s.maxStreak||0,s.streak);if(!good)s.misses.push(q);
    inp.disabled=true;submit.disabled=true;
    numpad.querySelectorAll('button').forEach(b=>b.disabled=true);
-   feedback.textContent=s.mode==='exam'?'Atbilde pieņemta.':good?'✅ Pareizi! Tu to paveici!':'🔍 Vēl ne. '+q.hint;
+   feedback.textContent=good?'✅ Pareizi! Tu to paveici!':s.mode==='exam'?'Atbilde pieņemta. Pareizo atbildi redzēsi rezultātu pārskatā.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;
    button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Nākamais →',()=>{s.index++;step();});
   };
  }
@@ -124,6 +124,7 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
   host.append(el('div','result-hero',pct+'%'),el('p','result-subtitle',s.correct+' pareizi no '+s.items.length+' uzdevumiem'));
   const weak=el('div','soft-notice',s.misses.length?'Visvairāk jānostiprina '+(s.type==='multiply'?'reizināšana':s.type==='division'?'dalīšana':'dažas reizināšanas un dalīšanas darbības')+'.':'🌟 Visas atbildes pareizas!');
   host.append(weak);
+  if(s.misses.length){const review=el('div','soft-notice');review.append(el('h3','','Pareizās atbildes'));for(const q of s.misses)review.append(el('p','',q.prompt+'  →  '+q.answer));host.append(review);}
   const policy=calculatePracticePoints({correct:s.correct,total:s.items.length,maxStreak:s.maxStreak||0,mode:s.mode});
   const key=storagePrefix+'best-'+s.type+'-'+s.fam;let previous=0;if(storagePrefix)try{previous=Number(localStorage.getItem(key))||0;}catch{}
   const award=previewImprovement(previous,policy.potential);
