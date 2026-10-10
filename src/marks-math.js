@@ -39,7 +39,7 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
   }
   if(mode==='speed'){
    speedDeadline=Date.now()+60000;
-   speedTimer=setInterval(()=>{if(mode!=='speed'){stopSpeedTimer();return;}const left=Math.max(0,Math.ceil((speedDeadline-Date.now())/1000));const clock=host.querySelector('.speed-clock');if(clock)clock.textContent='⏱️ Atlikušais laiks: '+left+' s';if(left===0){stopSpeedTimer();void finish();}},200);
+   speedTimer=setInterval(()=>{if(!host.isConnected){stopSpeedTimer();return;}if(mode!=='speed'){stopSpeedTimer();return;}const left=Math.max(0,Math.ceil((speedDeadline-Date.now())/1000));const clock=host.querySelector('.speed-clock');if(clock)clock.textContent='⏱️ Atlikušais laiks: '+left+' s';if(left===0){stopSpeedTimer();void finish();}},200);
   }
   step();
  }
