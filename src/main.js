@@ -149,6 +149,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
+   area.classList.add('learning-active');
    appBackAction=()=>renderSubjects();
    subjectRoot.replaceChildren();
    const nav=document.createElement('div');nav.className='subject-backbar';
@@ -187,6 +188,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    subjectRoot.scrollIntoView({behavior:'smooth',block:'start'});
   };
   function renderSubjects(){
+   area.classList.remove('learning-active');
    appBackAction=()=>{void showSchool(role);};
    subjectRoot.replaceChildren();
    const head=document.createElement('div');head.className='subject-intro';
@@ -201,6 +203,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const dxDesc=document.createElement('p');dxDesc.textContent=diagnosticDone?'Sākuma rezultāts jau ir vēsturē. Vari apskatīt un atkārtot kā treniņu.':'12 īsi uzdevumi: matemātika, lasīšana un angļu valoda. Sāc bez steigas! Pēc misijas — neliels ģimenes pārsteigums.';
    const dxButton=document.createElement('button');dxButton.className='action-button';dxButton.type='button';dxButton.textContent=diagnosticDone?'Atkārtot kā treniņu →':'Sākt pirmo misiju →';
    dxButton.onclick=()=>{
+    area.classList.add('learning-active');
     appBackAction=()=>renderSubjects();
     subjectRoot.replaceChildren();const diagContainer=document.createElement('div');subjectRoot.append(diagContainer);
     renderFirstDiagnostic(diagContainer,{role,alreadyCompleted:diagnosticDone,canSubmit:state.role===role,
@@ -227,6 +230,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const points=calculateChildPoints(role,progress);
    shopTile.innerHTML=`<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">🎁</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un mērķi</strong><span style="color:#6553a9;font-weight:700">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atvērt veikalu →</span>`;
    shopTile.onclick=()=>{
+    area.classList.add('learning-active');
     appBackAction=()=>renderSubjects();
     subjectRoot.replaceChildren();
     const nav=document.createElement('div');nav.className='subject-backbar';
