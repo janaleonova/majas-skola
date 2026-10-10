@@ -8,7 +8,7 @@ import { applyPersonalTheme,renderThemePicker } from './personal-theme.js';
 import { renderSamantaMath } from './samanta-math.js';
 import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
-import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,ROLES} from './firebase/homeSchoolService.js';
+import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,resetChildProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
 const $=id=>document.getElementById(id);
 const schools={marks:['🐉 Marka skola','Mācību spēles un progress'],samanta:['🎨 Samantas skola','Uzdevumi un sasniegumi'],vecaks:['📋 Vecāka panelis','Abu bērnu mācību pārskats']};
@@ -257,6 +257,29 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    finally{remove.disabled=false;}
   });
   area.append(panel);
+  const resetPanel=document.createElement('section');resetPanel.className='module';resetPanel.style.gridColumn='1/-1';
+  const resetTitle=document.createElement('h2');resetTitle.textContent='Bērnu progresa atiestatīšana';resetPanel.append(resetTitle);
+  const resetInfo=document.createElement('p');resetInfo.textContent='Dzēš tikai izvēlētā bērna Firebase mācību rezultātus. Konti, uzdevumi un Datorika HUB netiek skarti. Dzēšanu nevar atsaukt. Telefonā saglabātā lokālā treniņu statistika var palikt.';resetPanel.append(resetInfo);
+  const resetStatus=document.createElement('p');resetStatus.setAttribute('role','status');resetPanel.append(resetStatus);
+  for(const [childRole,childName,childUid] of [[ROLES.MARKS,'Marks','w4nbeq1UguRFrvdwVSFOkk46zXA2'],[ROLES.SAMANTA,'Samanta','txTRitErw8c4NRK87v1JFrFkoPa2']]){
+   const button=document.createElement('button');button.type='button';button.textContent='Atiestatīt: '+childName;button.style.margin='6px';resetPanel.append(button);
+   button.addEventListener('click',async()=>{
+    button.disabled=true;resetStatus.textContent='Pārbaudu '+childName+' rezultātus…';
+    try{
+     const all=await getProgressHistory({role:ROLES.PARENT,userUid:state.user.uid});
+     const matching=all.filter(p=>p.studentUid===childUid&&p.studentRole===childRole);
+     if(!matching.length){resetStatus.textContent=childName+': Firebase rezultātu nav. Lokālā statistika telefonā netiek dzēsta.';return;}
+     const answer=window.prompt('Neatgriezeniski dzēst '+matching.length+' '+childName+' rezultātus? Lai apstiprinātu, ieraksti precīzi: DZĒST '+childName.toUpperCase());
+     if(answer!=='DZĒST '+childName.toUpperCase()){resetStatus.textContent='Atiestatīšana atcelta.';return;}
+     resetStatus.textContent='Dzēšu tikai '+childName+' rezultātus…';
+     const deleted=await resetChildProgress(childRole,matching.length);
+     resetStatus.textContent=childName+': izdzēsti '+deleted+' Firebase rezultāti. Lokālās statistikas notīrīšana vēl nav veikta.';
+     await showSchool(ROLES.PARENT);
+    }catch(e){resetStatus.textContent='Atiestatīšana neizdevās vai bija daļēja: '+(e?.message||'Pārbaudi Firestore atļaujas.');}
+    finally{button.disabled=false;}
+   });
+  }
+  area.append(resetPanel);
  }
  if(role===ROLES.PARENT){const form=document.createElement('form');form.className='module';form.innerHTML='<h2>Jauns uzdevums</h2><label>Nosaukums <input name="title" required maxlength="120"></label><label> Priekšmets <input name="subject" required maxlength="80"></label><label> Kam <select name="assigned"><option value="marks">Markam</option><option value="samanta">Samantai</option><option value="both">Abiem</option></select></label><button type="submit">Saglabāt</button>';
  form.addEventListener('submit',async e=>{e.preventDefault();const fd=new FormData(form);try{await createTask({title:fd.get('title'),subject:fd.get('subject'),assignedTo:fd.get('assigned'),createdByUid:state.user.uid});await showSchool(role)}catch(err){alert('Saglabāt neizdevās: '+err.message)}});area.append(form)}
