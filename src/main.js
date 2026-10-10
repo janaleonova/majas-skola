@@ -10,6 +10,18 @@ import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,resetChildProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
+let appBackAction=null;
+let backNavigationInstalled=false;
+function installBackNavigation(){
+ if(backNavigationInstalled)return;
+ backNavigationInstalled=true;
+ history.pushState({levelUp:true},'',location.href);
+ window.addEventListener('popstate',()=>{
+  if(!state.user || !state.role || $('school').hidden)return;
+  history.pushState({levelUp:true},'',location.href);
+  if(typeof appBackAction==='function')appBackAction();
+ });
+}
 const $=id=>document.getElementById(id);
 const schools={marks:['🐉 Marka skola','Mācību spēles un progress'],samanta:['🎨 Samantas skola','Uzdevumi un sasniegumi'],vecaks:['📋 Vecāka panelis','Abu bērnu mācību pārskats']};
 const escapeHTML=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
