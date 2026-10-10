@@ -8,7 +8,7 @@
 <link rel="apple-touch-icon" href="/public/icon.svg">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Mājas skola">
+<meta name="apple-mobile-web-app-title" content="LEVEL UP!">
 <title>LEVEL UP!</title>
 <meta name="description" content="Mājas skola — Marka, Samantas un vecāku vide.">
 <meta property="og:title" content="Mājas skola">
@@ -457,6 +457,62 @@ html[data-school-theme="marks"] #school .subject-trainer .action-button{color:#f
 .answer-feedback{border-radius:12px;padding:9px 12px;font-size:1.1rem;font-weight:850;line-height:1.35}
 .answer-feedback-good{background:#dafbe7;color:#125a33!important}
 .answer-feedback-error{background:#fff0e6;color:#813618!important}
+
+/* All LEVEL UP screens: compact landscape layout on phones */
+@media (orientation:landscape) and (min-width:600px) and (max-height:650px){
+ header{padding:5px 14px!important;min-height:0!important;gap:8px!important}
+ header button{min-height:36px!important;padding:5px 11px!important;font-size:.88rem!important}
+ .wrap{padding:8px 14px 18px!important;max-width:1200px!important}
+ #school-title{font-size:1.35rem!important;margin:4px 0!important}
+ #school-intro{font-size:.84rem!important;margin:0 0 5px!important}
+ #school .modules{margin-top:9px!important;gap:12px!important;grid-template-columns:repeat(12,minmax(0,1fr))}
+ #school .modules>.world-hero{grid-column:1/-1!important;min-height:160px!important;border-radius:18px!important}
+ #school .modules>.world-hero .world-hero-content{padding:18px 23px!important;min-height:160px!important}
+ #school .modules>.world-hero h2{font-size:clamp(1.45rem,3.5vw,2rem)!important;margin:6px 0!important}
+ #school .modules>.world-hero p{font-size:.86rem!important;line-height:1.35!important}
+ #school .modules>.theme-picker{grid-column:1/-1!important;padding:13px 16px!important;border-radius:16px}
+ #school .theme-picker>strong{font-size:1.15rem!important}
+ #school .theme-picker>p{margin:3px 0 8px!important}
+ #school .theme-variants{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+ #school .theme-choice{width:100%!important;min-height:49px!important;padding:7px 9px!important;font-size:.85rem!important}
+ #school .theme-swatch{width:24px!important;height:24px!important}
+ #school .subjects-root{padding:13px!important;border-radius:17px!important}
+ #school .subject-intro{padding:3px 0 8px!important}
+ #school .subject-intro h2{font-size:1.45rem!important;margin:5px 0!important}
+ #school .subject-intro p{font-size:.86rem!important;line-height:1.35!important}
+ #school .subject-grid,
+ #school .levelup-marks-missions{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
+ #school .subject-card,
+ #school .levelup-marks-missions .subject-card{min-height:142px!important;padding:12px!important;border-radius:14px!important;gap:6px!important}
+ #school .subject-card .subject-symbol{font-size:1.8rem!important}
+ #school .subject-card strong{font-size:1rem!important}
+ #school .subject-description{font-size:.78rem!important;line-height:1.3!important}
+ #school .subject-status{padding:6px 9px!important;font-size:.75rem!important}
+ #school .subject-backbar{margin:0 0 6px!important}
+ #school .subject-back{min-height:35px!important;padding:6px 12px!important;font-size:.83rem!important}
+ #school .subject-trainer{grid-column:1/-1!important;width:100%;min-width:0}
+ #school .subject-trainer .learning-hub{padding:12px 16px!important;border-radius:16px!important}
+ #school .subject-trainer .learning-heading{padding:0 0 8px!important}
+ #school .subject-trainer .learning-heading h2{font-size:1.45rem!important;margin:4px 0!important}
+ #school .subject-trainer .learning-heading p{font-size:.86rem!important}
+ #school .subject-trainer .topic-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+ #school .subject-trainer .topic-tile{min-height:110px!important;padding:12px!important;border-radius:15px!important}
+ #school .subject-trainer .topic-emoji{font-size:1.8rem!important}
+ #school .subject-trainer .topic-tile strong{font-size:1rem!important}
+ #school .subject-trainer .topic-tile small{font-size:.75rem!important}
+ #school .subject-trainer .question-stage{padding:12px 15px!important;border-radius:16px!important}
+ #school .subject-trainer .math-expression{font-size:clamp(1.8rem,4.5vw,3.2rem)!important}
+ #school .subject-trainer .touch-numpad{margin:7px auto 3px}
+ #school .subject-trainer .numpad-grid{gap:5px!important}
+ #school .subject-trainer .numpad-key{min-height:43px!important;font-size:1.35rem!important;border-radius:10px!important}
+ #school .subject-trainer .button-cluster{flex-direction:row!important;flex-wrap:wrap!important;gap:8px!important}
+ #school .subject-trainer .button-cluster button{width:auto!important;min-height:40px!important}
+ #school .subject-trainer .progress-track{margin:5px 0!important}
+ #school .subject-trainer .story-expression{font-size:1.3rem!important;line-height:1.45!important}
+ #school .module:not(.learning-hub){padding:14px!important;border-radius:16px!important}
+ #school .modules>.module:not(.learning-hub){grid-column:span 6!important;min-width:0!important}
+ #school .modules>.module:not(.learning-hub):has(.topic-grid){grid-column:1/-1!important}
+}
 </style>
 </head>
 <body>
