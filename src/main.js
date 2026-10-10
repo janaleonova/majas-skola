@@ -160,6 +160,15 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const nav=document.createElement('div');nav.className='subject-backbar';
    const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=()=>leaveLearning(renderSubjects);nav.append(back);subjectRoot.append(nav);
    const trainer=document.createElement('div');trainer.className='subject-trainer';subjectRoot.append(trainer);
+   // In-module back buttons can discard a partly completed attempt too.
+   trainer.addEventListener('click',event=>{
+    const button=event.target.closest('button');
+    if(!button||!trainer.contains(button))return;
+    const label=(button.textContent||'').trim();
+    if(!/^(?:←|⬅|Atpakaļ|Visas tēmas|Uz tēmām|Uz sākumu)/i.test(label))return;
+    if(!confirmLeaveLearning()){event.preventDefault();event.stopImmediatePropagation();return;}
+    activeLearning=false;
+   },true);
    try{
    if(id==='latviesu'&&role==='marks'){
     renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,currentUid:state.role===ROLES.MARKS?state.user.uid:'',saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
