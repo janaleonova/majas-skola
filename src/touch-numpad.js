@@ -1,6 +1,6 @@
 // Mobilā ekrāna ciparnīca (Touch Numpad) matemātikas un skaitļu ievadei
 export function attachTouchNumpad(container, inputElement, { onSubmit, onInput } = {}) {
-  const pad = document.createElement('div');
+  // The built-in touch keypad is the only keyboard on mobile.\n  // readonly prevents Samsung's soft keyboard without disabling form validation.\n  inputElement.readOnly = true;\n  inputElement.setAttribute('aria-label', 'Atbilde — izmanto ekrāna ciparnīcu');\n  inputElement.setAttribute('enterkeyhint', 'done');\n  inputElement.setAttribute('inputmode', 'none');\n  const pad = document.createElement('div');
   pad.className = 'touch-numpad';
   pad.setAttribute('role', 'group');
   pad.setAttribute('aria-label', 'Ekrāna ciparnīca skaitļu ievadei');
