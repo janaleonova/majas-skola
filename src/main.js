@@ -119,9 +119,9 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
   const hero=document.createElement('section');hero.className='world-hero world-hero-'+role;hero.style.gridColumn='1/-1';
   const art=document.createElement('img');art.src=role==='marks'?'/public/dragon-world.svg':'/public/garden-world.svg';art.alt=role==='marks'?'Pūķu sala ar pasaku pili, kalniem un pūķi':'Saulains dārzs ar namiņu, varavīksni un ziediem';art.className='world-hero-art';
   const overlay=document.createElement('div');overlay.className='world-hero-content';
-  const k=document.createElement('span');k.className='world-kicker';k.textContent=role==='marks'?'🐉 TAVA PIEDZĪVOJUMU PASAULE':'🌸 TAVA MĀCĪBU PASAULE';
-  const title=document.createElement('h2');title.textContent=role==='marks'?'Laipni lūgts Pūķu salā!':'Laipni lūgta Saulainajā dārzā!';
-  const desc=document.createElement('p');desc.textContent=role==='marks'?'Katrs atrisināts uzdevums ir vēl viens solis tavā piedzīvojumā.':'Te mācīties var savā ritmā — ar attēliem, klausīšanos un maziem sasniegumiem.';
+  const k=document.createElement('span');k.className='world-kicker';k.textContent=role==='marks'?'LEVEL UP! · DRAGON REALM':'🌸 TAVA MĀCĪBU PASAULE';
+  const title=document.createElement('h2');title.textContent=role==='marks'?'Pūķu ekspedīcija':'Laipni lūgta Saulainajā dārzā!';
+  const desc=document.createElement('p');desc.textContent=role==='marks'?'Zināšanas dod spēku. Katra misija ir solis tuvāk nākamajam līmenim.':'Te mācīties var savā ritmā — ar attēliem, klausīšanos un maziem sasniegumiem.';
   overlay.append(k,title,desc);hero.append(art,overlay);area.append(hero);
   renderThemePicker(area,role);
  }
@@ -165,10 +165,11 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
   function renderSubjects(){
    subjectRoot.replaceChildren();
    const head=document.createElement('div');head.className='subject-intro';
-   const eyebrow=document.createElement('span');eyebrow.className='eyebrow';eyebrow.textContent='IZVĒLIES MĀCĪBU PRIEKŠMETU';
-   const title=document.createElement('h2');title.textContent='Ko šodien mācīsimies?';
-   const caption=document.createElement('p');caption.textContent='Izvēlies savu mācību priekšmetu. Pieejamās tēmas atvērsies nākamajā solī.';
+   const eyebrow=document.createElement('span');eyebrow.className='eyebrow';eyebrow.textContent=role==='marks'?'TAVS MISIJU PANELIS':'IZVĒLIES MĀCĪBU PRIEKŠMETU';
+   const title=document.createElement('h2');title.textContent=role==='marks'?'Šodienas misijas':'Ko šodien mācīsimies?';
+   const caption=document.createElement('p');caption.textContent=role==='marks'?'Trīs prasmes, trīs virzieni. Izvēlies izaicinājumu — par īstu progresu, nevis klikšķiem.':'Izvēlies savu mācību priekšmetu. Pieejamās tēmas atvērsies nākamajā solī.';
    head.append(eyebrow,title,caption);subjectRoot.append(head);
+   if(role==='marks'){const status=document.createElement('div');status.className='levelup-marks-status';status.textContent='⚔️ MARKS  ·  Prasmju ekspedīcija  ·  BP maks vēl nav aktivizēts';subjectRoot.append(status);}
    const diagnosticBox=document.createElement('div');diagnosticBox.className='card';diagnosticBox.style.cssText='margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff';
    const diagnosticDone=progress.some(p=>p.activityType===DIAGNOSTIC_VERSION && p.studentRole===role && (state.role===ROLES.PARENT || p.studentUid===state.user.uid));
    const dxTitle=document.createElement('h3');dxTitle.textContent=diagnosticDone?'✅ Pirmā ekspedīcija izpildīta':'🌟 Tava pirmā ekspedīcija';
@@ -181,7 +182,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
       onBack:()=>{void showSchool(role);}});
    };
    diagnosticBox.append(dxTitle,dxDesc,dxButton);subjectRoot.append(diagnosticBox);
-   const tiles=document.createElement('div');tiles.className='subject-grid';
+   const tiles=document.createElement('div');tiles.className=role==='marks'?'subject-grid levelup-marks-missions':'subject-grid';
    for(const subject of available){
     const button=document.createElement('button');button.type='button';button.className='subject-card subject-'+subject.kind;
     button.disabled=!subject.active;
@@ -193,6 +194,7 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
     if(subject.active)button.onclick=()=>openSubject(subject.id);
     tiles.append(button);
    }
+   if(role==='marks'){const missionsNote=document.createElement('p');missionsNote.className='levelup-marks-note';missionsNote.textContent='Katru priekšmetu vari atvērt savā tempā. Dienas rotācijas un līmeņu automatizācija vēl tiek izstrādāta.';subjectRoot.append(missionsNote);}
    const shopTile=document.createElement('button');
    shopTile.type='button';shopTile.className='subject-card';
    shopTile.style.cssText='background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px';
