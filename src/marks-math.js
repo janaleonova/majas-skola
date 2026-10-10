@@ -15,16 +15,18 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
  const el=(tag,txt)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;return e;};
  const btn=(parent,txt,fn)=>{const b=el('button',txt);b.type='button';b.className='action-button';b.onclick=fn;parent.append(b);return b;};
  let chosen='',mode='',items=[],position=0,correct=0,streak=0,record=0,errors=[],entered=[],sessionToken=null,sessionError='';
+ let speedDeadline=0,speedTimer=null;
+ const stopSpeedTimer=()=>{if(speedTimer!==null){clearInterval(speedTimer);speedTimer=null;}};
  function head(title,desc){host.replaceChildren();const h=el('div');h.className='learning-heading';h.append(el('span','🐉 MARKA MATEMĀTIKA'),el('h2',title),el('p',desc));host.append(h);}
- function home(){head('Skaitļu misijas','Izvēlies misiju un trenējies savā ritmā.');const grid=el('div');grid.className='topic-grid';host.append(grid);for(const [id,name,desc] of topics){const b=el('button');b.type='button';b.className='topic-tile';b.append(el('span',name.split(' ')[0]),el('strong',name.slice(name.indexOf(' ')+1)),el('small',desc));b.onclick=()=>choose(id);grid.append(b);}}
- function choose(id){chosen=id;const label=topics.find(t=>t[0]===id);head(label[1],label[2]);btn(host,'🌱 Mācos · 8',()=>start('learn'));btn(host,'🎯 Trenējos · 12',()=>start('practice'));btn(host,'🏆 Pārbaudu sevi · 20',()=>start('exam'));btn(host,'← Misijas',home);}
+ function home(){stopSpeedTimer();head('Skaitļu misijas','Izvēlies misiju un trenējies savā ritmā.');const grid=el('div');grid.className='topic-grid';host.append(grid);for(const [id,name,desc] of topics){const b=el('button');b.type='button';b.className='topic-tile';b.append(el('span',name.split(' ')[0]),el('strong',name.slice(name.indexOf(' ')+1)),el('small',desc));b.onclick=()=>choose(id);grid.append(b);}}
+ function choose(id){stopSpeedTimer();chosen=id;const label=topics.find(t=>t[0]===id);head(label[1],label[2]);btn(host,'🌱 Mācos · 8',()=>start('learn'));btn(host,'🎯 Trenējos · 12',()=>start('practice'));btn(host,'🏆 Pārbaudu sevi · 20',()=>start('exam'));btn(host,'⚡ Ātruma treniņš · 60 sekundes',()=>start('speed'));btn(host,'← Misijas',home);}
  async function start(m,review=false){
-  mode=review?'review':m;sessionToken=null;sessionError='';entered=[];
+  stopSpeedTimer();mode=review?'review':m;sessionToken=null;sessionError='';entered=[];
   const all=makeMarksMathBank(chosen);
   const different=review?all.filter(q=>!errors.some(e=>e.id===q.id)):all;
   items=shuffle(different).slice(0,review?10:m==='learn'?8:m==='exam'?20:12);
   position=correct=streak=record=0;errors=[];
-  if(canSubmit&&!review){
+  if(canSubmit&&!review&&m!=='speed'){
    head('Gatavoju uzdevumus…','Izveidoju pārbaudāmu matemātikas sesiju.');
    try{
     if(typeof startVerifiedSession!=='function')throw Error('Nav servera pārbaudes');
@@ -35,16 +37,22 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
     sessionToken=issued.token;items=verifiedItems;
    }catch(e){sessionError='Servera pārbaude nav pieejama: '+(e?.message||'Nezināma kļūda');}
   }
+  if(mode==='speed'){
+   speedDeadline=Date.now()+60000;
+   speedTimer=setInterval(()=>{if(mode!=='speed'){stopSpeedTimer();return;}const left=Math.max(0,Math.ceil((speedDeadline-Date.now())/1000));const clock=host.querySelector('.speed-clock');if(clock)clock.textContent='⏱️ Atlikušais laiks: '+left+' s';if(left===0){stopSpeedTimer();void finish();}},200);
+  }
   step();
  }
- function step(){if(position>=items.length){void finish();return;}const q=items[position];head('Misija '+(position+1)+' no '+items.length,'Atrisini un turpini savu sēriju.');const progress=el('div');progress.className='progress-track';const fill=el('div');fill.className='progress-fill';fill.style.width=Math.round(position/items.length*100)+'%';progress.append(fill);host.append(progress);const count=el('p','🔥 '+streak+' pēc kārtas · Rekords '+record);count.className='streak-label';host.append(count);const card=el('div');card.className='question-stage';card.append(el('div',q.prompt));card.firstChild.className='math-expression';if(q.visual){const groups=el('div');groups.className='visual-groups';groups.setAttribute('role','img');groups.setAttribute('aria-label',q.visual.groups+' grupas pa '+q.visual.each);for(let i=0;i<q.visual.groups;i++){const g=el('div');g.className='visual-group';for(let j=0;j<q.visual.each;j++){const icon=el('span',q.visual.icon);icon.className='visual-object';g.append(icon);}groups.append(g);}card.append(groups);}const form=el('form');form.className='math-answer-form';const input=el('input');input.type='number';input.inputMode='numeric';input.required=true;input.min=0;input.max=100;input.step=1;input.className='big-number-input';input.setAttribute('aria-label','Tava atbilde');const submit=el('button','Pārbaudīt');submit.type='submit';submit.className='action-button';form.append(input,submit);card.append(form);const status=el('p');status.setAttribute('role','status');card.append(status);const numpad=attachTouchNumpad(card,input);host.append(card);if(mode==='learn')btn(card,'💡 Pavediena palīdzība',()=>{status.textContent=q.hint;});form.onsubmit=e=>{e.preventDefault();const value=Number(input.value);if(input.value===''||!Number.isInteger(value))return;entered.push(value);const ok=value===q.answer;correct+=Number(ok);streak=ok?streak+1:0;record=Math.max(record,streak);if(!ok)errors.push(q);input.disabled=submit.disabled=true;numpad.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=mode==='exam'?'Atbilde pieņemta.':ok?'✅ Pareizi!':'🔎 '+q.hint;btn(card,'Nākamais →',()=>{position++;step();});};}
+ function step(){if(position>=items.length){void finish();return;}const q=items[position];head('Misija '+(position+1)+' no '+items.length,'Atrisini un turpini savu sēriju.');if(mode==='speed'){const timer=el('p','⏱️ Atlikušais laiks: '+Math.max(0,Math.ceil((speedDeadline-Date.now())/1000))+' s · 12 jautājumi');timer.className='speed-clock';timer.setAttribute('role','timer');host.append(timer);}
+ const progress=el('div');progress.className='progress-track';const fill=el('div');fill.className='progress-fill';fill.style.width=Math.round(position/items.length*100)+'%';progress.append(fill);host.append(progress);const count=el('p','🔥 '+streak+' pēc kārtas · Rekords '+record);count.className='streak-label';host.append(count);const card=el('div');card.className='question-stage';card.append(el('div',q.prompt));card.firstChild.className='math-expression';if(q.visual){const groups=el('div');groups.className='visual-groups';groups.setAttribute('role','img');groups.setAttribute('aria-label',q.visual.groups+' grupas pa '+q.visual.each);for(let i=0;i<q.visual.groups;i++){const g=el('div');g.className='visual-group';for(let j=0;j<q.visual.each;j++){const icon=el('span',q.visual.icon);icon.className='visual-object';g.append(icon);}groups.append(g);}card.append(groups);}const form=el('form');form.className='math-answer-form';const input=el('input');input.type='number';input.inputMode='numeric';input.required=true;input.min=0;input.max=100;input.step=1;input.className='big-number-input';input.setAttribute('aria-label','Tava atbilde');const submit=el('button','Pārbaudīt');submit.type='submit';submit.className='action-button';form.append(input,submit);card.append(form);const status=el('p');status.setAttribute('role','status');card.append(status);const numpad=attachTouchNumpad(card,input);host.append(card);if(mode==='learn')btn(card,'💡 Pavediena palīdzība',()=>{status.textContent=q.hint;});form.onsubmit=e=>{e.preventDefault();const value=Number(input.value);if(input.value===''||!Number.isInteger(value))return;entered.push(value);const ok=value===q.answer;correct+=Number(ok);streak=ok?streak+1:0;record=Math.max(record,streak);if(!ok)errors.push(q);input.disabled=submit.disabled=true;numpad.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=mode==='exam'?'Atbilde pieņemta.':ok?'✅ Pareizi!':'🔎 '+q.hint;btn(card,'Nākamais →',()=>{position++;step();});};}
  async function finish(){
+  stopSpeedTimer();
   const localPct=Math.round(correct/items.length*100);
   head('Misija pabeigta!','Katrs mēģinājums nostiprina prasmes.');
   const score=el('div',localPct+'%');score.className='result-hero';
   host.append(score,el('p',correct+' / '+items.length+' pareizi · Garākā sērija '+record));
   const note=el('p');note.setAttribute('role','status');host.append(note);
-  if(canSubmit&&mode!=='review'){
+  if(canSubmit&&mode!=='review'&&mode!=='speed'){
    if(!sessionToken||typeof gradeVerifiedSession!=='function'){
     note.textContent='⚠️ '+(sessionError||'Servera pārbaude nav pieejama.')+' Rezultāts nav saglabāts.';
    }else{
@@ -58,7 +66,8 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
      note.textContent='✅ Serveris pārbaudīja un Firebase saglabāja rezultātu. Tērējamie BP netika piešķirti.';
     }catch(e){note.textContent='⚠️ Pārbaude vai saglabāšana neizdevās: '+(e.message||'Kļūda')+'. Rezultāts nav apstiprināts.';}
    }
-  }else if(mode==='review')note.textContent='Kļūdu treniņš — bez BP un bez statistikas ieraksta.';
+  }else if(mode==='speed')note.textContent='⚡ Ātruma treniņš: '+entered.length+' no '+items.length+' atbildēti 60 sekundēs. Šis laika tests ir treniņš bez BP un Firebase ieraksta.';
+  else if(mode==='review')note.textContent='Kļūdu treniņš — bez BP un bez statistikas ieraksta.';
   else note.textContent='Vecāka priekšskatījums — rezultāts netiek ieskaitīts.';
   if(errors.length)btn(host,'🎯 Trenēt kļūdas ar citiem piemēriem',()=>{void start(mode,true);});
   btn(host,'Atkārtot misiju',()=>{void start(mode);});
