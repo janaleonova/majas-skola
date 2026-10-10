@@ -385,6 +385,31 @@ html[data-school-theme="marks"] #school .subject-trainer p,
 html[data-school-theme="marks"] #school .subject-trainer label{color:#20304c}
 html[data-school-theme="marks"] #school .subject-back{color:#182d55;background:#fff;border-color:#81a6d7}
 html[data-school-theme="marks"] #school .subject-trainer .action-button{color:#fff}
+
+/* Marks: landscape phone maths — equation on left, touch keypad on right. */
+@media (orientation:landscape) and (min-width:600px) and (max-height:650px){
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math{padding:12px 16px;border-radius:18px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .learning-heading{padding:0 0 5px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .learning-heading h2{font-size:1.25rem;margin:2px 0}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .learning-heading p{font-size:.82rem;margin:0}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .learning-heading span{font-size:.72rem}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .progress-track{margin:5px 0;height:7px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .streak-label{margin:4px 0;font-size:.82rem}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage{display:grid;grid-template-columns:minmax(0,1fr) minmax(210px,42%);grid-template-rows:auto auto 1fr;align-items:start;column-gap:16px;row-gap:8px;padding:12px 14px;min-height:280px;overflow:visible}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.math-expression{grid-column:1;grid-row:1;font-size:clamp(1.8rem,5vw,3.4rem);align-self:center;min-width:0;padding:9px 0}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.math-answer-form{grid-column:1;grid-row:2;display:flex;flex-direction:row;flex-wrap:wrap;gap:8px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.math-answer-form>.big-number-input{width:110px!important;max-width:45%;min-height:48px;font-size:1.5rem}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.math-answer-form>.action-button{width:auto!important;min-height:48px;padding:9px 15px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.touch-numpad{grid-column:2;grid-row:1 / span 4;width:100%;max-width:none;margin:0}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage .numpad-grid{gap:5px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage .numpad-key{min-height:46px;font-size:1.45rem;border-radius:12px}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>p[role="status"]{grid-column:1;grid-row:3;font-size:.9rem}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.action-button{grid-column:1;grid-row:4;justify-self:stretch}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.visual-groups{grid-column:1;max-height:85px;overflow:auto}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage>.reading-controls{grid-column:1}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage .numpad-key-submit{background:#059669}
+ html[data-school-theme="marks"] #school .subject-trainer .marks-math .question-stage .numpad-key:focus-visible{outline:3px solid #ffcf57;outline-offset:1px}
+}
 </style>
 </head>
 <body>
