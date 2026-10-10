@@ -138,8 +138,9 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
   const openSubject=id=>{
    subjectRoot.replaceChildren();
    const nav=document.createElement('div');nav.className='subject-backbar';
-   const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=renderSubjects;nav.append(back);subjectRoot.append(nav);
+   const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=()=>{const hero=area.querySelector('.world-hero');if(hero)hero.hidden=false;const picker=area.querySelector('.theme-picker');if(picker)picker.hidden=false;renderSubjects();};nav.append(back);subjectRoot.append(nav);
    const trainer=document.createElement('div');trainer.className='subject-trainer';subjectRoot.append(trainer);
+   try{
    if(id==='latviesu'&&role==='marks'){
     renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,currentUid:state.role===ROLES.MARKS?state.user.uid:'',saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
    }else if(id==='matematika'&&role==='marks'){
@@ -156,6 +157,15 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
     renderSamantaEnglish(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
    }else if(id==='latviesu'&&role==='samanta'){
     renderSamantaLatvian(trainer,{canSubmit:state.role===ROLES.SAMANTA,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
+   }
+   }catch(error){
+    console.error('[LEVEL UP] Priekšmeta atvēršana neizdevās:',{role,subject:id,error});
+    trainer.replaceChildren();
+    const message=document.createElement('section');message.className='module learning-hub';message.setAttribute('role','alert');
+    const title=document.createElement('h2');title.textContent='Neizdevās atvērt priekšmetu';
+    const detail=document.createElement('p');detail.textContent='Radās tehniska kļūda. Atgriezies pie priekšmetiem vai atver lietotni no jauna.';
+    const retry=document.createElement('button');retry.type='button';retry.className='action-button';retry.textContent='Mēģināt vēlreiz';retry.onclick=()=>openSubject(id);
+    message.append(title,detail,retry);trainer.append(message);
    }
    // Learning mode focuses on the task rather than the decorative dashboard.
    const hero=area.querySelector('.world-hero');if(hero)hero.hidden=true;
