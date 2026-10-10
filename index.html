@@ -744,4 +744,35 @@ window.addEventListener('beforeinstallprompt', function(e) {
 });
 </script>
 <script type="module" src="/public/bundle.js"></script>
+<script>
+(function(){
+  const mobile=()=>window.matchMedia('(pointer:coarse) and (max-width:950px)').matches;
+  const landscape=()=>window.matchMedia('(orientation: landscape)').matches;
+  const control=document.createElement('button');
+  control.type='button';control.id='levelup-landscape-control';
+  control.textContent='↻ Horizontāls skats';
+  control.setAttribute('aria-label','Mēģināt ieslēgt horizontālu skatu');
+  control.style.cssText='position:fixed;right:12px;bottom:74px;z-index:9000;border:2px solid #6b8ddc;border-radius:15px;background:#11264e;color:white;padding:11px 15px;font-weight:800;font-size:14px;box-shadow:0 6px 20px #09142d77;max-width:50vw;';
+  const note=document.createElement('p');note.id='levelup-rotation-notice';note.setAttribute('role','status');note.style.cssText='position:fixed;left:12px;right:12px;bottom:135px;z-index:9001;display:none;padding:12px 16px;border-radius:14px;background:#fff;color:#162348;font-size:14px;line-height:1.45;box-shadow:0 8px 25px #09142d77;';
+  const show=()=>{control.hidden=!mobile()||landscape();if(landscape())note.style.display='none';};
+  control.addEventListener('click',async()=>{
+    let succeeded=false;
+    try{
+      if(screen.orientation && typeof screen.orientation.lock==='function'){
+        await screen.orientation.lock('landscape');
+        succeeded=landscape();
+      }
+    }catch(e){console.info('[LEVEL UP] Device does not permit orientation lock:',e?.name||'unsupported');}
+    if(!succeeded){
+      note.textContent='Samsung telefonā ieslēdz “Automātiskā pagriešana” (nevis “Portrets”), tad pagriez telefonu sāniski. Ja LEVEL UP! ir instalēta agrāk, aizver to un pārinstalē pēc jaunākās sinhronizācijas. Dažas Android PWA versijas neļauj piespiedu pagriešanu.';
+      note.style.display='block';
+    }
+    show();
+  });
+  document.body.append(control,note);
+  window.addEventListener('resize',show);
+  window.addEventListener('orientationchange',show);
+  show();
+})();
+</script>
 </body></html>
