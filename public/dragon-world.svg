@@ -1,1 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" role="img" aria-label="Pūķu sala ar kalniem, pili un pūķi"><defs><linearGradient id="sky" x2="0" y2="1"><stop stop-color="#171c4a"/><stop offset=".6" stop-color="#38358a"/><stop offset="1" stop-color="#7461cd"/></linearGradient><linearGradient id="land" x2="0" y2="1"><stop stop-color="#53e0c5"/><stop offset="1" stop-color="#17688d"/></linearGradient><radialGradient id="moon"><stop stop-color="#e9f9ff"/><stop offset="1" stop-color="#a6adff"/></radialGradient></defs><rect width="1200" height="500" fill="url(#sky)"/><g fill="#d1d9ff"><circle cx="90" cy="70" r="3"/><circle cx="220" cy="40" r="2"/><circle cx="510" cy="80" r="3"/><circle cx="690" cy="35" r="2"/><circle cx="930" cy="85" r="3"/><circle cx="1080" cy="40" r="2"/><path d="M460 38v18m-9-9h18M1050 105v24m-12-12h24" stroke="#ebdfff" stroke-width="3"/></g><circle cx="860" cy="113" r="80" fill="url(#moon)" opacity=".92"/><path d="M0 300 100 220 194 310 320 160 475 340 585 240 725 345 890 178 1050 310 1180 224 1200 255V500H0Z" fill="#292864"/><path d="M0 392 200 322 345 404 590 305 760 396 940 315 1200 379V500H0Z" fill="#374a85"/><path d="M0 458Q190 398 380 440T770 421 1200 444V500H0" fill="url(#land)"/><g transform="translate(610 192)"><path d="M15 200V90h30V50l34-29 35 29v40h20V200Z" fill="#d8cbff"/><path d="M-5 210V110h40V69h27v141M115 211V120h38V82h26v129" fill="#9c94dd"/><path d="M77 22v-23m0 0 16 12-16 10" fill="none" stroke="#efdcff" stroke-width="7"/><path d="M56 210v-57q22-28 43 0v57" fill="#35347e"/><g fill="#ffdf80"><rect x="18" y="133" width="14" height="19" rx="3"/><rect x="123" y="148" width="13" height="18" rx="3"/><rect x="75" y="79" width="14" height="22" rx="3"/></g></g><g transform="translate(295 80)"><path d="M170 105Q112 6 27 58q68 7 91 96Q45 135 18 183q116-28 178-20Z" fill="#46d7bd" stroke="#273979" stroke-width="9"/><path d="M178 104q25-75 104-69l-22 27 40 9-36 22q21 42-14 75-49 40-115-5l-27-26Z" fill="#56ead2" stroke="#263679" stroke-width="9"/><path d="M251 82q40-13 66 22l-41 1" fill="#51dbc1" stroke="#263679" stroke-width="8"/><circle cx="245" cy="97" r="7" fill="#233769"/><path d="M271 129q20 17 37 1" fill="none" stroke="#243875" stroke-width="7" stroke-linecap="round"/><path d="m152 90-13-30 26 4 2-31 31 27" fill="#cbb6ff" stroke="#243875" stroke-width="7"/></g><path d="M0 472Q280 440 500 468T1200 454V500H0" fill="#182d61" opacity=".5"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 650" role="img" aria-label="Tumša fantāzijas pasaule: pūķis, kalnu cietokšņi un kvēlojošs portāls"><defs>
+<linearGradient id="sky" x2=".82" y2="1"><stop stop-color="#080e27"/><stop offset=".5" stop-color="#26345f"/><stop offset="1" stop-color="#e39372"/></linearGradient>
+<radialGradient id="glow"><stop stop-color="#ffe8bf"/><stop offset=".3" stop-color="#ffa966" stop-opacity=".86"/><stop offset="1" stop-color="#f09b7b" stop-opacity="0"/></radialGradient>
+<linearGradient id="cliffs" x2="0" y2="1"><stop stop-color="#263957"/><stop offset="1" stop-color="#0c1934"/></linearGradient>
+<linearGradient id="dragon" x2="0" y2="1"><stop stop-color="#171c32"/><stop offset=".7" stop-color="#090d22"/><stop offset="1" stop-color="#29406a"/></linearGradient>
+<linearGradient id="water" x2="0" y2="1"><stop stop-color="#e09e91"/><stop offset=".4" stop-color="#47658b"/><stop offset="1" stop-color="#142442"/></linearGradient>
+<filter id="blur"><feGaussianBlur stdDeviation="20"/></filter>
+</defs>
+<rect width="1440" height="650" fill="url(#sky)"/>
+<circle cx="1090" cy="300" r="310" fill="url(#glow)"/><circle cx="1090" cy="300" r="92" fill="#ffd4a1" opacity=".75" filter="url(#blur)"/><circle cx="1090" cy="300" r="64" fill="#ffdaa9"/>
+<g fill="#b1c5f0" opacity=".5"><circle cx="240" cy="84" r="2"/><circle cx="680" cy="30" r="2"/><circle cx="905" cy="73" r="2"/><circle cx="1290" cy="42" r="3"/><circle cx="1180" cy="121" r="1.8"/><circle cx="760" cy="145" r="2"/></g>
+<path d="M0 370 190 260 280 338 455 166 570 320 705 218 825 340 980 255 1080 365 1290 193 1440 320V650H0Z" fill="#172541" opacity=".68"/>
+<path d="M0 440 150 370 270 415 455 280 570 402 720 320 830 415 950 333 1090 437 1250 285 1440 410V650H0Z" fill="#203451"/>
+<path d="M0 470 235 445 450 480 660 435 835 455 1060 414 1215 442 1440 418V650H0Z" fill="url(#water)"/>
+<path d="M0 530 340 488 610 542 860 486 1060 538 1440 495V650H0Z" fill="#122340" opacity=".88"/>
+<path d="M590 485 690 426 725 353 764 420 860 470 927 388 1000 489 1060 515 1440 520V650H590Z" fill="url(#cliffs)"/>
+<path d="M810 412 860 390 888 277 913 290 922 385 958 405 958 488 810 488Z" fill="#11172a"/>
+<path d="M876 279 892 233 910 278ZM804 412 820 345 836 412ZM945 405 956 335 974 405" fill="#090f21"/>
+<path d="M866 321h12v27h-12Zm30 0h10v27h-10Zm-30 48h12v27h-12Zm30 0h10v27h-10Z" fill="#e89c63"/>
+<path d="M1014 444 1040 376 1051 401 1072 334 1090 374 1110 438v60h-96Z" fill="#161d32"/><path d="M1036 385 1040 344 1054 385m13-37 6-43 12 43" stroke="#161d32" stroke-width="13" fill="none"/>
+<path d="M1160 454 1190 404 1207 420 1240 356 1270 431 1301 470V520h-141Z" fill="#10192f"/>
+<path d="M1165 490Q1050 470 965 493T755 500" stroke="#ffcc85" stroke-opacity=".48" stroke-width="3" fill="none"/>
+<g transform="translate(1080 180)" fill="url(#dragon)">
+<path d="M-120 210Q-265 92-388 112Q-310 132-320 180L-390 235Q-270 215-198 261Q-230 175-120 210Z"/>
+<path d="M-80 216Q-115 112-50 15Q-20 85 11 94Q45 25 84-14Q92 80 115 97L200 65L143 141L190 162L112 163L130 208L52 189Q31 224-28 242Z"/>
+<path d="M42 117Q-6 126-24 167L-2 230Q-52 257-69 292L5 274L22 247L58 207L107 192Q105 154 75 145Z"/>
+<path d="M20 120Q18 76 58 51Q88 50 105 70L139 67L121 87L167 96L133 109L95 108L77 137Z"/>
+<path d="M44 67L33 27L67 55L79 29L88 65" fill="#121c36"/>
+<circle cx="117" cy="90" r="5" fill="#ffad4d"/><path d="M123 108L158 115L129 121Z" fill="#293a52"/>
+<path d="M-44 216Q-30 263-80 313L-50 294L-20 248Z" fill="#0d1029"/>
+<path d="M26 232Q70 267 52 320L78 295L78 247Z" fill="#0d1029"/>
+</g>
+<path d="M0 600Q360 575 580 610T1060 600 1440 592V650H0Z" fill="#081329" opacity=".65"/>
+<g stroke="#7ac8ff" stroke-opacity=".27" fill="none"><path d="M1310 202v33m-16-16h33"/><circle cx="685" cy="115" r="17"/><circle cx="685" cy="115" r="30" opacity=".3"/></g>
+</svg>
