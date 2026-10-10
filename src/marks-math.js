@@ -67,7 +67,15 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
      note.textContent='✅ Serveris pārbaudīja un Firebase saglabāja rezultātu. Tērējamie BP netika piešķirti.';
     }catch(e){note.textContent='⚠️ Pārbaude vai saglabāšana neizdevās: '+(e.message||'Kļūda')+'. Rezultāts nav apstiprināts.';}
    }
-  }else if(mode==='speed')note.textContent='⚡ Ātruma treniņš: '+entered.length+' no '+items.length+' atbildēti 60 sekundēs. Šis laika tests ir treniņš bez BP un Firebase ieraksta.';
+  }else if(mode==='speed'){
+   note.textContent='⚡ Ātruma treniņš: '+entered.length+' no '+items.length+' atbildēti. '+(canSubmit?'Saglabāju rezultātu…':'Vecāka priekšskatījumā rezultātu nesaglabā.');
+   if(canSubmit){try{
+    const id=await saveProgress({studentRole:'marks',subject:'Matemātika',activityType:'Ātruma treniņš · '+chosen,score:localPct,notes:JSON.stringify({correct,total:items.length,answered:entered.length,maxStreak:record,durationSeconds:60,serverVerified:false,provisionalBP:true,spendableBP:0})});
+    if(!id)throw Error('Firebase neapstiprināja ierakstu');
+    note.textContent='✅ Ātruma treniņš saglabāts Firebase. Rezultāts piedalās provizoriskajā kino vakara BP progresā; tērējamie punkti vēl nav aktivizēti.';
+   }catch(e){note.textContent='⚠️ Ātruma treniņa saglabāšana neizdevās: '+(e.message||'Pārbaudi savienojumu');}
+   }
+  }
   else if(mode==='review')note.textContent='Kļūdu treniņš — bez BP un bez statistikas ieraksta.';
   else note.textContent='Vecāka priekšskatījums — rezultāts netiek ieskaitīts.';
   if(errors.length)btn(host,'🎯 Trenēt kļūdas ar citiem piemēriem',()=>{void start(mode,true);});
