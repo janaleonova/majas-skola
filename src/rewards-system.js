@@ -31,9 +31,17 @@ export function calculateChildPoints(role,progressRecords=[],now=new Date()){
  return {totalEarned,todayEarned,spent:0,balance:totalEarned,provisional:true,activityCount,goal:250,remaining:Math.max(0,250-totalEarned)};
 }
 const rewards=[
- {id:'phone20',title:'Papildu 20 minūtes telefonā',cost:100,icon:'📱'},
- {id:'games40',title:'Papildu 40 minūtes spēļu laika',cost:180,icon:'🎮'},
- {id:'film',title:'Ģimenes filmu vakars',cost:250,icon:'🎬'}];
+ {id:'popcorn',title:'Svaigs popkorns kino vakaram',cost:40,icon:'🍿'},
+ {id:'cola',title:'Vēsa kola vai mīļākais dzēriens kino',cost:40,icon:'🥤'},
+ {id:'icecream',title:'Mīļākais saldējums vai našķis',cost:50,icon:'🍦'},
+ {id:'extra20',title:'Papildu 20 minūtes pirms miega',cost:70,icon:'⏰'},
+ {id:'phone20',title:'Papildu 20 minūtes telefonā',cost:80,icon:'📱'},
+ {id:'movie-pick',title:'Filmas izvēles šefs piektdienā',cost:90,icon:'🎬'},
+ {id:'breakfast',title:'Svētdienas brokastu pasūtījums (pankūkas)',cost:110,icon:'🥞'},
+ {id:'board-game',title:'Galda spēļu vakars pēc bērna noteikumiem',cost:130,icon:'🎲'},
+ {id:'games40',title:'Papildu 40 minūtes spēļu laika',cost:150,icon:'🎮'},
+ {id:'film',title:'Lielais ģimenes kino vakars ar popkorna komplektu',cost:200,icon:'👑'}
+];
 const claims=()=>collection(db,'homeSchool','data','rewardRequests');
 const make=(tag,text)=>{const e=document.createElement(tag);if(text!==undefined)e.textContent=text;return e;};
 const button=(parent,label,handler)=>{const b=make('button',label);b.type='button';b.className='action-button';b.onclick=handler;parent.append(b);return b;};
@@ -53,7 +61,7 @@ export function renderRewardShop(container,{studentRole,progressRecords=[],onBac
  const draw=async()=>{
   list.replaceChildren();try{
    const user=await identity();const existing=await getRequests(studentRole);
-   for(const reward of rewards){const card=make('div');card.className='card';card.append(make('h3',reward.icon+' '+reward.title),make('p','Plānotā cena: '+reward.cost+' BP (punktu tērēšana vēl nav ieslēgta).'));
+   for(const reward of rewards){const card=make('div');card.className='card reward-coupon-card';card.append(make('h3',reward.icon+' '+reward.title),make('p','Plānotā cena: '+reward.cost+' BP (punktu tērēšana vēl nav ieslēgta).'));
     const own=existing.find(c=>c.rewardId===reward.id&&c.status==='pending');
     const b=button(card,own?'⏳ Gaida vecāka atbildi':'💌 Pieteikt vēlmi',async()=>{b.disabled=true;try{await submitWish(studentRole,reward);status.textContent='Vēlme saglabāta Firebase. Vecāks to varēs redzēt savā panelī.';await draw();}catch(e){status.textContent='Neizdevās: '+e.message;b.disabled=false;}});
     b.disabled=Boolean(own)||user.role!==studentRole;list.append(card);

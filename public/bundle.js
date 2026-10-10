@@ -1,7 +1,156 @@
 (() => {
+  // src/first-diagnostic.js
+  var DIAGNOSTIC_VERSION = "starta-misija-v1";
+  var q = (skill, prompt, choices, answer) => ({ skill, prompt, choices, answer });
+  var DIAGNOSTICS = {
+    marks: [
+      q("math.multiply", "Cik ir 7 \xD7 8?", ["54", "56", "64"], 1),
+      q("math.divide", "Cik ir 48 \xF7 6?", ["8", "6", "9"], 0),
+      q("math.story", "4 l\u0101d\u0113s katr\u0101 ir 9 krist\u0101li. Cik kop\u0101?", ["32", "36", "49"], 1),
+      q("math.mental", "Cik ir 300 + 200 + 150?", ["550", "650", "750"], 1),
+      q("reading.ending", "Izlasi uzman\u012Bgi: \u201CEs devu gr\u0101matu draugam.\u201D Kam deva gr\u0101matu?", ["draugi", "draugam", "drauga"], 1),
+      q("reading.ending", "Kur\u0161 v\u0101rds prec\u012Bzi ir uzrakst\u012Bts: \u201CSkol\u0113ni skrien pagalm\u0101.\u201D?", ["skr\u0113ja", "skrietu", "skrien"], 2),
+      q("reading.detail", "Izlasi: \u201CL\u012Bga atnesa divas zilas kr\u016Bzes, nevis tr\u012Bs.\u201D Cik kr\u016Bzes L\u012Bga atnesa?", ["Divas", "Tr\u012Bs", "Vienu"], 0),
+      q("reading.detail", "Izlasi: \u201CMazais suns negul\u0113ja. Tas gaid\u012Bja saimnieku.\u201D Ko suns dar\u012Bja?", ["Gul\u0113ja", "Gaid\u012Bja", "Skr\u0113ja"], 1),
+      q("english.days", "K\u0101 angliski ir \u201Ctre\u0161diena\u201D?", ["Thursday", "Wednesday", "Tuesday"], 1),
+      q("english.months", "K\u0101 angliski ir \u201Coktobris\u201D?", ["October", "August", "November"], 0),
+      q("english.seasons", "Ko noz\u012Bm\u0113 \u201Cspring\u201D?", ["Pavasaris", "Ziema", "Rudens"], 0),
+      q("english.pronouns", "K\u0101ds vietniekv\u0101rds der: \u201C___ are my friends.\u201D", ["He", "They", "She"], 1)
+    ],
+    samanta: [
+      q("math.multiply", "Cik ir 3 \xD7 4?", ["7", "12", "14"], 1),
+      q("math.multiply", "Cik ir 6 \xD7 5?", ["30", "25", "35"], 0),
+      q("math.divide", "Cik ir 20 \xF7 4?", ["4", "6", "5"], 2),
+      q("math.story", "Ir 3 \u0161\u0137\u012Bvji. Uz katra ir 2 \u0101boli. Cik \u0101bolu kop\u0101?", ["5", "6", "8"], 1),
+      q("reading.words", "Izlasi v\u0101rdu: \u201Cpu\u0137\u012Bte\u201D. Kur\u0161 variants ir tie\u0161i t\u0101ds pats?", ["pu\u0137\u012Bte", "pu\u0137\u012Btes", "pu\u0137\u012Btei"], 0),
+      q("reading.ending", "Izlasi: \u201CKa\u0137is s\u0113\u017E zem galda.\u201D Kur atrodas ka\u0137is?", ["Uz galda", "Zem galda", "Pie loga"], 1),
+      q("reading.detail", "Izlasi: \u201CAnna pa\u0146\u0113ma sarkanu somu.\u201D K\u0101d\u0101 kr\u0101s\u0101 bija soma?", ["Zil\u0101", "Za\u013C\u0101", "Sarkan\u0101"], 2),
+      q("reading.words", "Kur\u0161 v\u0101rds ir uzrakst\u012Bts: \u201Csaul\u012Bte\u201D?", ["saule", "saul\u012Bte", "saul\u012Btes"], 1),
+      q("english.colors", "Ko noz\u012Bm\u0113 \u201Cblue\u201D?", ["Zils", "Za\u013C\u0161", "Sarkans"], 0),
+      q("english.animals", "Ko noz\u012Bm\u0113 \u201Ccat\u201D?", ["Suns", "Ka\u0137is", "Putns"], 1),
+      q("english.numbers", "Kur\u0161 ir \u201Cseven\u201D?", ["7", "6", "9"], 0),
+      q("english.words", "K\u0101 angliski ir \u201Cgr\u0101mata\u201D?", ["ball", "book", "door"], 1)
+    ]
+  };
+  var E = (tag, txt) => {
+    const e2 = document.createElement(tag);
+    if (txt !== void 0) e2.textContent = txt;
+    return e2;
+  };
+  function analyzeDiagnostic(role, answers, times = []) {
+    const questions = DIAGNOSTICS[role];
+    if (!questions || answers.length !== questions.length) throw Error("Neder\u012Bgs s\u0101kuma tests");
+    const skills = {}, sections = {};
+    for (let i2 = 0; i2 < questions.length; i2++) {
+      const item = questions[i2], ok = answers[i2] === item.answer;
+      const group = item.skill.split(".")[0];
+      const s2 = skills[item.skill] || { correct: 0, total: 0, observations: [] };
+      s2.correct += Number(ok);
+      s2.total++;
+      s2.observations.push({ correct: ok, responseMs: Number.isFinite(times[i2]) ? Math.max(0, Math.round(times[i2])) : null });
+      skills[item.skill] = s2;
+      const g = sections[group] || { correct: 0, total: 0 };
+      g.correct += Number(ok);
+      g.total++;
+      sections[group] = g;
+    }
+    return { version: DIAGNOSTIC_VERSION, correct: Object.values(sections).reduce((a, x2) => a + x2.correct, 0), total: questions.length, sections, skills };
+  }
+  function renderFirstDiagnostic(container, { role, canSubmit = false, alreadyCompleted = false, saveProgress = async () => {
+  }, onBack = () => {
+  } } = {}) {
+    const questions = DIAGNOSTICS[role], root = E("section");
+    root.className = "module learning-hub";
+    container.replaceChildren(root);
+    if (!questions) return;
+    let position = 0, answers = [], times = [], shownAt = 0, busy = false;
+    const button2 = (label, onClick) => {
+      const b2 = E("button", label);
+      b2.type = "button";
+      b2.className = "action-button";
+      b2.onclick = onClick;
+      return b2;
+    };
+    function intro() {
+      root.replaceChildren(E("h2", role === "marks" ? "\u{1F409} Marka pirm\u0101 eksped\u012Bcija" : "\u{1F337} Samantas pirm\u0101 eksped\u012Bcija"));
+      root.append(E("p", "12 \u012Bsi uzdevumi no matem\u0101tikas, las\u012B\u0161anas un ang\u013Cu valodas. Nav atpaka\u013Cskait\u012B\u0161anas. Ja kaut ko nezini, izv\u0113lies savu lab\u0101ko atbildi. K\u013C\u016Bd\u012Bties dr\u012Bkst!"));
+      root.append(E("p", "\u0160\u012B ir iepaz\u012B\u0161an\u0101s, nevis atz\u012Bme. Balvu punktus \u0161is tests nepie\u0161\u0137ir."));
+      if (alreadyCompleted) root.append(E("p", "\u2705 Tav\u0101 Firebase v\u0113stur\u0113 s\u0101kuma misija jau ir izpild\u012Bta. To vari atk\u0101rtot tikai k\u0101 treni\u0146u bez jauna s\u0101kuma rezult\u0101ta."));
+      if (!canSubmit) root.append(E("p", "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiks saglab\u0101ts."));
+      root.append(button2("S\u0101kt misiju \u2192", () => {
+        position = 0;
+        answers = [];
+        times = [];
+        question();
+      }));
+      root.append(button2("\u2190 Atpaka\u013C", onBack));
+    }
+    function question() {
+      const x2 = questions[position];
+      shownAt = performance.now();
+      root.replaceChildren(E("h2", "Uzdevums " + (position + 1) + " no " + questions.length));
+      const p2 = E("p", x2.prompt);
+      p2.style.cssText = "font-size:clamp(1.25rem,3vw,1.8rem);line-height:1.65;font-weight:650;white-space:pre-wrap;";
+      root.append(p2);
+      if (role === "samanta" && x2.skill.startsWith("reading.")) {
+        root.append(E("p", "Vispirms pam\u0113\u0123ini izlas\u012Bt pati. Ja vajag, vari noklaus\u012Bties."));
+        const speak = button2("\u{1F50A} Noklaus\u012Bties", () => {
+          if ("speechSynthesis" in window) {
+            speechSynthesis.cancel();
+            const u2 = new SpeechSynthesisUtterance(x2.prompt);
+            u2.lang = "lv-LV";
+            u2.rate = 0.8;
+            speechSynthesis.speak(u2);
+          }
+        });
+        root.append(speak);
+      }
+      for (let i2 = 0; i2 < x2.choices.length; i2++) {
+        const choice = button2(x2.choices[i2], () => {
+          if (busy) return;
+          times.push(Math.round(performance.now() - shownAt));
+          answers.push(i2);
+          position++;
+          if (position < questions.length) question();
+          else void finish();
+        });
+        choice.style.cssText = "display:block;width:100%;margin:12px 0;padding:16px;text-align:left;font-size:1.15rem";
+        root.append(choice);
+      }
+      root.append(E("p", "Str\u0101d\u0101 sav\u0101 temp\u0101. \u0160eit nav sacens\u012Bbu."));
+    }
+    async function finish() {
+      busy = true;
+      const report = analyzeDiagnostic(role, answers, times);
+      root.replaceChildren(E("h2", "\u{1F389} Pirm\u0101 eksped\u012Bcija pabeigta!"));
+      root.append(E("p", "Tu izpild\u012Bji visus 12 uzdevumus. \u0160is ir tavs s\u0101kuma punkts \u2014 n\u0101kamajos treni\u0146os redz\u0113sim, k\u0101 aug prasmes."));
+      const labels = { math: "Matem\u0101tika", reading: "Las\u012B\u0161ana", english: "Ang\u013Cu valoda" };
+      for (const [id, val] of Object.entries(report.sections)) root.append(E("p", labels[id] + ": " + val.correct + " no " + val.total));
+      const status = E("p", "");
+      status.setAttribute("role", "status");
+      root.append(status);
+      if (canSubmit && !alreadyCompleted) {
+        status.textContent = "Saglab\u0101ju s\u0101kuma rezult\u0101tu Firebase\u2026";
+        try {
+          const id = await saveProgress({ studentRole: role, subject: "S\u0101kuma diagnostika", activityType: DIAGNOSTIC_VERSION, score: Math.round(report.correct * 100 / report.total), notes: JSON.stringify({ kind: "baseline", ...report }) });
+          if (!id) throw Error("Saglab\u0101\u0161ana nav apstiprin\u0101ta");
+          status.textContent = "\u2705 S\u0101kuma rezult\u0101ts saglab\u0101ts Firebase.";
+        } catch (e2) {
+          status.textContent = "\u26A0\uFE0F Rezult\u0101ts nav saglab\u0101ts Firebase. L\u016Bdzu, pasaki vec\u0101kam.";
+        }
+      } else status.textContent = alreadyCompleted ? "Atk\u0101rtots treni\u0146\u0161 \u2014 s\u0101kuma rezult\u0101ts netiek p\u0101rrakst\u012Bts." : "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts nav saglab\u0101ts.";
+      const prize = E("div");
+      prize.className = "soft-notice";
+      prize.append(E("h3", "\u{1F381} Pirm\u0101s misijas p\u0101rsteigums"));
+      prize.append(E("p", "Par drosmi s\u0101kt un izpild\u012Bt visus uzdevumus vari kop\u0101 ar vec\u0101ku izv\u0113l\u0113ties mazu prieku, piem\u0113ram, popkornu n\u0101kamaj\u0101 filmu vakar\u0101 vai kop\u012Bgu galda sp\u0113li. Vec\u0101ks izlemj un sarun\u0101, kad to \u012Bstenos. \u0160\u012B nav autom\u0101tiska BP balva."));
+      root.append(prize, button2("\u2190 Uz priek\u0161metiem", onBack));
+      busy = false;
+    }
+    intro();
+  }
+
   // src/touch-numpad.js
   function attachTouchNumpad(container, inputElement, { onSubmit, onInput } = {}) {
-    const pad = document.createElement("div");
     pad.className = "touch-numpad";
     pad.setAttribute("role", "group");
     pad.setAttribute("aria-label", "Ekr\u0101na ciparn\u012Bca skait\u013Cu ievadei");
@@ -85,7 +234,7 @@
     }
     return out;
   }
-  function renderMarksMath(root, { canSubmit = false, saveProgress = async () => {
+  function renderMarksMath(root, { canSubmit = false, startVerifiedSession = null, gradeVerifiedSession = null, saveProgress = async () => {
   } } = {}) {
     const host = document.createElement("section");
     host.className = "module learning-hub marks-math";
@@ -104,8 +253,23 @@
       parent.append(b2);
       return b2;
     };
-    let chosen = "", mode = "", items = [], position = 0, correct = 0, streak = 0, record = 0, errors = [];
+    let chosen = "", mode = "", items = [], position = 0, correct = 0, streak = 0, record = 0, errors = [], entered = [], sessionToken = null, sessionError = "";
+    let speedDeadline = 0, speedTimer = null, answerTimer = null;
+    let automatedCount = 0, reactionTimes = [], qStartTime = 0;
+    const stopAnswerTimer = () => {
+      if (answerTimer !== null) {
+        clearTimeout(answerTimer);
+        answerTimer = null;
+      }
+    };
+    const stopSpeedTimer = () => {
+      if (speedTimer !== null) {
+        clearInterval(speedTimer);
+        speedTimer = null;
+      }
+    };
     function head(title, desc) {
+      stopAnswerTimer();
       host.replaceChildren();
       const h = el("div");
       h.className = "learning-heading";
@@ -113,6 +277,7 @@
       host.append(h);
     }
     function home() {
+      stopSpeedTimer();
       head("Skait\u013Cu misijas", "Izv\u0113lies misiju un tren\u0113jies sav\u0101 ritm\u0101.");
       const grid = el("div");
       grid.className = "topic-grid";
@@ -127,30 +292,80 @@
       }
     }
     function choose(id) {
+      stopSpeedTimer();
       chosen = id;
       const label = topics.find((t2) => t2[0] === id);
       head(label[1], label[2]);
       btn(host, "\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
       btn(host, "\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
       btn(host, "\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
+      btn(host, "\u26A1 \u0100truma treni\u0146\u0161 \xB7 60 sekundes", () => start2("speed"));
       btn(host, "\u2190 Misijas", home);
     }
-    function start2(m2, review = false) {
+    async function start2(m2, review = false) {
+      stopSpeedTimer();
       mode = review ? "review" : m2;
+      sessionToken = null;
+      sessionError = "";
+      entered = [];
       const all = makeMarksMathBank(chosen);
-      const different = review ? all.filter((q) => !errors.some((e2) => e2.id === q.id)) : all;
+      const different = review ? all.filter((q2) => !errors.some((e2) => e2.id === q2.id)) : all;
       items = shuffle(different).slice(0, review ? 10 : m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
-      position = correct = streak = record = 0;
+      position = correct = streak = record = automatedCount = 0;
       errors = [];
+      reactionTimes = [];
+      if (canSubmit && !review && m2 !== "speed") {
+        head("Gatavoju uzdevumus\u2026", "Izveidoju p\u0101rbaud\u0101mu matem\u0101tikas sesiju.");
+        try {
+          if (typeof startVerifiedSession !== "function") throw Error("Nav servera p\u0101rbaudes");
+          const issued = await startVerifiedSession(chosen, m2);
+          const byId = new Map(all.map((q2) => [q2.id, q2]));
+          const verifiedItems = issued.ids?.map((id) => byId.get(id));
+          if (!issued.token || !Array.isArray(verifiedItems) || verifiedItems.some((x2) => !x2) || verifiedItems.length !== items.length) throw Error("Neder\u012Bgs servera uzdevumu saraksts");
+          sessionToken = issued.token;
+          items = verifiedItems;
+        } catch (e2) {
+          sessionError = "Servera p\u0101rbaude nav pieejama: " + (e2?.message || "Nezin\u0101ma k\u013C\u016Bda");
+        }
+      }
+      if (mode === "speed") {
+        speedDeadline = Date.now() + 6e4;
+        speedTimer = setInterval(() => {
+          if (!host.isConnected) {
+            stopSpeedTimer();
+            return;
+          }
+          if (mode !== "speed") {
+            stopSpeedTimer();
+            return;
+          }
+          const left = Math.max(0, Math.ceil((speedDeadline - Date.now()) / 1e3));
+          const clock = host.querySelector(".speed-clock");
+          if (clock) clock.textContent = "\u23F1\uFE0F Atliku\u0161ais laiks: " + left + " s";
+          if (left === 0) {
+            stopSpeedTimer();
+            stopAnswerTimer();
+            void finish();
+          }
+        }, 200);
+      }
       step();
     }
     function step() {
+      stopAnswerTimer();
+      qStartTime = Date.now();
       if (position >= items.length) {
         void finish();
         return;
       }
-      const q = items[position];
+      const q2 = items[position];
       head("Misija " + (position + 1) + " no " + items.length, "Atrisini un turpini savu s\u0113riju.");
+      if (mode === "speed") {
+        const timer = el("p", "\u23F1\uFE0F Atliku\u0161ais laiks: " + Math.max(0, Math.ceil((speedDeadline - Date.now()) / 1e3)) + " s \xB7 12 jaut\u0101jumi");
+        timer.className = "speed-clock";
+        timer.setAttribute("role", "timer");
+        host.append(timer);
+      }
       const progress = el("div");
       progress.className = "progress-track";
       const fill = el("div");
@@ -163,18 +378,18 @@
       host.append(count);
       const card = el("div");
       card.className = "question-stage";
-      card.append(el("div", q.prompt));
+      card.append(el("div", q2.prompt));
       card.firstChild.className = "math-expression";
-      if (q.visual) {
+      if (q2.visual) {
         const groups = el("div");
         groups.className = "visual-groups";
         groups.setAttribute("role", "img");
-        groups.setAttribute("aria-label", q.visual.groups + " grupas pa " + q.visual.each);
-        for (let i2 = 0; i2 < q.visual.groups; i2++) {
+        groups.setAttribute("aria-label", q2.visual.groups + " grupas pa " + q2.visual.each);
+        for (let i2 = 0; i2 < q2.visual.groups; i2++) {
           const g = el("div");
           g.className = "visual-group";
-          for (let j = 0; j < q.visual.each; j++) {
-            const icon = el("span", q.visual.icon);
+          for (let j = 0; j < q2.visual.each; j++) {
+            const icon = el("span", q2.visual.icon);
             icon.className = "visual-object";
             g.append(icon);
           }
@@ -204,46 +419,96 @@
       const numpad = attachTouchNumpad(card, input);
       host.append(card);
       if (mode === "learn") btn(card, "\u{1F4A1} Pavediena pal\u012Bdz\u012Bba", () => {
-        status.textContent = q.hint;
+        status.textContent = q2.hint;
       });
+      let answered = false, advanced = false;
       form.onsubmit = (e2) => {
         e2.preventDefault();
+        if (answered || !card.isConnected) return;
         const value = Number(input.value);
         if (input.value === "" || !Number.isInteger(value)) return;
-        const ok = value === q.answer;
+        answered = true;
+        entered.push(value);
+        const elapsedSec = Math.max(0.2, (Date.now() - qStartTime) / 1e3);
+        reactionTimes.push(elapsedSec);
+        const ok = value === q2.answer;
+        const isFast = ok && elapsedSec <= 3.2;
+        if (isFast) automatedCount++;
         correct += Number(ok);
         streak = ok ? streak + 1 : 0;
         record = Math.max(record, streak);
-        if (!ok) errors.push(q);
+        if (!ok) errors.push(q2);
         input.disabled = submit.disabled = true;
         numpad.querySelectorAll("button").forEach((b2) => b2.disabled = true);
-        status.textContent = mode === "exam" ? "Atbilde pie\u0146emta." : ok ? "\u2705 Pareizi!" : "\u{1F50E} " + q.hint;
-        btn(card, "N\u0101kamais \u2192", () => {
+        status.textContent = ok ? "\u{1F389} Pareizi! Lieliski!" : mode === "exam" ? "Atbilde pie\u0146emta." : "\u274C Pareiz\u0101 atbilde: " + q2.answer + ". " + q2.hint;
+        status.className = "answer-feedback " + (ok ? "answer-feedback-good" : "answer-feedback-error");
+        if (ok && mode !== "exam") {
+          const badge = isFast ? el("div", "\u26A1 Ziben\u012Bgs autom\u0101tisms! (" + elapsedSec.toFixed(1) + "s)", "speed-badge-flash") : el("div", "\u{1F4A1} Pareizi izdom\u0101ts! (" + elapsedSec.toFixed(1) + "s)", "speed-badge-thinking");
+          card.append(badge);
+        }
+        const advance = () => {
+          if (advanced || !card.isConnected) return;
+          advanced = true;
+          stopAnswerTimer();
           position++;
           step();
-        });
+        };
+        if (mode === "exam" && !ok) {
+          btn(card, "N\u0101kamais \u2192", advance);
+        } else {
+          const wait = ok ? 1e3 : 2800;
+          const next = btn(card, "Turpin\u0101t uzreiz \u2192", advance);
+          next.setAttribute("aria-label", "P\u0101riet uz n\u0101kamo uzdevumu");
+          answerTimer = setTimeout(advance, wait);
+        }
       };
     }
     async function finish() {
-      const pct = Math.round(correct / items.length * 100);
+      stopAnswerTimer();
+      stopSpeedTimer();
+      const localPct = Math.round(correct / items.length * 100);
       head("Misija pabeigta!", "Katrs m\u0113\u0123in\u0101jums nostiprina prasmes.");
-      const score = el("div", pct + "%");
+      const score = el("div", localPct + "%");
       score.className = "result-hero";
-      host.append(score, el("p", correct + " / " + items.length + " pareizi \xB7 Gar\u0101k\u0101 s\u0113rija " + record));
+      host.append(score, el("p", correct + " / " + items.length + " pareizi \xB7 Gar\u0101k\u0101 s\u0113rija " + record), el("p", "\u26A1 Autom\u0101tisms: " + automatedCount + " no " + items.length + " atrisin\u0101ti ziben\u012Bgi (zem 3.2 s)"));
       const note = el("p");
+      note.setAttribute("role", "status");
       host.append(note);
-      if (canSubmit) {
-        try {
-          const id = await saveProgress({ studentRole: "marks", subject: "Matem\u0101tika", activityType: chosen + " \xB7 " + mode, score: pct, notes: JSON.stringify({ correct, total: items.length, bestStreak: record }) });
-          note.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts Firebase." : "\u26A0\uFE0F Nav apstiprin\u0101ta saglab\u0101\u0161ana.";
-        } catch {
-          note.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana neizdev\u0101s.";
+      if (canSubmit && mode !== "review" && mode !== "speed") {
+        if (!sessionToken || typeof gradeVerifiedSession !== "function") {
+          note.textContent = "\u26A0\uFE0F " + (sessionError || "Servera p\u0101rbaude nav pieejama.") + " Rezult\u0101ts nav saglab\u0101ts.";
+        } else {
+          note.textContent = "P\u0101rbaudu rezult\u0101tu server\u012B\u2026";
+          try {
+            const verified = await gradeVerifiedSession(sessionToken, entered);
+            if (verified.verifiedBy !== "server" || verified.total !== items.length || verified.correct !== correct) throw Error("Atbil\u017Eu p\u0101rbaudes neatbilst\u012Bba");
+            score.textContent = verified.percent + "%";
+            const id = await saveProgress({ studentRole: "marks", subject: "Matem\u0101tika", activityType: chosen + " \xB7 " + mode, score: verified.percent, notes: JSON.stringify({ correct: verified.correct, total: verified.total, bestStreak: verified.maxStreak, serverVerified: true, spendableBP: 0 }) });
+            if (!id) throw Error("Firebase nesaglab\u0101ja rezult\u0101tu");
+            note.textContent = "\u2705 Serveris p\u0101rbaud\u012Bja un Firebase saglab\u0101ja rezult\u0101tu. T\u0113r\u0113jamie BP netika pie\u0161\u0137irti.";
+          } catch (e2) {
+            note.textContent = "\u26A0\uFE0F P\u0101rbaude vai saglab\u0101\u0161ana neizdev\u0101s: " + (e2.message || "K\u013C\u016Bda") + ". Rezult\u0101ts nav apstiprin\u0101ts.";
+          }
         }
-      }
-      if (errors.length) {
-        btn(host, "\u{1F3AF} Tren\u0113t k\u013C\u016Bdas ar citiem piem\u0113riem", () => start2(mode, true));
-      }
-      btn(host, "Atk\u0101rtot misiju", () => start2(mode));
+      } else if (mode === "speed") {
+        note.textContent = "\u26A1 \u0100truma treni\u0146\u0161: " + entered.length + " no " + items.length + " atbild\u0113ti. " + (canSubmit ? "Saglab\u0101ju rezult\u0101tu\u2026" : "Vec\u0101ka priek\u0161skat\u012Bjum\u0101 rezult\u0101tu nesaglab\u0101.");
+        if (canSubmit) {
+          try {
+            const id = await saveProgress({ studentRole: "marks", subject: "Matem\u0101tika", activityType: "\u0100truma treni\u0146\u0161 \xB7 " + chosen, score: localPct, notes: JSON.stringify({ correct, total: items.length, answered: entered.length, maxStreak: record, durationSeconds: 60, serverVerified: false, provisionalBP: true, spendableBP: 0 }) });
+            if (!id) throw Error("Firebase neapstiprin\u0101ja ierakstu");
+            note.textContent = "\u2705 \u0100truma treni\u0146\u0161 saglab\u0101ts Firebase. Rezult\u0101ts piedal\u0101s provizoriskaj\u0101 kino vakara BP progres\u0101; t\u0113r\u0113jamie punkti v\u0113l nav aktiviz\u0113ti.";
+          } catch (e2) {
+            note.textContent = "\u26A0\uFE0F \u0100truma treni\u0146a saglab\u0101\u0161ana neizdev\u0101s: " + (e2.message || "P\u0101rbaudi savienojumu");
+          }
+        }
+      } else if (mode === "review") note.textContent = "K\u013C\u016Bdu treni\u0146\u0161 \u2014 bez BP un bez statistikas ieraksta.";
+      else note.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiek ieskait\u012Bts.";
+      if (errors.length) btn(host, "\u{1F3AF} Tren\u0113t k\u013C\u016Bdas ar citiem piem\u0113riem", () => {
+        void start2(mode, true);
+      });
+      btn(host, "Atk\u0101rtot misiju", () => {
+        void start2(mode);
+      });
       btn(host, "\u2190 Uz t\u0113m\u0101m", home);
     }
     home();
@@ -259,16 +524,23 @@
     return b2;
   };
   var words = { days: [["Monday", "pirmdiena"], ["Tuesday", "otrdiena"], ["Wednesday", "tre\u0161diena"], ["Thursday", "ceturtdiena"], ["Friday", "piektdiena"], ["Saturday", "sestdiena"], ["Sunday", "sv\u0113tdiena"]], months: [["January", "janv\u0101ris"], ["February", "febru\u0101ris"], ["March", "marts"], ["April", "apr\u012Blis"], ["May", "maijs"], ["June", "j\u016Bnijs"], ["July", "j\u016Blijs"], ["August", "augusts"], ["September", "septembris"], ["October", "oktobris"], ["November", "novembris"], ["December", "decembris"]], seasons: [["spring", "pavasaris"], ["summer", "vasara"], ["autumn", "rudens"], ["winter", "ziema"]] };
-  var pronouns = [["I", "es"], ["you", "tu"], ["he", "vi\u0146\u0161"], ["she", "vi\u0146a"], ["it", "tas"], ["we", "m\u0113s"], ["they", "vi\u0146i"]];
+  var pronouns = [["I", "es"], ["you", "tu / j\u016Bs"], ["he", "vi\u0146\u0161"], ["she", "vi\u0146a"], ["it", "tas / t\u0101"], ["we", "m\u0113s"], ["they", "vi\u0146i / vi\u0146as"]];
+  var acceptedEnglish = { autumn: ["autumn", "fall"] };
+  var normalizeAnswer = (value) => String(value).trim().toLocaleLowerCase("lv-LV").replace(/[.!?]+$/, "").replace(/\s+/g, " ");
+  function isCorrectEnglishAnswer(question, input) {
+    const value = normalizeAnswer(input);
+    const options = question.accepted || acceptedEnglish[question.a.toLowerCase()] || [question.a];
+    return options.some((answer) => normalizeAnswer(answer) === value);
+  }
   function makeEnglishBank() {
     let bank = [];
     for (const [topic, pairs] of Object.entries(words)) {
       pairs.forEach(([en, lv], i2) => {
-        bank.push({ id: topic + "-en-" + i2, topic, q: "Iztulko angliski: " + lv, a: en, hint: "Atceries nosaukumu ang\u013Cu valod\u0101." }, { id: topic + "-lv-" + i2, topic, q: "Iztulko latviski: " + en, a: lv, hint: "Atceries tulkojumu." }, { id: topic + "-order-" + i2, topic, q: "Kur\u0161 nosaukums n\u0101k p\u0113c " + en + "?", a: pairs[(i2 + 1) % pairs.length][0], hint: "Padom\u0101 par sec\u012Bbu." });
+        bank.push({ id: topic + "-en-" + i2, topic, q: "Iztulko angliski: " + lv, a: en, hint: "Atceries nosaukumu ang\u013Cu valod\u0101." }, { id: topic + "-lv-" + i2, topic, q: "Iztulko latviski: " + en, a: lv, accepted: en.toLowerCase() === "autumn" ? ["rudens"] : void 0, hint: "Atceries tulkojumu." }, { id: topic + "-order-" + i2, topic, q: "Kur\u0161 nosaukums n\u0101k p\u0113c " + en + "?", a: pairs[(i2 + 1) % pairs.length][0], hint: "Padom\u0101 par sec\u012Bbu." });
       });
     }
     pronouns.forEach(([en, lv], i2) => bank.push({ id: "pronoun-" + i2, topic: "pronouns", q: "Iztulko angliski: " + lv, a: en, hint: "I, you, he, she, it, we, they." }));
-    [["Anna is my friend. ___ is kind.", "she"], ["Dad is tall. ___ is strong.", "he"], ["Tom and I are friends. ___ play.", "we"], ["The cats are hungry. ___ want food.", "they"], ["This is a dog. ___ is happy.", "it"], ["___ am at school.", "I"], ["Are ___ ready?", "you"], ["Marta and Lisa sing. ___ sing well.", "they"], ["Mother reads. ___ likes books.", "she"], ["The boy runs. ___ is fast.", "he"]].forEach(([q, a], i2) => bank.push({ id: "usage-" + i2, topic: "pronouns", q, a, hint: "Nosaki, par kuru personu vai lietu ir runa." }));
+    [["Anna is my friend. ___ is kind.", "she"], ["Dad is tall. ___ is strong.", "he"], ["Tom and I are friends. ___ play.", "we"], ["The cats are hungry. ___ want food.", "they"], ["This is a dog. ___ is happy.", "it"], ["___ am at school.", "I"], ["Are ___ ready?", "you"], ["Marta and Lisa sing. ___ sing well.", "they"], ["Mother reads. ___ likes books.", "she"], ["The boy runs. ___ is fast.", "he"]].forEach(([q2, a], i2) => bank.push({ id: "usage-" + i2, topic: "pronouns", q: q2, a, hint: "Nosaki, par kuru personu vai lietu ir runa." }));
     return bank;
   }
   function renderMarksEnglish(root, { canSubmit = false, saveProgress = async () => {
@@ -278,13 +550,13 @@
     root.append(host);
     const bank = makeEnglishBank();
     const topics = [["days", "\u{1F4C5} Ned\u0113\u013Cas dienas"], ["months", "\u{1F5D3}\uFE0F M\u0113ne\u0161i"], ["seasons", "\u{1F341} Gadalaiki"], ["pronouns", "\u{1F9D1} Personu vietniekv\u0101rdi"]];
-    let topic = null, items = [], index = 0, correct = 0, mode = "practice", streak = 0, best = 0;
+    let topic = null, items = [], index = 0, correct = 0, mode = "practice", streak = 0, best = 0, misses = [];
     const el = (tag, text) => {
       let n2 = document.createElement(tag);
       if (text) n2.textContent = text;
       return n2;
     };
-    const button = (title, fn2) => {
+    const button2 = (title, fn2) => {
       let b2 = el("button", title);
       b2.type = "button";
       b2.className = "action-button";
@@ -295,21 +567,22 @@
     function home() {
       host.replaceChildren();
       host.append(el("h2", "\u{1F30D} Ang\u013Cu valodas piedz\u012Bvojums"), el("p", "Dienas, m\u0113ne\u0161i, gadalaiki un vietniekv\u0101rdi."));
-      topics.forEach(([id, title]) => button(title, () => choose(id)));
+      topics.forEach(([id, title]) => button2(title, () => choose(id)));
     }
     function choose(id) {
       topic = id;
       host.replaceChildren();
       host.append(el("h2", topics.find((t2) => t2[0] === id)[1]));
-      button("\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
-      button("\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
-      button("\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
-      button("\u2190 Priek\u0161meta t\u0113mas", home);
+      button2("\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
+      button2("\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
+      button2("\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
+      button2("\u2190 Priek\u0161meta t\u0113mas", home);
     }
     function start2(m2) {
       mode = m2;
-      items = shuffle2(bank.filter((q) => q.topic === topic)).slice(0, m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
+      items = shuffle2(bank.filter((q2) => q2.topic === topic)).slice(0, m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
       index = correct = streak = best = 0;
+      misses = [];
       step();
     }
     function step() {
@@ -318,7 +591,7 @@
         return;
       }
       host.replaceChildren();
-      let q = items[index];
+      let q2 = items[index];
       host.append(el("h2", "Jaut\u0101jums " + (index + 1) + " / " + items.length));
       let bar = el("div");
       bar.className = "progress-track";
@@ -326,7 +599,7 @@
       fill.className = "progress-fill";
       fill.style.width = 100 * index / items.length + "%";
       bar.append(fill);
-      host.append(bar, el("p", "\u{1F525} " + streak + " p\u0113c k\u0101rtas \xB7 Rekords: " + best), el("h3", q.q));
+      host.append(bar, el("p", "\u{1F525} " + streak + " p\u0113c k\u0101rtas \xB7 Rekords: " + best), el("h3", q2.q));
       let form = el("form");
       form.className = "latvian-question-form";
       let inp = el("input");
@@ -342,16 +615,17 @@
       let status = el("p");
       status.setAttribute("role", "status");
       host.append(status);
-      if (mode === "learn") button("\u{1F4A1} Pal\u012Bdz\u012Bba", () => status.textContent = q.hint);
+      if (mode === "learn") button2("\u{1F4A1} Pal\u012Bdz\u012Bba", () => status.textContent = q2.hint);
       form.onsubmit = (e2) => {
         e2.preventDefault();
-        let good = inp.value.trim().toLocaleLowerCase("lv-LV") === q.a.toLocaleLowerCase("lv-LV");
+        let good = isCorrectEnglishAnswer(q2, inp.value);
         correct += Number(good);
+        if (!good) misses.push({ question: q2.q, answer: q2.a });
         streak = good ? streak + 1 : 0;
         best = Math.max(best, streak);
         inp.disabled = submit.disabled = true;
-        status.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F50D} Pareiz\u0101 atbilde: " + q.a;
-        button("N\u0101kamais \u2192", () => {
+        status.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F50D} Pareiz\u0101 atbilde: " + q2.a;
+        button2("N\u0101kamais \u2192", () => {
           index++;
           step();
         });
@@ -361,6 +635,13 @@
       let percent = Math.round(correct / items.length * 100);
       host.replaceChildren();
       host.append(el("h2", "Rezult\u0101ts: " + percent + "%"), el("p", "Pareizi " + correct + " no " + items.length + " \xB7 Gar\u0101k\u0101 s\u0113rija: " + best));
+      if (misses.length) {
+        const review = el("div");
+        review.className = "soft-notice";
+        review.append(el("h3", "Pareiz\u0101s atbildes"));
+        for (const miss of misses) review.append(el("p", miss.question + " \u2192 " + miss.answer));
+        host.append(review);
+      }
       let stat = el("p");
       host.append(stat);
       if (canSubmit) try {
@@ -369,64 +650,200 @@
       } catch {
         stat.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana neizdev\u0101s";
       }
-      button("Atk\u0101rtot", () => start2(mode));
-      button("\u2190 T\u0113mas", home);
+      button2("Atk\u0101rtot", () => start2(mode));
+      button2("\u2190 T\u0113mas", home);
     }
     home();
   }
 
   // src/samanta-latvian.js
-  var examples = [["Ka\u0137is gu\u013C uz sola.", "Kur gu\u013C ka\u0137is?", "uz sola"], ["Saule sp\u012Bd.", "Kas sp\u012Bd?", "saule"], ["Liene lasa gr\u0101matu.", "Ko lasa Liene?", "gr\u0101matu"], ["D\u0101rz\u0101 aug roze.", "Kas aug d\u0101rz\u0101?", "roze"], ["Mazs suns skrien.", "Kas skrien?", "suns"], ["T\u0113tis cep maizi.", "Ko cep t\u0113tis?", "maizi"], ["Me\u017E\u0101 dz\u012Bvo lapsa.", "Kur dz\u012Bvo lapsa?", "me\u017E\u0101"], ["Anna dzer pienu.", "Ko dzer Anna?", "pienu"], ["Putns dzied kok\u0101.", "Kur dzied putns?", "kok\u0101"], ["Zivis peld ezer\u0101.", "Kur peld zivis?", "ezer\u0101"], ["M\u0101sa z\u012Bm\u0113 pu\u0137i.", "Ko z\u012Bm\u0113 m\u0101sa?", "pu\u0137i"], ["Pele grau\u017E sieru.", "Ko grau\u017E pele?", "sieru"], ["Sniegs kl\u0101j zemi.", "Kas kl\u0101j zemi?", "sniegs"], ["L\u0101cis gu\u013C al\u0101.", "Kur gu\u013C l\u0101cis?", "al\u0101"], ["Mamma nes somu.", "Ko nes mamma?", "somu"], ["B\u0113rni sp\u0113l\u0113jas park\u0101.", "Kur sp\u0113l\u0113jas b\u0113rni?", "park\u0101"], ["Vilciens brauc \u0101tri.", "Kas brauc \u0101tri?", "vilciens"], ["Skol\u0101 skan zvans.", "Kas skan skol\u0101?", "zvans"]];
-  var partWords = { lietv\u0101rds: ["m\u0101ja", "suns", "zieds", "koks", "laiva", "upe", "skola", "gr\u0101mata", "pele", "saule"], darb\u012Bbas_v\u0101rds: ["skrien", "lasa", "\u0113d", "raksta", "dzied", "lec", "s\u0113\u017E", "brauc", "z\u012Bm\u0113", "peld"], \u012Bpa\u0161\u012Bbas_v\u0101rds: ["mazs", "liels", "gudrs", "gai\u0161s", "za\u013C\u0161", "skaists", "silts", "gar\u0161", "sarkans", "\u0101trs"] };
-  var gaps = [["m_ja", "\u0101"], ["sk_la", "o"], ["p_\u0137e", "u"], ["z_eds", "i"], ["l\u0101_is", "c"], ["gr_mata", "\u0101"], ["s_ule", "a"], ["m_\u017Es", "e"], ["sni_gs", "e"], ["m_\u013C\u0161", "\u012B"], ["r_tenis", "i"], ["z_mulis", "\u012B"], ["b_rns", "\u0113"], ["r_den\u012B", "u"], ["p\u013C_va", "a"], ["dra_gs", "u"], ["m_konis", "\u0101"]];
+  var readingStories = [
+    { sentence: "Ka\u0137is gu\u013C uz sola.", syllables: "Ka-\u0137is gu\u013C uz so-la.", q: "Kur gu\u013C ka\u0137is?", a: "uz sola", options: ["uz sola", "zem sola", "kok\u0101"], hint: "Izlasi teikumu v\u0113lreiz: kur atrodas ka\u0137is?" },
+    { sentence: "Saule sp\u012Bd.", syllables: "Sau-le sp\u012Bd.", q: "Kas sp\u012Bd?", a: "saule", options: ["saule", "m\u0113ness", "lampa"], hint: "Paskaties uz pirmo v\u0101rdu: kas ir debes\u012Bs?" },
+    { sentence: "Liene lasa gr\u0101matu.", syllables: "Lie-ne la-sa gr\u0101-ma-tu.", q: "Ko lasa Liene?", a: "gr\u0101matu", options: ["gr\u0101matu", "v\u0113stuli", "av\u012Bzi"], hint: "Ko Liene tur rok\u0101s?" },
+    { sentence: "D\u0101rz\u0101 aug roze.", syllables: "D\u0101r-z\u0101 aug ro-ze.", q: "Kas aug d\u0101rz\u0101?", a: "roze", options: ["roze", "\u0101bele", "z\u0101le"], hint: "Pu\u0137e ar asiem \u0113rk\u0161\u0137iem ir..." },
+    { sentence: "Mazs suns skrien.", syllables: "Mazs suns skrien.", q: "Kas skrien?", a: "suns", options: ["suns", "ka\u0137is", "za\u0137is"], hint: "\u010Cetrk\u0101jains draugs, kur\u0161 rej." },
+    { sentence: "T\u0113tis cep maizi.", syllables: "T\u0113-tis cep mai-zi.", q: "Ko cep t\u0113tis?", a: "maizi", options: ["maizi", "pank\u016Bkas", "k\u016Bku"], hint: "Smar\u017E\u012Bgu un siltu cepe\u0161kr\u0101sn\u012B cep..." },
+    { sentence: "Me\u017E\u0101 dz\u012Bvo lapsa.", syllables: "Me-\u017E\u0101 dz\u012B-vo lap-sa.", q: "Kur dz\u012Bvo lapsa?", a: "me\u017E\u0101", options: ["me\u017E\u0101", "al\u0101 pie ezera", "m\u0101j\u0101"], hint: "Za\u013C\u0101 viet\u0101 ar daudziem kokiem." },
+    { sentence: "Anna dzer pienu.", syllables: "An-na dzer pie-nu.", q: "Ko dzer Anna?", a: "pienu", options: ["pienu", "t\u0113ju", "\u016Bdeni"], hint: "Baltu un vesel\u012Bgu dz\u0113rienu." },
+    { sentence: "Putns dzied kok\u0101.", syllables: "Putns dzied ko-k\u0101.", q: "Kur dzied putns?", a: "kok\u0101", options: ["kok\u0101", "uz jumta", "p\u013Cav\u0101"], hint: "Augstu zaros." },
+    { sentence: "Zivis peld ezer\u0101.", syllables: "Zi-vis peld e-ze-r\u0101.", q: "Kur peld zivis?", a: "ezer\u0101", options: ["ezer\u0101", "up\u0113 pie j\u016Bras", "b\u013Cod\u0101"], hint: "\u016Adenstilp\u0113, kur ir daudz \u016Bdens." },
+    { sentence: "M\u0101sa z\u012Bm\u0113 pu\u0137i.", syllables: "M\u0101-sa z\u012B-m\u0113 pu-\u0137i.", q: "Ko z\u012Bm\u0113 m\u0101sa?", a: "pu\u0137i", options: ["pu\u0137i", "m\u0101ju", "sauli"], hint: "Ziedu ar kr\u0101sain\u0101m ziedlapi\u0146\u0101m." },
+    { sentence: "Pele grau\u017E sieru.", syllables: "Pe-le grau\u017E sie-ru.", q: "Ko grau\u017E pele?", a: "sieru", options: ["sieru", "maizi", "riekstu"], hint: "Dzeltenu gardumu ar caurumiem." },
+    { sentence: "Sniegs kl\u0101j zemi.", syllables: "Sniegs kl\u0101j ze-mi.", q: "Kas kl\u0101j zemi?", a: "sniegs", options: ["sniegs", "lietus", "lapas"], hint: "Balts un auksts ziem\u0101." },
+    { sentence: "L\u0101cis gu\u013C al\u0101.", syllables: "L\u0101-cis gu\u013C a-l\u0101.", q: "Kur gu\u013C l\u0101cis?", a: "al\u0101", options: ["al\u0101", "gult\u0101", "kok\u0101"], hint: "Dro\u0161\u0101 un silt\u0101 ziemas miega viet\u0101." },
+    { sentence: "Mamma nes somu.", syllables: "Mam-ma nes so-mu.", q: "Ko nes mamma?", a: "somu", options: ["somu", "grozu", "kasti"], hint: "Kur liek mantas un gr\u0101matas?" },
+    { sentence: "B\u0113rni sp\u0113l\u0113jas park\u0101.", syllables: "B\u0113r-ni sp\u0113-l\u0113-jas par-k\u0101.", q: "Kur sp\u0113l\u0113jas b\u0113rni?", a: "park\u0101", options: ["park\u0101", "skol\u0101", "istab\u0101"], hint: "Liel\u0101 za\u013C\u0101 laukum\u0101 ar \u0161\u016Bpol\u0113m." },
+    { sentence: "Vilciens brauc \u0101tri.", syllables: "Vil-ciens brauc \u0101-tri.", q: "Kas brauc \u0101tri?", a: "vilciens", options: ["vilciens", "autobuss", "ritenis"], hint: "Brauc pa slied\u0113m." },
+    { sentence: "Skol\u0101 skan zvans.", syllables: "Sko-l\u0101 skan zvans.", q: "Kas skan skol\u0101?", a: "zvans", options: ["zvans", "m\u016Bzika", "smaids"], hint: "Aicina uz stundu." }
+  ];
+  var partWords = {
+    lietv\u0101rds: ["m\u0101ja", "suns", "zieds", "koks", "laiva", "upe", "skola", "gr\u0101mata", "pele", "saule"],
+    darb\u012Bbas_v\u0101rds: ["skrien", "lasa", "\u0113d", "raksta", "dzied", "lec", "s\u0113\u017E", "brauc", "z\u012Bm\u0113", "peld"],
+    \u012Bpa\u0161\u012Bbas_v\u0101rds: ["mazs", "liels", "gudrs", "gai\u0161s", "za\u013C\u0161", "skaists", "silts", "gar\u0161", "sarkans", "\u0101trs"]
+  };
+  var gaps = [
+    ["m_ja", "\u0101", ["\u0101", "a", "e"]],
+    ["sk_la", "o", ["o", "u", "a"]],
+    ["p_\u0137e", "u", ["u", "\u016B", "i"]],
+    ["z_eds", "i", ["i", "\u012B", "e"]],
+    ["l\u0101_is", "c", ["c", "\u010D", "s"]],
+    ["gr_mata", "\u0101", ["\u0101", "a", "o"]],
+    ["s_ule", "a", ["a", "\u0101", "e"]],
+    ["m_\u017Es", "e", ["e", "\u0113", "i"]],
+    ["sni_gs", "e", ["e", "\u0113", "i"]],
+    ["m_\u013C\u0161", "\u012B", ["\u012B", "i", "e"]],
+    ["r_tenis", "i", ["i", "\u012B", "u"]],
+    ["z_mulis", "\u012B", ["\u012B", "i", "e"]],
+    ["b_rns", "\u0113", ["\u0113", "e", "i"]],
+    ["r_den\u012B", "u", ["u", "\u016B", "o"]],
+    ["p\u013C_va", "a", ["a", "\u0101", "e"]],
+    ["dra_gs", "u", ["u", "\u016B", "o"]],
+    ["m_konis", "\u0101", ["\u0101", "a", "o"]]
+  ];
   function makeSamantaLatvianBank() {
-    let bank = [];
-    examples.forEach(([sentence, question, answer], i2) => bank.push({ id: "r" + i2, topic: "reading", q: sentence + "\n" + question, a: answer, hint: "Izlasi pirmo teikumu v\u0113lreiz." }));
-    for (const [name4, words2] of Object.entries(partWords)) words2.forEach((word, i2) => bank.push({ id: "p" + name4 + i2, topic: "parts", q: "Kura v\u0101rd\u0161\u0137ira ir v\u0101rds \u201C" + word + "\u201D?", a: name4.replace("_", " "), hint: "Lietv\u0101rds ir lieta; darb\u012Bbas v\u0101rds ir darb\u012Bba; \u012Bpa\u0161\u012Bbas v\u0101rds ir paz\u012Bme." }));
-    gaps.forEach(([word, answer], i2) => bank.push({ id: "g" + i2, topic: "letters", q: "Ievieto tr\u016Bksto\u0161o burtu: " + word, a: answer, hint: "Izrun\u0101 v\u0101rdu l\u0113n\u0101m un padom\u0101 par ska\u0146u." }));
+    const bank = [];
+    readingStories.forEach((item, i2) => {
+      bank.push({
+        id: "r" + i2,
+        topic: "reading",
+        prompt: item.sentence + "\n" + item.q,
+        speechText: item.sentence + " " + item.q,
+        syllablesText: item.syllables + "\n" + item.q,
+        answer: item.a,
+        options: item.options,
+        hint: item.hint
+      });
+    });
+    for (const [name4, words2] of Object.entries(partWords)) {
+      const roleName = name4.replace("_", " ");
+      words2.forEach((word, i2) => {
+        bank.push({
+          id: "p" + name4 + i2,
+          topic: "parts",
+          prompt: "Kura v\u0101rd\u0161\u0137ira ir v\u0101rds \u201C" + word + "\u201D?",
+          speechText: "Kura v\u0101rd\u0161\u0137ira ir v\u0101rds " + word + "?",
+          syllablesText: "Kura v\u0101rd\u0161\u0137ira ir v\u0101rds \u201C" + word + "\u201D?",
+          answer: roleName,
+          options: ["lietv\u0101rds", "darb\u012Bbas v\u0101rds", "\u012Bpa\u0161\u012Bbas v\u0101rds"],
+          hint: "Lietv\u0101rds ir lieta vai b\u016Btne; darb\u012Bbas v\u0101rds ir darb\u012Bba; \u012Bpa\u0161\u012Bbas v\u0101rds ir paz\u012Bme."
+        });
+      });
+    }
+    gaps.forEach(([word, answer, options], i2) => {
+      bank.push({
+        id: "g" + i2,
+        topic: "letters",
+        prompt: "Ievieto tr\u016Bksto\u0161o burtu: " + word,
+        speechText: "Ievieto tr\u016Bksto\u0161o burtu v\u0101rd\u0101 " + word.replace("_", "tuk\u0161ums"),
+        syllablesText: "Ievieto tr\u016Bksto\u0161o burtu: " + word,
+        answer,
+        options,
+        hint: "Izrun\u0101 v\u0101rdu l\u0113n\u0101m un ieklausies ska\u0146\u0101."
+      });
+    });
     return bank;
   }
-  function renderSamantaLatvian(root, { canSubmit = false, saveProgress = async () => {
+  function renderSamantaLatvian(root, { canSubmit = false, currentUid = "", saveProgress = async () => {
   } } = {}) {
     const host = document.createElement("section");
     host.className = "module learning-hub samanta-reading";
     root.append(host);
     const bank = makeSamantaLatvianBank();
-    const topics = [["reading", "\u{1F4D6} Viegl\u0101 las\u012B\u0161ana"], ["parts", "\u{1F9E9} V\u0101rd\u0161\u0137iras"], ["letters", "\u{1F524} Tr\u016Bksto\u0161ais burts"]];
-    let topic = null, mode = "practice", questions = [], index = 0, correct = 0, streak = 0, maxStreak = 0;
-    const el = (tag, text) => {
-      let n2 = document.createElement(tag);
-      if (text) n2.textContent = text;
+    const topics = [
+      ["reading", "\u{1F4D6} Viegl\u0101 las\u012B\u0161ana", "\u012Asi st\u0101sti\u0146i un teikumi ar jaut\u0101jumiem"],
+      ["parts", "\u{1F9E9} V\u0101rd\u0161\u0137iras", "Lietv\u0101rdi, darb\u012Bbas v\u0101rdi un \u012Bpa\u0161\u012Bbas v\u0101rdi"],
+      ["letters", "\u{1F524} Tr\u016Bksto\u0161ais burts", "Atrodi \u012Bsto burtu v\u0101rd\u0101"]
+    ];
+    let topic = null;
+    let mode = "practice";
+    let questions = [];
+    let index = 0;
+    let correct = 0;
+    let streak = 0;
+    let maxStreak = 0;
+    let showSyllables = true;
+    const el = (tag, text, cls) => {
+      const n2 = document.createElement(tag);
+      if (cls) n2.className = cls;
+      if (text !== void 0) n2.textContent = text;
       return n2;
     };
     const btn = (text, cb, parent = host, cls = "action-button") => {
-      const b2 = el("button", text);
+      const b2 = el("button", text, cls);
       b2.type = "button";
-      b2.className = cls;
       b2.onclick = cb;
       parent.append(b2);
       return b2;
     };
-    const shuffle6 = (x2) => [...x2].sort(() => Math.random() - 0.5);
+    const shuffle6 = (arr) => {
+      const b2 = [...arr];
+      for (let i2 = b2.length - 1; i2 > 0; i2--) {
+        const j = Math.floor(Math.random() * (i2 + 1));
+        [b2[i2], b2[j]] = [b2[j], b2[i2]];
+      }
+      return b2;
+    };
     function view() {
       host.replaceChildren();
-      host.append(el("h2", "\u{1F338} Latvie\u0161u valodas d\u0101rzs"), el("p", "Lasi, klausies un tren\u0113jies sav\u0101 ritm\u0101."));
-      topics.forEach(([key, title]) => btn(title, () => choose(key)));
+      const heading = el("div", void 0, "learning-heading");
+      heading.append(
+        el("span", "\u{1F338} SAMANTAS VALODAS D\u0100RZS", "eyebrow"),
+        el("h2", "Viegl\u0101 las\u012B\u0161ana un v\u0101rdi"),
+        el("p", "M\u0101cies sav\u0101 temp\u0101 \u2014 ar skaidriem burtiem, zilb\u0113m un balss atbalstu.")
+      );
+      host.append(heading);
+      const grid = el("div", void 0, "topic-grid");
+      topics.forEach(([key, title, desc]) => {
+        const tile = el("button", void 0, "topic-tile");
+        tile.type = "button";
+        tile.append(
+          el("span", title.split(" ")[0], "topic-emoji"),
+          el("strong", title.slice(title.indexOf(" ") + 1)),
+          el("small", desc)
+        );
+        tile.onclick = () => choose(key);
+        grid.append(tile);
+      });
+      host.append(grid);
     }
     function choose(t2) {
       topic = t2;
       host.replaceChildren();
-      host.append(el("h2", topics.find((x2) => x2[0] === t2)[1]));
-      btn("\u{1F331} M\u0101cos \xB7 8", () => start2("learn"));
-      btn("\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"));
-      btn("\u{1F3C6} P\u0101rbaudu sevi \xB7 20", () => start2("exam"));
-      btn("\u2190 Visas t\u0113mas", view);
+      const item = topics.find((x2) => x2[0] === t2);
+      const heading = el("div", void 0, "learning-heading");
+      heading.append(
+        el("span", "\u{1F338} T\u0112MAS IZV\u0112LE", "eyebrow"),
+        el("h2", item[1]),
+        el("p", item[2])
+      );
+      host.append(heading);
+      const cluster = el("div", void 0, "button-cluster");
+      btn("\u{1F331} M\u0101cos \xB7 8", () => start2("learn"), cluster);
+      btn("\u{1F3AF} Tren\u0113jos \xB7 12", () => start2("practice"), cluster);
+      btn("\u{1F3C6} P\u0101rbaudu sevi \xB7 16", () => start2("exam"), cluster);
+      btn("\u2190 Visas t\u0113mas", view, cluster, "quiet-button");
+      host.append(cluster);
     }
     function start2(m2) {
       mode = m2;
-      questions = shuffle6(bank.filter((q) => q.topic === topic)).slice(0, m2 === "learn" ? 8 : m2 === "exam" ? 20 : 12);
+      const pool = bank.filter((q2) => q2.topic === topic);
+      const count = m2 === "learn" ? 8 : m2 === "exam" ? 16 : 12;
+      questions = shuffle6(pool).slice(0, count);
       index = correct = streak = maxStreak = 0;
       step();
+    }
+    function renderSyllableHtml(text) {
+      return text.split("\n").map((line) => {
+        const words2 = line.split(" ");
+        return words2.map((w2) => {
+          if (!w2.includes("-")) return `<span>${w2}</span>`;
+          const parts = w2.split("-");
+          return parts.map(
+            (part, idx) => `<span class="${idx % 2 === 0 ? "syllable-a" : "syllable-b"}">${part}</span>`
+          ).join('<span class="syllable-dash">\xB7</span>');
+        }).join(" ");
+      }).join("<br>");
     }
     function step() {
       if (index >= questions.length) {
@@ -434,41 +851,47 @@
         return;
       }
       host.replaceChildren();
-      let q = questions[index];
-      host.append(el("h2", "Uzdevums " + (index + 1) + " no " + questions.length));
-      let progress = el("div");
-      progress.className = "progress-track";
-      let fill = el("div");
-      fill.className = "progress-fill";
-      fill.style.width = index / questions.length * 100 + "%";
+      const q2 = questions[index];
+      const topBar = el("div", void 0, "reading-topbar");
+      topBar.append(el("h2", "Uzdevums " + (index + 1) + " no " + questions.length));
+      const sylBtn = el("button", showSyllables ? "\u2702\uFE0F Zilbju re\u017E\u012Bms: Iesl\u0113gts" : "\u{1F4D6} Parastais teksts", "syllable-mode-toggle");
+      sylBtn.type = "button";
+      sylBtn.onclick = () => {
+        showSyllables = !showSyllables;
+        step();
+      };
+      topBar.append(sylBtn);
+      host.append(topBar);
+      const progress = el("div", void 0, "progress-track");
+      const fill = el("div", void 0, "progress-fill");
+      fill.style.width = Math.round(index / questions.length * 100) + "%";
       progress.append(fill);
       host.append(progress);
-      const streakBadge = el("p", "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak);
-      streakBadge.className = "streak-label";
+      const streakBadge = el("p", "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak, "streak-label");
       host.append(streakBadge);
-      const card = el("section");
-      card.className = "reading-task-card";
-      const taskText = el("div", q.q);
-      taskText.className = "reading-prompt";
-      taskText.style.whiteSpace = "pre-line";
+      const card = el("section", void 0, "reading-task-card dyslexia-friendly");
+      const taskText = el("div", void 0, "reading-prompt");
+      if (showSyllables && q2.syllablesText) {
+        taskText.innerHTML = renderSyllableHtml(q2.syllablesText);
+      } else {
+        taskText.textContent = q2.prompt;
+        taskText.style.whiteSpace = "pre-line";
+      }
       card.append(taskText);
-      host.append(card);
-      const status = el("p");
-      status.setAttribute("role", "status");
-      status.className = "reading-feedback";
-      const controls = el("div");
-      controls.className = "reading-controls";
-      const listenBtn = btn("\u{1F50A} Nolas\u012Bt uzdevumu", () => {
+      const controls = el("div", void 0, "reading-controls");
+      const listenText = q2.speechText || q2.prompt;
+      const listenBtn = btn("\u{1F50A} Nolas\u012Bt l\u0113n\u0101m", () => {
         if (!("speechSynthesis" in window)) {
-          status.textContent = "Balss nolas\u012B\u0161ana \u0161aj\u0101 p\u0101rl\u016Bk\u0101 nav pieejama.";
+          status.textContent = "Balss nolas\u012B\u0161ana \u0161aj\u0101 ier\u012Bc\u0113 nav pieejama.";
           return;
         }
         window.speechSynthesis.cancel();
-        let u2 = new SpeechSynthesisUtterance(q.q);
+        const u2 = new SpeechSynthesisUtterance(listenText);
         u2.lang = "lv-LV";
-        u2.rate = 0.82;
-        const v2 = window.speechSynthesis.getVoices().find((v3) => v3.lang.startsWith("lv"));
-        if (v2) u2.voice = v2;
+        u2.rate = 0.78;
+        u2.pitch = 1.05;
+        const lvVoice = window.speechSynthesis.getVoices().find((v2) => v2.lang.startsWith("lv"));
+        if (lvVoice) u2.voice = lvVoice;
         u2.onstart = () => listenBtn.classList.add("audio-playing");
         u2.onend = () => listenBtn.classList.remove("audio-playing");
         u2.onerror = () => listenBtn.classList.remove("audio-playing");
@@ -479,55 +902,81 @@
         listenBtn.classList.remove("audio-playing");
       }, controls, "reading-stop");
       card.append(controls);
-      const form = el("form");
-      form.className = "reading-answer-form";
-      const label = el("label", "Tava atbilde");
-      label.className = "reading-answer-label";
-      const input = el("input");
-      input.className = "reading-answer-input";
-      input.id = "samanta-reading-answer";
-      label.htmlFor = input.id;
-      input.required = true;
-      input.autocomplete = "off";
-      input.setAttribute("aria-label", "Tava atbilde");
-      input.maxLength = 80;
-      form.append(label, input);
-      let submit = el("button", "P\u0101rbaud\u012Bt");
-      submit.type = "submit";
-      submit.className = "action-button";
-      form.append(submit);
-      card.append(form, status);
-      if (mode === "learn") btn("\u{1F4A1} Pal\u012Bdz\u012Bba", () => status.textContent = q.hint);
-      form.onsubmit = (e2) => {
-        e2.preventDefault();
-        const answer = input.value.trim().toLocaleLowerCase("lv-LV");
-        const good = answer === q.a.toLocaleLowerCase("lv-LV");
-        correct += Number(good);
-        streak = good ? streak + 1 : 0;
-        maxStreak = Math.max(streak, maxStreak);
-        input.disabled = submit.disabled = true;
-        status.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F50E} Pam\u0113\u0123ini atcer\u0113ties: " + q.a;
-        btn("N\u0101kamais \u2192", () => {
-          index++;
-          step();
-        });
-      };
+      const status = el("p", void 0, "reading-feedback");
+      status.setAttribute("role", "status");
+      const optionsContainer = el("div", void 0, "reading-options-cluster");
+      optionsContainer.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin:16px 0";
+      const opts = q2.options && q2.options.length ? shuffle6(q2.options) : [q2.answer];
+      opts.forEach((optionText) => {
+        const optBtn = el("button", optionText, "galotnes-btn");
+        optBtn.type = "button";
+        optBtn.onclick = () => {
+          optionsContainer.querySelectorAll("button").forEach((b2) => b2.disabled = true);
+          const isGood = optionText.trim().toLowerCase() === q2.answer.trim().toLowerCase();
+          correct += Number(isGood);
+          streak = isGood ? streak + 1 : 0;
+          maxStreak = Math.max(streak, maxStreak);
+          if (isGood) {
+            optBtn.style.background = "#dcfce7";
+            optBtn.style.borderColor = "#16a34a";
+            status.textContent = mode === "exam" ? "Atbilde pie\u0146emta!" : "\u{1F389} Pareizi! Lieliski izlas\u012Bts!";
+            status.className = "reading-feedback answer-feedback-good";
+          } else {
+            optBtn.style.background = "#fee2e2";
+            optBtn.style.borderColor = "#dc2626";
+            status.textContent = mode === "exam" ? "Atbilde pie\u0146emta." : "\u{1F50E} Pareiz\u0101 atbilde bija: " + q2.answer + ". " + (q2.hint || "");
+            status.className = "reading-feedback answer-feedback-error";
+          }
+          const nextBtn = btn("N\u0101kamais uzdevums \u2192", () => {
+            if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+            index++;
+            step();
+          }, card, "action-button");
+          nextBtn.style.marginTop = "14px";
+        };
+        optionsContainer.append(optBtn);
+      });
+      card.append(optionsContainer, status);
+      if (mode === "learn") {
+        btn("\u{1F4A1} Pavediens", () => {
+          status.textContent = q2.hint || "P\u0101rlasi l\u0113n\u0101m katru v\u0101rdu.";
+        }, card, "quiet-button");
+      }
+      host.append(card);
     }
     async function finish() {
       if ("speechSynthesis" in window) window.speechSynthesis.cancel();
       const pct = Math.round(100 * correct / questions.length);
       host.replaceChildren();
-      host.append(el("h2", "Rezult\u0101ts: " + pct + "%"), el("p", "Pareizi " + correct + " no " + questions.length + " \xB7 S\u0113rija: " + maxStreak));
-      let status = el("p");
+      const heading = el("div", void 0, "learning-heading");
+      heading.append(
+        el("span", "\u{1F338} TRENI\u0145\u0160 PABEIGTS", "eyebrow"),
+        el("h2", "Rezult\u0101ts: " + pct + "%"),
+        el("p", "Pareizi " + correct + " no " + questions.length + " \xB7 Gar\u0101k\u0101 s\u0113rija: " + maxStreak)
+      );
+      host.append(heading);
+      const status = el("p", void 0, "reading-feedback");
       host.append(status);
-      if (canSubmit) try {
-        const id = await saveProgress({ studentRole: "samanta", subject: "Latvie\u0161u valoda", activityType: topic + " \xB7 " + mode, score: pct, notes: JSON.stringify({ correct, total: questions.length, maxStreak }) });
-        status.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts Firebase" : "\u26A0\uFE0F Saglab\u0101\u0161ana nav apstiprin\u0101ta";
-      } catch {
-        status.textContent = "\u26A0\uFE0F Saglab\u0101\u0161ana neizdev\u0101s";
+      if (canSubmit) {
+        try {
+          const id = await saveProgress({
+            studentRole: "samanta",
+            subject: "Latvie\u0161u valoda",
+            activityType: topic + " \xB7 " + mode,
+            score: pct,
+            notes: JSON.stringify({ correct, total: questions.length, maxStreak, dyslexiaMode: showSyllables })
+          });
+          status.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts Firebase." : "\u26A0\uFE0F Saglab\u0101\u0161ana nav apstiprin\u0101ta.";
+        } catch {
+          status.textContent = "\u26A0\uFE0F Rezult\u0101ta saglab\u0101\u0161ana neizdev\u0101s.";
+        }
+      } else {
+        status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiek ieskait\u012Bts.";
       }
-      btn("M\u0113\u0123in\u0101t v\u0113lreiz", () => start2(mode));
-      btn("\u2190 T\u0113mas", view);
+      const actions = el("div", void 0, "button-cluster");
+      btn("Tren\u0113ties v\u0113lreiz", () => start2(mode), actions);
+      btn("\u2190 Atpaka\u013C uz t\u0113m\u0101m", view, actions, "quiet-button");
+      host.append(actions);
     }
     view();
   }
@@ -742,11 +1191,11 @@
         return;
       }
       host.replaceChildren();
-      const q = questions[index];
+      const q2 = questions[index];
       const head = el("div", void 0, "learning-heading");
       head.append(
         el("span", "UZDEVUMS " + (index + 1) + " NO " + questions.length, "eyebrow"),
-        el("h2", q.promptText)
+        el("h2", q2.promptText)
       );
       host.append(head);
       const track = el("div", void 0, "progress-track");
@@ -760,26 +1209,26 @@
       const centerDisplay = el("div", void 0, "english-card-center");
       centerDisplay.style.textAlign = "center";
       centerDisplay.style.margin = "16px 0 24px";
-      const bigIcon = el("div", q.icon, "english-big-icon");
+      const bigIcon = el("div", q2.icon, "english-big-icon");
       bigIcon.style.fontSize = "clamp(3.5rem, 8vw, 5rem)";
       bigIcon.style.lineHeight = "1.2";
       centerDisplay.append(bigIcon);
-      if (q.type === "choice") {
-        const lvWord = el("h3", q.targetLv, "english-target-word");
+      if (q2.type === "choice") {
+        const lvWord = el("h3", q2.targetLv, "english-target-word");
         lvWord.style.fontSize = "clamp(1.8rem, 4vw, 2.5rem)";
         lvWord.style.color = "#382b6b";
         lvWord.style.margin = "10px 0 6px";
         centerDisplay.append(lvWord);
       } else {
-        const engPrompt = el("h3", `\u201C${q.promptEn}\u201D`, "english-target-word");
+        const engPrompt = el("h3", `\u201C${q2.promptEn}\u201D`, "english-target-word");
         engPrompt.style.fontSize = "clamp(2rem, 4vw, 2.8rem)";
         engPrompt.style.color = "#382b6b";
         engPrompt.style.margin = "10px 0 6px";
         centerDisplay.append(engPrompt);
       }
       const audioRow = el("div", void 0, "reading-controls");
-      const bListen = el("button", "\u{1F50A} Klaus\u012Bties izrunu (\u201C" + q.speechText + "\u201D)", "reading-listen");
-      bListen.onclick = () => speakEnglish(q.speechText, bListen);
+      const bListen = el("button", "\u{1F50A} Klaus\u012Bties izrunu (\u201C" + q2.speechText + "\u201D)", "reading-listen");
+      bListen.onclick = () => speakEnglish(q2.speechText, bListen);
       const bStop = el("button", "\u23F9 Aptur\u0113t", "reading-stop");
       bStop.onclick = () => {
         if ("speechSynthesis" in window) window.speechSynthesis.cancel();
@@ -789,7 +1238,7 @@
       centerDisplay.append(audioRow);
       card.append(centerDisplay);
       if (mode === "learn") {
-        setTimeout(() => speakEnglish(q.speechText, bListen), 300);
+        setTimeout(() => speakEnglish(q2.speechText, bListen), 300);
       }
       const optionsGrid = el("div", void 0, "english-options-grid");
       optionsGrid.style.display = "grid";
@@ -799,7 +1248,7 @@
       const status = el("p", "", "reading-feedback");
       status.setAttribute("role", "status");
       let answered = false;
-      q.options.forEach((opt) => {
+      q2.options.forEach((opt) => {
         const optBtn = el("button", opt, "english-option-button");
         optBtn.type = "button";
         optBtn.style.padding = "18px 20px";
@@ -814,26 +1263,26 @@
         optBtn.onclick = () => {
           if (answered) return;
           answered = true;
-          const isGood = opt.toLowerCase() === q.correctAnswer.toLowerCase();
+          const isGood = opt.toLowerCase() === q2.correctAnswer.toLowerCase();
           correct += Number(isGood);
           streak = isGood ? streak + 1 : 0;
           maxStreak = Math.max(streak, maxStreak);
           if (!isGood) {
-            mistakes.push(q);
+            mistakes.push(q2);
             optBtn.style.borderColor = "#e57373";
             optBtn.style.background = "#ffebee";
             optBtn.style.color = "#c62828";
           }
           optionsGrid.querySelectorAll("button").forEach((b2) => {
             b2.disabled = true;
-            if (b2.textContent.toLowerCase() === q.correctAnswer.toLowerCase()) {
+            if (b2.textContent.toLowerCase() === q2.correctAnswer.toLowerCase()) {
               b2.style.borderColor = "#48bb78";
               b2.style.background = "#e6fffa";
               b2.style.color = "#1b7454";
             }
           });
-          status.textContent = mode === "exam" ? "Atbilde pie\u0146emta." : isGood ? "\u2705 Pareizi! Lieliski!" : `\u{1F50D} Pareiz\u0101 atbilde ir \u201C${q.correctAnswer}\u201D. ${q.hint}`;
-          speakEnglish(q.speechText);
+          status.textContent = mode === "exam" ? "Atbilde pie\u0146emta." : isGood ? "\u2705 Pareizi! Lieliski!" : `\u{1F50D} Pareiz\u0101 atbilde ir \u201C${q2.correctAnswer}\u201D. ${q2.hint}`;
+          speakEnglish(q2.speechText);
           const nextBtn = el("button", index + 1 === questions.length ? "Skat\u012Bt rezult\u0101tu \u2192" : "N\u0101kamais v\u0101rds \u2192", "action-button");
           nextBtn.style.marginTop = "15px";
           nextBtn.onclick = () => {
@@ -848,7 +1297,7 @@
       if (mode === "learn") {
         const bHint = el("button", "\u{1F4A1} Pavediens", "quiet-button");
         bHint.onclick = () => {
-          status.textContent = q.hint;
+          status.textContent = q2.hint;
         };
         card.append(bHint);
       }
@@ -900,1084 +1349,6 @@
       host.append(actions);
     }
     viewTopics();
-  }
-
-  // src/rewards-system.js
-  var DEFAULT_REWARDS = [
-    { id: "rew-icecream", title: "Sald\u0113jums vai iecien\u012Bts gardums", icon: "\u{1F366}", cost: 40, desc: "Izv\u0113lies savu m\u012B\u013C\u0101ko sald\u0113jumu vai na\u0161\u0137i veikal\u0101" },
-    { id: "rew-game-30", title: "30 min\u016Btes papildu sp\u0113\u013Cu / ekr\u0101na laiks", icon: "\u{1F3AE}", cost: 50, desc: "Papildu laiks Roblox, Minecraft vai plan\u0161et\u0113" },
-    { id: "rew-movie-night", title: "\u0122imenes filmu vakars ar popkornu", icon: "\u{1F3AC}", cost: 75, desc: "Tu izv\u0113lies filmu un k\u0101rumus visai \u0123imenei" },
-    { id: "rew-bike-trip", title: "Kop\u012Bgs velobrauciens vai piedz\u012Bvojums park\u0101", icon: "\u{1F6B4}", cost: 80, desc: "Izbraukums ar rite\u0146iem, skrejrite\u0146iem vai pikniks" },
-    { id: "rew-pizza-night", title: "Picas vakars vai vakari\u0146u pas\u016Bt\u012B\u0161ana", icon: "\u{1F355}", cost: 100, desc: "Kop\u012Bgi pas\u016Bt\u0101m vai cepam tavu m\u012B\u013C\u0101ko picu" },
-    { id: "rew-book", title: "Jauna gr\u0101mata vai komikss", icon: "\u{1F4DA}", cost: 120, desc: "Gr\u0101matn\u012Bcas apmekl\u0113jums jaunas las\u0101mvielas izv\u0113lei" },
-    { id: "rew-craft-toy", title: "Rado\u0161ais komplekts vai maza rota\u013Clieta", icon: "\u{1F3A8}", cost: 150, desc: "Jauns lego, z\u012Bm\u0113\u0161anas kr\u0101sas vai hobija lieta" }
-  ];
-  var CLAIMS_STORAGE_KEY = "majas-skola-reward-claims-v1";
-  function getStoredRewardClaims() {
-    try {
-      const raw = localStorage.getItem(CLAIMS_STORAGE_KEY);
-      return raw ? JSON.parse(raw) : [];
-    } catch {
-      return [];
-    }
-  }
-  function saveStoredRewardClaims(claims) {
-    try {
-      localStorage.setItem(CLAIMS_STORAGE_KEY, JSON.stringify(claims));
-    } catch {
-    }
-  }
-  function calculateChildPoints(role, progressRecords = []) {
-    const childRecords = progressRecords.filter((r2) => r2.studentRole === role);
-    let totalXP = 0;
-    for (const r2 of childRecords) {
-      const score = Number(r2.score) || 0;
-      if (score >= 90) totalXP += 25;
-      else if (score >= 70) totalXP += 18;
-      else if (score >= 50) totalXP += 10;
-      else totalXP += 5;
-      try {
-        const notes = JSON.parse(r2.notes || "{}");
-        if (notes.pointsPreview) totalXP += Math.min(20, Number(notes.pointsPreview) || 0);
-      } catch {
-      }
-    }
-    const claims = getStoredRewardClaims().filter((c2) => c2.studentRole === role && c2.status !== "rejected");
-    const spentPoints = claims.reduce((acc, c2) => acc + (Number(c2.cost) || 0), 0);
-    const currentBalance = Math.max(0, totalXP - spentPoints);
-    return { totalEarned: totalXP, spent: spentPoints, balance: currentBalance };
-  }
-  function claimReward({ studentRole, rewardId, currentBalance }) {
-    const reward = DEFAULT_REWARDS.find((r2) => r2.id === rewardId);
-    if (!reward) throw new Error("Balva netika atrasta.");
-    if (currentBalance < reward.cost) throw new Error(`Nepiecie\u0161ami v\u0113l ${reward.cost - currentBalance} punkti.`);
-    const newClaim = {
-      id: "claim-" + Date.now() + "-" + Math.random().toString(36).slice(2, 6),
-      studentRole,
-      studentName: studentRole === "marks" ? "Marks" : studentRole === "samanta" ? "Samanta" : studentRole,
-      rewardId: reward.id,
-      rewardTitle: reward.title,
-      icon: reward.icon,
-      cost: reward.cost,
-      status: "pending",
-      // 'pending' | 'approved' | 'fulfilled' | 'rejected'
-      claimedAt: (/* @__PURE__ */ new Date()).toISOString(),
-      statusUpdatedAt: (/* @__PURE__ */ new Date()).toISOString()
-    };
-    const claims = getStoredRewardClaims();
-    claims.unshift(newClaim);
-    saveStoredRewardClaims(claims);
-    return newClaim;
-  }
-  function updateRewardClaimStatus(claimId, status) {
-    const claims = getStoredRewardClaims();
-    const target = claims.find((c2) => c2.id === claimId);
-    if (target) {
-      target.status = status;
-      target.statusUpdatedAt = (/* @__PURE__ */ new Date()).toISOString();
-      saveStoredRewardClaims(claims);
-      return true;
-    }
-    return false;
-  }
-  function renderRewardShop(container, { studentRole, progressRecords = [], onBack } = {}) {
-    const host = document.createElement("section");
-    host.className = "module learning-hub reward-shop-hub";
-    host.style.gridColumn = "1/-1";
-    container.replaceChildren(host);
-    const pointsInfo = calculateChildPoints(studentRole, progressRecords);
-    const head = document.createElement("div");
-    head.className = "learning-heading";
-    head.innerHTML = `
-    <span class="eyebrow">\u{1F381} BALVU VEIKALS UN MOTIV\u0100CIJA</span>
-    <h2>Tavi nopeln\u012Btie punkti un m\u0113r\u0137i</h2>
-    <p>Katrs atrisin\u0101ts uzdevums un katra s\u0113rija kr\u0101j punktus balv\u0101m, kuras apstiprina vec\u0101ks!</p>
-  `;
-    host.append(head);
-    const balanceCard = document.createElement("div");
-    balanceCard.className = "reward-balance-card";
-    balanceCard.style.cssText = "background:linear-gradient(135deg,#6955f7,#443cae);color:white;padding:25px;border-radius:24px;margin-bottom:24px;display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:15px;box-shadow:0 15px 35px #5544cb33";
-    balanceCard.innerHTML = `
-    <div>
-      <span style="font-size:0.9rem;text-transform:uppercase;letter-spacing:0.06em;opacity:0.9">Pieejamie punkti (BP)</span>
-      <div style="font-size: clamp(2.5rem, 6vw, 3.8rem);font-weight:900;line-height:1">${pointsInfo.balance} <small style="font-size:1.4rem;font-weight:700">BP</small></div>
-      <small style="opacity:0.85">Kop\u0101 nopeln\u012Bts: ${pointsInfo.totalEarned} BP \xB7 Izt\u0113r\u0113ts balv\u0101m: ${pointsInfo.spent} BP</small>
-    </div>
-    <div style="text-align:right">
-      <span style="display:inline-block;background:rgba(255,255,255,0.2);padding:10px 16px;border-radius:99px;font-weight:800;font-size:0.95rem">
-        ${pointsInfo.balance >= 40 ? "\u{1F389} Vari izv\u0113l\u0113ties balvu!" : "\u2B50 Kr\u0101j punktus treni\u0146os!"}
-      </span>
-    </div>
-  `;
-    host.append(balanceCard);
-    const myClaims = getStoredRewardClaims().filter((c2) => c2.studentRole === studentRole);
-    if (myClaims.length) {
-      const claimsBox = document.createElement("div");
-      claimsBox.className = "my-claims-box";
-      claimsBox.style.cssText = "background:#ffffff;border:2px solid #eae6fb;border-radius:22px;padding:20px;margin-bottom:26px";
-      claimsBox.innerHTML = '<h3 style="margin-top:0">\u{1F4CB} Tavi pieteikumi vec\u0101kam</h3>';
-      const claimsList = document.createElement("div");
-      claimsList.style.cssText = "display:grid;gap:10px";
-      myClaims.forEach((c2) => {
-        const row = document.createElement("div");
-        row.style.cssText = "display:flex;justify-content:space-between;align-items:center;padding:12px 16px;background:#f9f8ff;border-radius:14px;gap:12px;flex-wrap:wrap";
-        const statusBadge = c2.status === "approved" ? '<span style="color:#137333;font-weight:900">\u2705 Apstiprin\u0101ts (Gatavs sa\u0146em\u0161anai!)</span>' : c2.status === "fulfilled" ? '<span style="color:#1a73e8;font-weight:900">\u{1F389} Sa\u0146emts!</span>' : c2.status === "rejected" ? '<span style="color:#d93025;font-weight:900">\u274C Noraid\u012Bts</span>' : '<span style="color:#e37400;font-weight:900">\u23F3 Gaida vec\u0101ka apstiprin\u0101jumu</span>';
-        row.innerHTML = `
-        <div>
-          <strong style="font-size:1.1rem">${c2.icon} ${c2.rewardTitle}</strong>
-          <small style="display:block;color:#67718e">${c2.cost} BP \xB7 Pieteikts: ${new Date(c2.claimedAt).toLocaleDateString("lv-LV")}</small>
-        </div>
-        <div>${statusBadge}</div>
-      `;
-        claimsList.append(row);
-      });
-      claimsBox.append(claimsList);
-      host.append(claimsBox);
-    }
-    const listHeading = document.createElement("h3");
-    listHeading.textContent = "Pieejam\u0101s \u0123imenes balvas:";
-    host.append(listHeading);
-    const grid = document.createElement("div");
-    grid.className = "reward-grid";
-    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin:16px 0 28px";
-    DEFAULT_REWARDS.forEach((item) => {
-      const card = document.createElement("div");
-      const canAfford = pointsInfo.balance >= item.cost;
-      card.className = "reward-coupon-card";
-      card.style.opacity = canAfford ? "1" : "0.85";
-      if (!canAfford) card.style.borderColor = "#e2dfed";
-      const stampHtml = canAfford ? '<span class="reward-stamp reward-stamp-ready">\u2B50 Gatavs pieteik\u0161anai!</span>' : `<span class="reward-stamp reward-stamp-need">V\u0113l tr\u016Bkst ${item.cost - pointsInfo.balance} BP</span>`;
-      card.innerHTML = `
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
-        <div style="font-size:2.8rem;line-height:1">${item.icon}</div>
-        ${stampHtml}
-      </div>
-      <div>
-        <strong style="font-size:1.25rem;display:block;margin:6px 0 4px;color:#282f53">${item.title}</strong>
-        <p style="font-size:0.92rem;color:#636e8b;margin:0">${item.desc}</p>
-      </div>
-      <div style="margin-top:14px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;border-top:1px dashed #e6e2f5;padding-top:12px">
-        <span style="font-weight:900;font-size:1.2rem;color:#5a49c7">${item.cost} BP</span>
-        <button type="button" class="action-button claim-btn" style="${canAfford ? "" : "background:#e2e2ec;color:#787b99;cursor:not-allowed;box-shadow:none"}">
-          ${canAfford ? "Pieteikt balvu \u{1F3AF}" : `Tr\u016Bkst ${item.cost - pointsInfo.balance} BP`}
-        </button>
-      </div>
-    `;
-      const btn = card.querySelector(".claim-btn");
-      if (canAfford) {
-        btn.onclick = () => {
-          try {
-            claimReward({ studentRole, rewardId: item.id, currentBalance: pointsInfo.balance });
-            alert(`\u{1F389} Apsveicam! Tu pieteici balvu: \u201C${item.title}\u201D!
-Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
-            renderRewardShop(container, { studentRole, progressRecords, onBack });
-          } catch (e2) {
-            alert(e2.message);
-          }
-        };
-      } else {
-        btn.disabled = true;
-      }
-      grid.append(card);
-    });
-    host.append(grid);
-    if (onBack) {
-      const backBtn = document.createElement("button");
-      backBtn.type = "button";
-      backBtn.className = "quiet-button";
-      backBtn.textContent = "\u2190 Atpaka\u013C uz m\u0101c\u012Bb\u0101m";
-      backBtn.onclick = onBack;
-      host.append(backBtn);
-    }
-  }
-  function renderParentRewardManager(container) {
-    const section = document.createElement("section");
-    section.className = "module";
-    section.style.gridColumn = "1/-1";
-    const title = document.createElement("h2");
-    title.textContent = "\u{1F381} Balvu pieteikumu p\u0101rvald\u012Bba";
-    section.append(title);
-    const desc = document.createElement("p");
-    desc.textContent = "\u0160eit redzami Marka un Samantas pieteikumi par nopeln\u012Btajiem m\u0101c\u012Bbu punktiem. Apstiprini un atz\u012Bm\u0113 k\u0101 izpild\u012Btas \u0123imenes balvas!";
-    section.append(desc);
-    const claims = getStoredRewardClaims();
-    if (!claims.length) {
-      const empty = document.createElement("p");
-      empty.textContent = "Pagaid\u0101m nav neviena akt\u012Bva balvu pieteikuma.";
-      section.append(empty);
-      container.append(section);
-      return;
-    }
-    const list = document.createElement("div");
-    list.style.cssText = "display:grid;gap:12px;margin-top:14px";
-    claims.forEach((c2) => {
-      const row = document.createElement("div");
-      row.style.cssText = "border:1px solid #e2e4f3;border-radius:18px;padding:16px 20px;background:#fbfbfe;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px";
-      const info = document.createElement("div");
-      info.innerHTML = `
-      <div style="display:flex;align-items:center;gap:10px">
-        <span style="font-size:1.8rem">${c2.icon}</span>
-        <div>
-          <strong style="font-size:1.15rem">${c2.studentName}: ${c2.rewardTitle}</strong>
-          <small style="display:block;color:#67718e">${c2.cost} BP \xB7 Pieteikts: ${new Date(c2.claimedAt).toLocaleString("lv-LV")} \xB7 Statuss: <strong>${c2.status}</strong></small>
-        </div>
-      </div>
-    `;
-      const actions = document.createElement("div");
-      actions.style.cssText = "display:flex;gap:8px;flex-wrap:wrap";
-      if (c2.status === "pending") {
-        const bApprove = document.createElement("button");
-        bApprove.type = "button";
-        bApprove.textContent = "\u2705 Apstiprin\u0101t";
-        bApprove.style.cssText = "background:#137333;color:white;border:0;border-radius:10px;padding:8px 14px;font-weight:800";
-        bApprove.onclick = () => {
-          updateRewardClaimStatus(c2.id, "approved");
-          renderParentRewardManager(container);
-        };
-        const bReject = document.createElement("button");
-        bReject.type = "button";
-        bReject.textContent = "\u274C Noraid\u012Bt";
-        bReject.style.cssText = "background:#f28b82;color:#5f2120;border:0;border-radius:10px;padding:8px 14px;font-weight:800";
-        bReject.onclick = () => {
-          updateRewardClaimStatus(c2.id, "rejected");
-          renderParentRewardManager(container);
-        };
-        actions.append(bApprove, bReject);
-      } else if (c2.status === "approved") {
-        const bDone = document.createElement("button");
-        bDone.type = "button";
-        bDone.textContent = "\u{1F389} Atz\u012Bm\u0113t k\u0101 sa\u0146emtu / izpild\u012Btu";
-        bDone.style.cssText = "background:#1a73e8;color:white;border:0;border-radius:10px;padding:8px 14px;font-weight:800";
-        bDone.onclick = () => {
-          updateRewardClaimStatus(c2.id, "fulfilled");
-          renderParentRewardManager(container);
-        };
-        actions.append(bDone);
-      } else if (c2.status === "fulfilled") {
-        const doneLabel = document.createElement("span");
-        doneLabel.textContent = "Izpild\u012Bts \u2705";
-        doneLabel.style.cssText = "color:#137333;font-weight:800;padding:6px 12px;background:#e6f4ea;border-radius:8px";
-        actions.append(doneLabel);
-      } else {
-        const rejectLabel = document.createElement("span");
-        rejectLabel.textContent = "Noraid\u012Bts \u274C";
-        rejectLabel.style.cssText = "color:#d93025;font-weight:800;padding:6px 12px;background:#fce8e6;border-radius:8px";
-        actions.append(rejectLabel);
-      }
-      row.append(info, actions);
-      list.append(row);
-    });
-    section.append(list);
-    container.append(section);
-  }
-
-  // src/personal-theme.js
-  var palettes = {
-    marks: { dragon: ["#6452eb", "#38cab8", "#f0eeff"], night: ["#344f8a", "#67d2e1", "#eaf3ff"], forest: ["#287b65", "#e1a853", "#e9f8ee"] },
-    samanta: { peach: ["#e86996", "#f8b966", "#fff0f4"], ocean: ["#229bad", "#7f83e8", "#e9fbff"], lavender: ["#9161c8", "#ef9dc0", "#f8eeff"] }
-  };
-  var defaults = { marks: "dragon", samanta: "peach" };
-  function applyPersonalTheme(role) {
-    const key = "home-school-theme-" + role;
-    let theme = defaults[role] || "dragon";
-    try {
-      const selected = localStorage.getItem(key);
-      if (palettes[role]?.[selected]) theme = selected;
-    } catch {
-    }
-    const root = document.documentElement;
-    const [primary, accent, tint] = palettes[role]?.[theme] || palettes.marks.dragon;
-    root.style.setProperty("--personal-primary", primary);
-    root.style.setProperty("--personal-accent", accent);
-    root.style.setProperty("--personal-tint", tint);
-    root.dataset.schoolTheme = role;
-    root.dataset.themeVariant = theme;
-    return theme;
-  }
-  function renderThemePicker(parent, role) {
-    if (!palettes[role]) return;
-    const box = document.createElement("section");
-    box.className = "theme-picker";
-    box.setAttribute("aria-label", "Piel\u0101got dizainu");
-    const heading = document.createElement("strong");
-    heading.textContent = "\u{1F3A8} Mana pasaule";
-    box.append(heading);
-    const subtitle = document.createElement("p");
-    subtitle.textContent = "Izv\u0113lies sev pat\u012Bkam\u0101k\u0101s kr\u0101sas.";
-    box.append(subtitle);
-    const variants = document.createElement("div");
-    variants.className = "theme-variants";
-    box.append(variants);
-    const labels = { dragon: "\u{1F409} P\u016B\u0137u sala", night: "\u{1F30C} Zvaig\u017E\u0146u nakts", forest: "\u{1F332} Me\u017Ea eksped\u012Bcija", peach: "\u{1F338} Saulainais d\u0101rzs", ocean: "\u{1F30A} Oke\u0101ns", lavender: "\u{1F984} Lavandas sapnis" };
-    let active = applyPersonalTheme(role);
-    for (const [name4, colors] of Object.entries(palettes[role])) {
-      const b2 = document.createElement("button");
-      b2.type = "button";
-      b2.className = "theme-choice";
-      b2.setAttribute("aria-pressed", String(active === name4));
-      const swatch = document.createElement("span");
-      swatch.className = "theme-swatch";
-      swatch.style.background = "linear-gradient(135deg," + colors[0] + "," + colors[1] + ")";
-      b2.append(swatch, document.createTextNode(labels[name4]));
-      variants.append(b2);
-      b2.onclick = () => {
-        active = name4;
-        try {
-          localStorage.setItem("home-school-theme-" + role, name4);
-        } catch {
-        }
-        applyPersonalTheme(role);
-        for (const child of variants.children) child.setAttribute("aria-pressed", String(child === b2));
-      };
-    }
-    parent.append(box);
-  }
-
-  // src/points-policy.js
-  var REWARD_CAP = 20;
-  function calculatePracticePoints({ correct, total, maxStreak = 0, mode = "practice" } = {}) {
-    if (!Number.isInteger(total) || total <= 0 || !Number.isInteger(correct) || correct < 0 || correct > total) throw new Error("Neder\u012Bgs rezult\u0101ts");
-    const percent = Math.round(100 * correct / total);
-    if (mode === "learn" || mode === "errors" || mode === "mistakes" || mode === "review")
-      return { percent, base: 0, streakBonus: 0, potential: 0, eligible: false, reason: "M\u0101c\u012Bbu vai k\u013C\u016Bdu labo\u0161anas re\u017E\u012Bms" };
-    const bands = [[0, 39, 0, 3], [40, 59, 4, 7], [60, 74, 8, 11], [75, 89, 12, 15], [90, 100, 16, 18]];
-    const band = bands.find(([lo2, hi2]) => percent >= lo2 && percent <= hi2);
-    const [lo, hi, low, high] = band;
-    const base = percent === 0 ? 0 : Math.min(high, Math.floor(low + (percent - lo) * (high - low) / Math.max(1, hi - lo)));
-    const streakBonus = (maxStreak >= 5 ? 1 : 0) + (maxStreak >= 10 ? 1 : 0);
-    const potential = Math.min(REWARD_CAP, base + streakBonus);
-    return { percent, base, streakBonus, potential, eligible: true, cap: REWARD_CAP };
-  }
-  function previewImprovement(bestBefore, potential) {
-    const before = Math.max(0, Math.min(REWARD_CAP, Number(bestBefore) || 0));
-    const after = Math.max(before, Math.min(REWARD_CAP, potential));
-    return { earned: after - before, best: after };
-  }
-
-  // src/samanta-math.js
-  var shuffle4 = (a) => {
-    const b2 = [...a];
-    for (let i2 = b2.length - 1; i2 > 0; i2--) {
-      const j = Math.floor(Math.random() * (i2 + 1));
-      [b2[i2], b2[j]] = [b2[j], b2[i2]];
-    }
-    return b2;
-  };
-  var historyKey = "samanta-math-v1";
-  function history() {
-    try {
-      const x2 = JSON.parse(localStorage.getItem(historyKey) || "[]");
-      return Array.isArray(x2) ? x2.slice(-50) : [];
-    } catch {
-      return [];
-    }
-  }
-  function store(result) {
-    try {
-      localStorage.setItem(historyKey, JSON.stringify([...history(), result].slice(-50)));
-    } catch {
-    }
-  }
-  function makeMathQuestions(type = "mixed", family = 0, count = 12) {
-    const base = [];
-    for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
-      if (family && a !== family && b2 !== family) continue;
-      const product = a * b2;
-      if (type !== "division" && type !== "visual" && type !== "story") {
-        base.push({ key: "m-" + a + "-" + b2, kind: "multiply", a, b: b2, answer: product, prompt: a + " \xD7 " + b2 + " = ?", hint: a + " grupas, katr\u0101 " + b2 + " priek\u0161meti. Kop\u0101 ir " + product + "." });
-        base.push({ key: "missing-m-" + a + "-" + b2, kind: "missing", a, b: b2, answer: b2, prompt: a + " \xD7 \u25A1 = " + product, hint: "Atrodi skaitli, kuru reizinot ar " + a + ", ieg\u016Bst " + product + "." });
-      }
-      if (type !== "multiply" && type !== "visual" && type !== "story") {
-        base.push({ key: "d-" + a + "-" + b2, kind: "divide", a, b: b2, answer: b2, prompt: product + " \xF7 " + a + " = ?", hint: "Ja " + product + " sadala " + a + " vien\u0101d\u0101s grup\u0101s, katr\u0101 ir " + b2 + "." });
-        base.push({ key: "missing-d-" + a + "-" + b2, kind: "missing", a, b: b2, answer: a, prompt: product + " \xF7 \u25A1 = " + b2, hint: "Atrodi dal\u012Bt\u0101ju, kas dod rezult\u0101tu " + b2 + "." });
-      }
-    }
-    if (type === "visual" || type === "story") {
-      const objects = ["\u{1F34E}", "\u2B50", "\u{1F33C}", "\u{1F98B}", "\u{1F7E3}"];
-      const people = ["Samanta", "L\u012Bga", "Anna", "Marta", "Elza"];
-      for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
-        if (family && a !== family && b2 !== family) continue;
-        const icon = objects[(a + b2) % objects.length], person = people[(a + b2) % people.length];
-        if (type === "visual") {
-          base.push({ key: "v-m-" + a + "-" + b2, kind: "visual-multiply", a, b: b2, answer: a * b2, prompt: "Cik priek\u0161metu ir kop\u0101?", icon, hint: a + " grupas pa " + b2 + " ir " + a * b2 + "." });
-          base.push({ key: "v-d-" + a + "-" + b2, kind: "visual-divide", a, b: b2, answer: b2, prompt: "Cik priek\u0161metu ir katr\u0101 grup\u0101?", icon, hint: a * b2 + " priek\u0161metus sadalot " + a + " vien\u0101d\u0101s grup\u0101s, katr\u0101 b\u016Bs " + b2 + "." });
-        } else {
-          base.push({ key: "s-m-" + a + "-" + b2, kind: "story-multiply", a, b: b2, answer: a * b2, prompt: person + " salika " + a + " grozi\u0146us. Katr\u0101 grozi\u0146\u0101 ir " + b2 + " \u0101boli. Cik \u0101bolu ir kop\u0101?", hint: "Saskaiti " + a + " grupas pa " + b2 + " \u0101boliem." });
-          base.push({ key: "s-d-" + a + "-" + b2, kind: "story-divide", a, b: b2, answer: b2, prompt: person + " vien\u0101di sadal\u012Bja " + a * b2 + " uzl\u012Bmes " + a + " draugiem. Cik uzl\u012Bmju sa\u0146\u0113ma katrs draugs?", hint: "Sadal\u0101m " + a * b2 + " ar " + a + "." });
-        }
-      }
-    }
-    return shuffle4(base).slice(0, count);
-  }
-  function renderSamantaMath(container, { canSubmit = false, saveProgress = async () => {
-  } } = {}) {
-    const host = document.createElement("section");
-    host.className = "module learning-hub math-hub";
-    host.style.gridColumn = "1/-1";
-    container.append(host);
-    let session = null, errors = [], currentMode = "mixed", family = 0;
-    function el(tag, cls, text) {
-      const e2 = document.createElement(tag);
-      if (cls) e2.className = cls;
-      if (text !== void 0) e2.textContent = text;
-      return e2;
-    }
-    function button(parent, text, action, cls = "action-button") {
-      const b2 = el("button", cls, text);
-      b2.type = "button";
-      b2.onclick = action;
-      parent.append(b2);
-      return b2;
-    }
-    function shell(title, subtitle) {
-      host.replaceChildren();
-      const head = el("div", "learning-heading");
-      head.append(el("span", "eyebrow", "\u2726 SAMANTAS MATEM\u0100TIKAS LABORATORIJA"), el("h2", "", title), el("p", "", subtitle));
-      host.append(head);
-    }
-    function welcome() {
-      shell("Skait\u013Cu piedz\u012Bvojums", "Reizini, dali un k\u013C\u016Bsti arvien dro\u0161\u0101ka! Te vari m\u0113\u0123in\u0101t tik rei\u017Eu, cik v\u0113lies.");
-      const stats = history().filter((x2) => x2.type);
-      if (stats.length) {
-        const last = stats.at(-1), row = el("div", "stat-strip");
-        row.append(el("span", "", "\u{1F3C5} Lab\u0101kais " + Math.max(...stats.map((x2) => x2.percent)) + "%"), el("span", "", "\u{1F4C8} P\u0113d\u0113jais " + last.percent + "%"), el("span", "", "\u2726 Treni\u0146i " + stats.length));
-        host.append(row);
-      }
-      const modeRow = el("div", "topic-grid");
-      host.append(modeRow);
-      for (const [type, icon, title, desc] of [["multiply", "\u2716", "Reizr\u0113\u0137ins", "Skait\u013Ci no 1 l\u012Bdz 10"], ["division", "\u2797", "Dal\u012B\u0161ana", "Dal\u0101m tikai bez atlikuma"], ["mixed", "\u26A1", "Jauktais izaicin\u0101jums", "Reizin\u0101\u0161ana un dal\u012B\u0161ana kop\u0101"], ["visual", "\u{1F9E9}", "Redzu un skaitu", "Uzdevumi ar priek\u0161metu grup\u0101m"], ["story", "\u{1F4D6}", "St\u0101stu uzdevumi", "\u012Asi teksta uzdevumi ar balsi"]]) {
-        const b2 = el("button", "topic-tile");
-        b2.type = "button";
-        b2.append(el("span", "topic-emoji", icon), el("strong", "", title), el("small", "", desc));
-        b2.onclick = () => settings(type);
-        modeRow.append(b2);
-      }
-      if (errors.length) {
-        const alert2 = el("div", "soft-notice", "\u{1F3AF} Tev ir " + errors.length + " jaut\u0101jumi, kurus vari patren\u0113t v\u0113lreiz.");
-        host.append(alert2);
-        button(host, "Tren\u0113t manas k\u013C\u016Bdas", () => start2(currentMode, family, "mistakes"));
-      }
-      const grid = el("div", "table-area");
-      grid.append(el("h3", "", "\u{1F522} Reizin\u0101\u0161anas tabula"));
-      const table = el("div", "times-grid");
-      for (let a = 1; a <= 10; a++) {
-        const line = el("div", "times-line");
-        for (let b2 = 1; b2 <= 10; b2++) {
-          const cell = el("span", "times-cell", String(a * b2));
-          cell.title = a + " \xD7 " + b2;
-          line.append(cell);
-        }
-        table.append(line);
-      }
-      grid.append(table);
-      host.append(grid);
-    }
-    function settings(type) {
-      currentMode = type;
-      shell(type === "multiply" ? "\u2716 Reizr\u0113\u0137ins" : type === "division" ? "\u2797 Dal\u012B\u0161ana" : type === "visual" ? "\u{1F9E9} Redzu un skaitu" : type === "story" ? "\u{1F4D6} St\u0101stu uzdevumi" : "\u26A1 Jauktais izaicin\u0101jums", "Izv\u0113lies, ko v\u0113lies patren\u0113t.");
-      const controls = el("div", "settings-panel");
-      controls.append(el("label", "", "Kuru reizin\u0101\u0161anas tabulu?"));
-      const select = el("select", "select-control");
-      for (let i2 = 0; i2 <= 10; i2++) {
-        const op = el("option", "", i2 === 0 ? "Visas tabulas 1\u201310" : i2 + ". tabula");
-        op.value = i2;
-        select.append(op);
-      }
-      select.value = String(family);
-      select.onchange = () => {
-        family = Number(select.value);
-      };
-      controls.append(select);
-      host.append(controls);
-      const buttons = el("div", "button-cluster");
-      host.append(buttons);
-      button(buttons, "\u{1F331} M\u0101cos \xB7 8 uzdevumi", () => start2(type, Number(select.value), "learn"));
-      button(buttons, "\u{1F3AF} Tren\u0113jos \xB7 12 uzdevumi", () => start2(type, Number(select.value), "practice"));
-      button(buttons, "\u{1F3C6} P\u0101rbaudu sevi \xB7 20 uzdevumi", () => start2(type, Number(select.value), "exam"));
-      button(host, "\u2190 Visas t\u0113mas", welcome, "quiet-button");
-    }
-    function start2(type, fam, mode) {
-      const source = makeMathQuestions(type, fam, mode === "learn" ? 8 : mode === "exam" ? 20 : mode === "mistakes" ? Math.min(10, Math.max(4, errors.length * 2)) : 12);
-      const previous = new Set(errors.map((q) => q.key));
-      const related = mode === "mistakes" ? errors.flatMap((q) => {
-        const all = makeMathQuestions("mixed", 0, 400);
-        return all.filter((x2) => x2.a === q.a && x2.b === q.b && !previous.has(x2.key));
-      }) : [];
-      const distinct = [...new Map(related.map((q) => [q.key, q])).values()];
-      const review = shuffle4(distinct).slice(0, 10);
-      const items = mode === "mistakes" ? review.length ? review : source.filter((q) => !previous.has(q.key)).slice(0, 10) : source;
-      session = { type, fam, mode, items, index: 0, correct: 0, misses: [], answers: [], began: Date.now() };
-      step();
-    }
-    function step() {
-      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-      const s2 = session;
-      if (s2.index >= s2.items.length) {
-        void finish();
-        return;
-      }
-      const q = s2.items[s2.index];
-      shell("Atrisini uzdevumu", "Jaut\u0101jums " + (s2.index + 1) + " no " + s2.items.length);
-      const bar = el("div", "progress-track");
-      const fill = el("div", "progress-fill");
-      fill.style.width = Math.round(s2.index / s2.items.length * 100) + "%";
-      bar.append(fill);
-      host.append(bar);
-      const streakLabel = el("div", "streak-label", "\u{1F525} " + (s2.streak || 0) + " pareizas atbildes p\u0113c k\u0101rtas \xB7 Rekords: " + (s2.maxStreak || 0));
-      host.append(streakLabel);
-      const card = el("div", "question-stage");
-      card.append(el("span", "eyebrow", s2.mode === "exam" ? "P\u0100RBAUDES RE\u017D\u012AMS" : "TAVS IZAICIN\u0100JUMS"), el("div", q.kind.startsWith("story") ? "story-expression" : "math-expression", q.prompt));
-      if (q.kind.startsWith("visual")) {
-        const grid = el("div", "visual-groups");
-        grid.setAttribute("role", "img");
-        grid.setAttribute("aria-label", q.a + " grupas ar " + q.b + " priek\u0161metiem katr\u0101");
-        for (let i2 = 0; i2 < q.a; i2++) {
-          const group = el("div", "visual-group");
-          for (let j = 0; j < q.b; j++) group.append(el("span", "visual-object", q.icon));
-          grid.append(group);
-        }
-        card.append(grid);
-      }
-      if (q.kind.startsWith("story")) {
-        const controls = el("div", "reading-controls");
-        const read = button(controls, "\u{1F50A} Nolas\u012Bt uzdevumu", () => {
-          if (!("speechSynthesis" in window)) {
-            feedback.textContent = "\u0160aj\u0101 p\u0101rl\u016Bk\u0101 balss nolas\u012B\u0161ana nav pieejama.";
-            return;
-          }
-          window.speechSynthesis.cancel();
-          const speech = new SpeechSynthesisUtterance(q.prompt);
-          speech.lang = "lv-LV";
-          speech.rate = 0.85;
-          speech.pitch = 1;
-          const available = window.speechSynthesis.getVoices().find((v2) => v2.lang.toLowerCase().startsWith("lv"));
-          if (available) speech.voice = available;
-          window.speechSynthesis.speak(speech);
-        }, "quiet-button");
-        read.setAttribute("aria-label", "Nolas\u012Bt teksta uzdevumu ska\u013Ci");
-        button(controls, "\u23F9 Aptur\u0113t", () => {
-          if ("speechSynthesis" in window) window.speechSynthesis.cancel();
-        }, "quiet-button");
-        card.append(controls);
-      }
-      const form = el("form", "math-answer-form");
-      const inp = el("input", "big-number-input");
-      inp.type = "number";
-      inp.inputMode = "numeric";
-      inp.min = "0";
-      inp.max = "100";
-      inp.step = "1";
-      inp.required = true;
-      inp.placeholder = "?";
-      inp.autocomplete = "off";
-      inp.setAttribute("aria-label", "Tava atbilde");
-      form.append(inp);
-      const feedback = el("p", "feedback-line");
-      feedback.setAttribute("role", "status");
-      if (s2.mode === "learn") button(card, "\u{1F4A1} Par\u0101di pavedienu", () => {
-        feedback.textContent = q.kind.includes("multiply") ? "Atceries: reizin\u0101\u0161ana ir atk\u0101rtota saskait\u012B\u0161ana." : q.kind.includes("divide") ? "P\u0101rbaudi dal\u012B\u0161anu ar reizin\u0101\u0161anu." : "Dom\u0101, kura darb\u012Bba j\u0101izpilda.";
-      }, "quiet-button");
-      const submit = el("button", "action-button", "P\u0101rbaud\u012Bt");
-      submit.type = "submit";
-      form.append(submit);
-      card.append(form, feedback);
-      const numpad = attachTouchNumpad(card, inp);
-      host.append(card);
-      inp.focus({ preventScroll: true });
-      form.onsubmit = (e2) => {
-        e2.preventDefault();
-        const val = Number(inp.value);
-        if (!Number.isInteger(val) || inp.value === "") return;
-        const good = val === q.answer;
-        s2.correct += Number(good);
-        s2.answers.push({ key: q.key, correct: good });
-        s2.streak = good ? (s2.streak || 0) + 1 : 0;
-        s2.maxStreak = Math.max(s2.maxStreak || 0, s2.streak);
-        if (!good) s2.misses.push(q);
-        inp.disabled = true;
-        submit.disabled = true;
-        numpad.querySelectorAll("button").forEach((b2) => b2.disabled = true);
-        feedback.textContent = s2.mode === "exam" ? "Atbilde pie\u0146emta." : good ? "\u2705 Pareizi! Tu to paveici!" : "\u{1F50D} V\u0113l ne. " + q.hint;
-        button(card, s2.index + 1 === s2.items.length ? "Skat\u012Bt rezult\u0101tu \u2192" : "N\u0101kamais \u2192", () => {
-          s2.index++;
-          step();
-        });
-      };
-    }
-    async function finish() {
-      const s2 = session, pct = Math.round(s2.correct / s2.items.length * 100);
-      errors = s2.misses;
-      currentMode = s2.type;
-      family = s2.fam;
-      shell("Tavs rezult\u0101ts", "Katrs m\u0113\u0123in\u0101jums pal\u012Bdz k\u013C\u016Bt dro\u0161\u0101kai.");
-      host.append(el("div", "result-hero", pct + "%"), el("p", "result-subtitle", s2.correct + " pareizi no " + s2.items.length + " uzdevumiem"));
-      const weak = el("div", "soft-notice", s2.misses.length ? "Visvair\u0101k j\u0101nostiprina " + (s2.type === "multiply" ? "reizin\u0101\u0161ana" : s2.type === "division" ? "dal\u012B\u0161ana" : "da\u017Eas reizin\u0101\u0161anas un dal\u012B\u0161anas darb\u012Bbas") + "." : "\u{1F31F} Visas atbildes pareizas!");
-      host.append(weak);
-      const policy = calculatePracticePoints({ correct: s2.correct, total: s2.items.length, maxStreak: s2.maxStreak || 0, mode: s2.mode });
-      const key = "samanta-math-best-" + s2.type + "-" + s2.fam;
-      let previous = 0;
-      try {
-        previous = Number(localStorage.getItem(key)) || 0;
-      } catch {
-      }
-      const award = previewImprovement(previous, policy.potential);
-      const row = { type: s2.type, mode: s2.mode, percent: pct, correct: s2.correct, total: s2.items.length, date: (/* @__PURE__ */ new Date()).toISOString(), streak: s2.maxStreak || 0, pointsPreview: award.earned, pointsPotential: policy.potential };
-      if (canSubmit) {
-        store(row);
-        try {
-          localStorage.setItem(key, String(award.best));
-        } catch {
-        }
-      }
-      const pts = el("div", "soft-notice", policy.eligible ? "\u{1F3C5} \u0160\u012B m\u0113\u0123in\u0101juma punktu potenci\u0101ls: " + policy.potential + "/20 \xB7 Jauns uzlabojums: +" + award.earned + " treni\u0146a BP \xB7 S\u0113rijas bonuss: " + policy.streakBonus : "\u{1F331} \u0160is ir m\u0101c\u012Bbu re\u017E\u012Bms \u2014 bez balvu punktiem.");
-      host.append(pts);
-      const disclaimer = el("p", "points-disclaimer", "Treni\u0146a BP pagaid\u0101m ir informat\u012Bvi. Balvu makam tos nepieskaita, l\u012Bdz ir dro\u0161a servera v\u0113rt\u0113\u0161ana.");
-      host.append(disclaimer);
-      const status = el("p", "save-status");
-      host.append(status);
-      if (canSubmit) {
-        try {
-          const id = await saveProgress({ studentRole: "samanta", subject: "Matem\u0101tika", activityType: "Reizr\u0113\u0137ins un dal\u012B\u0161ana \xB7 " + s2.type + " \xB7 " + s2.mode, score: pct, notes: JSON.stringify(row) });
-          status.textContent = id ? "\u2705 Rezult\u0101ts saglab\u0101ts." : "\u26A0\uFE0F Saglab\u0101\u0161anu nevar\u0113ja apstiprin\u0101t.";
-        } catch {
-          status.textContent = "\u26A0\uFE0F Firebase saglab\u0101\u0161ana neizdev\u0101s. Rezult\u0101ts paliek \u0161\u012Bs p\u0101rl\u016Bkprogrammas v\u0113stur\u0113.";
-        }
-      } else status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiek ieskait\u012Bts.";
-      const actions = el("div", "button-cluster");
-      host.append(actions);
-      if (s2.misses.length) {
-        button(actions, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(s2.type, s2.fam, "mistakes"));
-        button(actions, "V\u0113l\u0101k", welcome, "quiet-button");
-      }
-      button(actions, "M\u0113\u0123in\u0101t v\u0113lreiz", () => start2(s2.type, s2.fam, s2.mode));
-      button(actions, "\u2190 Uz s\u0101kumu", welcome, "quiet-button");
-    }
-    welcome();
-  }
-
-  // src/latvian-school.js
-  var TOPICS = [
-    { id: "morfemas", name: "V\u0101rda sast\u0101vs un v\u0101rddarin\u0101\u0161ana", icon: "\u{1F50E}" },
-    { id: "sazina", name: "Sazi\u0146a un sazi\u0146as veidi", icon: "\u{1F4AC}" },
-    { id: "vardskiras", name: "V\u0101rd\u0161\u0137iras un v\u0101rda pamatforma", icon: "\u{1F4DA}" }
-  ];
-  var BANK = {
-    morfemas: [
-      ["Kas ir v\u0101rda sakne?", ["V\u0101rda da\u013Ca, kas kop\u012Bga radniec\u012Bgiem v\u0101rdiem", "Vienm\u0113r v\u0101rda p\u0113d\u0113jais burts", "V\u0101rda s\u0101kum\u0101 eso\u0161s pried\u0113klis"], 0, "Sakne izsaka radniec\u012Bgo v\u0101rdu kop\u012Bgo noz\u012Bmi."],
-      ["Kur\u0161 ir saliktenis?", ["saules stars", "saulespu\u0137e", "skaista pu\u0137e"], 1, "Saliktenis veidots no div\u0101m vai vair\u0101k\u0101m sakn\u0113m."],
-      ["Kur\u0161 ir v\u0101rdu savienojums?", ["sniegav\u012Brs", "\u016Bdensroze", "\u016Bdens pudele"], 2, "V\u0101rdu savienojumu raksta atsevi\u0161\u0137os v\u0101rdos."],
-      ["Kur\u0161 v\u0101rds ir radniec\u012Bgs v\u0101rdam \u201Cme\u017Es\u201D?", ["me\u017Eains", "m\u0113ness", "maiss"], 0, "Radniec\u012Bgiem v\u0101rdiem ir kop\u012Bga sakne un saist\u012Bta noz\u012Bme."],
-      ["Kas atrodas pirms saknes v\u0101rd\u0101, ja v\u0101rdam ir pried\u0113klis?", ["galotne", "pried\u0113klis", "pied\u0113klis"], 1, "Pried\u0113klis atrodas pirms saknes."],
-      ["Kur\u0161 apgalvojums ir pareizs?", ["Katram v\u0101rdam ir pried\u0113klis", "Katram v\u0101rdam ir pied\u0113klis", "Ne visiem v\u0101rdiem ir pried\u0113klis"], 2, "Pried\u0113k\u013Ca un pied\u0113k\u013Ca var neb\u016Bt."],
-      ["Izv\u0113lies pareizi darin\u0101tu salikteni no v\u0101rdiem \u201Csaule\u201D un \u201Cpu\u0137e\u201D.", ["saulespu\u0137e", "saule pu\u0137e", "sau\u013Cpu\u0137e"], 0, "Saliktenis ir \u201Csaulespu\u0137e\u201D."]
-    ],
-    sazina: [
-      ["Kura ir mutv\u0101rdu sazi\u0146a?", ["Saruna kl\u0101tien\u0113", "V\u0113stules rakst\u012B\u0161ana", "Plak\u0101ta las\u012B\u0161ana"], 0, "Saruna kl\u0101tien\u0113 ir mutv\u0101rdu sazi\u0146a."],
-      ["Kura ir rakstveida sazi\u0146a?", ["Rokasspiediens", "\u012Aszi\u0146a", "Saruna pa telefonu"], 1, "\u012Aszi\u0146a ir rakstveida sazi\u0146a."],
-      ["Kas pal\u012Bdz saprast sarunas partneri?", ["P\u0101rtraukt vi\u0146u", "Neklaus\u012Bties", "Uzman\u012Bgi klaus\u012Bties"], 2, "Akt\u012Bva klaus\u012B\u0161an\u0101s pal\u012Bdz saprast teikto."],
-      ["K\u0101 piekl\u0101j\u012Bgi pajaut\u0101t, ja nedzird\u0113ji?", ["Vai, l\u016Bdzu, vari atk\u0101rtot?", "Run\u0101 norm\u0101li!", "T\u0101 nav mana probl\u0113ma!"], 0, "Piekl\u0101j\u012Bgs l\u016Bgums veicina labu sazi\u0146u."],
-      ["Kas ir neverb\u0101l\u0101 sazi\u0146a?", ["E-pasta teksts", "Sejas izteiksme", "Gr\u0101matas apraksts"], 1, "M\u012Bmika un \u017Eesti var nodot inform\u0101ciju bez v\u0101rdiem."],
-      ["Kur\u0161 ir piem\u0113rots sazi\u0146as veids steidzamai sarunai?", ["V\u0113stule pa pastu", "Plak\u0101ts", "T\u0101lru\u0146a zvans"], 2, "Steidzamai inform\u0101cijai parasti noder tie\u0161s zvans."]
-    ],
-    vardskiras: [
-      ["Kura v\u0101rd\u0161\u0137ira nosauc priek\u0161metus un dz\u012Bvas b\u016Btnes?", ["Lietv\u0101rds", "Darb\u012Bbas v\u0101rds", "\u012Apa\u0161\u012Bbas v\u0101rds"], 0, "Lietv\u0101rds atbild, piem\u0113ram, uz jaut\u0101jumu kas?"],
-      ["Kur\u0161 v\u0101rds ir darb\u012Bbas v\u0101rds?", ["skaists", "skrien", "koks"], 1, "Darb\u012Bbas v\u0101rds nosauc darb\u012Bbu vai st\u0101vokli."],
-      ["Kur\u0161 v\u0101rds ir \u012Bpa\u0161\u012Bbas v\u0101rds?", ["m\u0101ja", "las\u012Bt", "gudrs"], 2, "\u012Apa\u0161\u012Bbas v\u0101rds nosauc paz\u012Bmi."],
-      ["K\u0101da ir v\u0101rda \u201Cskr\u0113ja\u201D nenoteiksme?", ["skriet", "skr\u0113ju", "skrie\u0161ana"], 0, "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme."],
-      ["Kura ir lietv\u0101rda \u201Ckokiem\u201D pamatforma?", ["kokos", "koks", "koki"], 1, "Lietv\u0101rda pamatforma ir vienskait\u013Ca nominat\u012Bvs, ja tas lietojams."],
-      ["Kura ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cskaist\u0101kam\u201D pamatforma?", ["skaisti", "skaist\u0101k", "skaists"], 2, "\u012Apa\u0161\u012Bbas v\u0101rda pamatforma ir v\u012Brie\u0161u dzimtes vienskait\u013Ca nominat\u012Bvs."]
-    ]
-  };
-  BANK.morfemas.push(...[["Kura v\u0101rda sast\u0101vda\u013Ca atrodas pa\u0161\u0101s v\u0101rda beig\u0101s un lokot main\u0101s?", ["Galotne", "Sakne", "Pried\u0113klis", "Pied\u0113klis"], 0, "Galotne main\u0101s, v\u0101rdu lokot: m\u0101ja, m\u0101jas, m\u0101jai."], ["J\u0101nis strauji _______ no m\u0101jas pagalm\u0101.", ["izskr\u0113ja", "ieskr\u0113ja", "uzskr\u0113ja", "pieskr\u0113ja"], 0, "Pried\u0113klis iz- nor\u0101da kust\u012Bbu uz \u0101ru."], ["Skol\u0113ns uzman\u012Bgi _______ klas\u0113.", ["ieg\u0101ja", "aizg\u0101ja", "nog\u0101ja", "izg\u0101ja"], 0, "Ie- nor\u0101da kust\u012Bbu uz iek\u0161u."], ["V\u0101ver\u012Bte veikli _______ augst\u0101 priedes zar\u0101.", ["uzk\u0101pa", "nok\u0101pa", "aizk\u0101pa", "iek\u0101pa"], 0, "Uz- nor\u0101da kust\u012Bbu aug\u0161up."], ["Autobuss _______ pie pieturas.", ["piebrauca", "aizbrauca", "p\u0101rbrauca", "izbrauca"], 0, "Pie- nor\u0101da tuvo\u0161anos."], ["Skolot\u0101ja l\u016Bdza _______ k\u013C\u016Bdaino v\u0101rdu pareizi.", ["p\u0101rrakst\u012Bt", "aizrakst\u012Bt", "norakst\u012Bt", "ierakst\u012Bt"], 0, "P\u0101r- \u0161eit noz\u012Bm\u0113 darb\u012Bbu no jauna."], ["Vakar\u0101 t\u0113tis _______ no t\u0101l\u0101 komand\u0113juma.", ["atbrauca", "aizbrauca", "izbrauca", "uzbrauca"], 0, "At- nor\u0101da atgrie\u0161anos."], ["K\u0101 sauc v\u0101rda da\u013Cu, kas ir kop\u012Bga radniec\u012Bgiem v\u0101rdiem?", ["Sakne", "Galotne", "Pried\u0113klis", "Pied\u0113klis"], 0, "Sakne glab\u0101 radniec\u012Bgo v\u0101rdu kop\u012Bgo noz\u012Bmi."], ["K\u0101 sauc v\u0101rda da\u013Cu, kas atrodas PIRMS saknes?", ["Pried\u0113klis", "Pied\u0113klis", "Galotne", "Sakne"], 0, "Pried\u0113klis atrodas pirms saknes."], ["Kas ir SALIKTENIS?", ["V\u0101rds no div\u0101m vai vair\u0101k\u0101m sakn\u0113m", "Divi atsevi\u0161\u0137i v\u0101rdi", "V\u0101rds tikai ar pried\u0113kli", "V\u0101rds bez saknes"], 0, "Salikten\u012B apvienotas vismaz divas saknes."], ["Kas veido v\u0101rda IZSKA\u0145U?", ["Pied\u0113klis ar galotni vai tikai galotne", "Pried\u0113klis un sakne", "Tikai pried\u0113klis", "Patska\u0146i"], 0, "Izska\u0146a ir v\u0101rda beigu da\u013Ca aiz saknes."]]);
-  BANK.sazina.push(...[["Kas ir SAZI\u0145A?", ["Inform\u0101cijas, domu un j\u016Btu apmai\u0146a", "Tikai telefona zvans", "Gr\u0101matas las\u012B\u0161ana vienatn\u0113", "Klus\u0113\u0161ana"], 0, "Sazi\u0146\u0101 cilv\u0113ki nodod un sa\u0146em inform\u0101ciju."], ["K\u0101 sauc cilv\u0113ku, kur\u0161 NODO zi\u0146u?", ["S\u016Bt\u012Bt\u0101js", "Sa\u0146\u0113m\u0113js", "V\u0113rot\u0101js", "Tulks"], 0, "S\u016Bt\u012Bt\u0101js nodod zi\u0146u, sa\u0146\u0113m\u0113js to uztver."], ["K\u0101 sauc cilv\u0113ku, kur\u0161 uztver zi\u0146u?", ["Sa\u0146\u0113m\u0113js", "S\u016Bt\u012Bt\u0101js", "Zi\u0146nesis", "Autors"], 0, "Zi\u0146as uztv\u0113r\u0113js ir sa\u0146\u0113m\u0113js."], ["Roberts zvana mammai. Kas ir s\u016Bt\u012Bt\u0101js?", ["Roberts", "Mamma", "Telefons", "Abi tikai sa\u0146\u0113m\u0113ji"], 0, "Roberts pasaka zi\u0146u, mamma to uzklausa."], ["Kas sazi\u0146\u0101 ir ZI\u0145A?", ["Nodot\u0101 inform\u0101cija", "Tikai SMS", "Tuk\u0161a aploksne", "Baterijas uzl\u0101de"], 0, "Zi\u0146a ir inform\u0101cija, ko nodod citam."], ["Kura ir MUTV\u0100RDU sazi\u0146a?", ["Saruna starpbr\u012Bd\u012B", "Apsveikuma kart\u012Bte", "E-pasts", "Ce\u013Ca z\u012Bme"], 0, "Mutv\u0101rdu sazi\u0146\u0101 run\u0101 un klaus\u0101s."], ["Kura ir RAKSTVEIDA sazi\u0146a?", ["\u012Aszi\u0146a draugam", "Telefonsaruna", "Mutiska uzst\u0101\u0161an\u0101s", "Piemieg\u0161ana ar aci"], 0, "Rakstveida sazi\u0146\u0101 izmanto uzrakst\u012Btu tekstu."], ["K\u0101da priek\u0161roc\u012Bba ir rakstveida sazi\u0146ai?", ["Tekstu var p\u0101rlas\u012Bt v\u0113l\u0101k", "T\u0101 vienm\u0113r ir ska\u013C\u0101ka", "Nav j\u0101dom\u0101 par v\u0101rdiem", "To saprot visi dz\u012Bvnieki"], 0, "Rakst\u012Btais saglab\u0101jas un ir p\u0101rlas\u0101ms."], ["Kas ir NEVERB\u0100L\u0100 sazi\u0146a?", ["M\u012Bmika, \u017Eesti un poza", "Sve\u0161valoda", "Tikai dators", "\u010Cukst\u0113\u0161ana"], 0, "Neverb\u0101l\u0101 sazi\u0146a notiek bez v\u0101rdiem."], ["Kas ir M\u012AMIKA?", ["Sejas izteiksme", "Roku vicin\u0101\u0161ana", "Ska\u013Ca run\u0101\u0161ana", "Rakst\u012B\u0161ana"], 0, "M\u012Bmika ir sejas izteiksme."], ["Kas ir \u017DESTS?", ["Roku vai galvas kust\u012Bba ar noz\u012Bmi", "Kliedziens", "Rakst\u012Bts teikums", "Friz\u016Bra"], 0, "\u017Desti pal\u012Bdz nodot inform\u0101ciju."], ["Ko noz\u012Bm\u0113 pirksts pie l\u016Bp\u0101m?", ["L\u016Bgums klus\u0113t", "Aicin\u0101jums dzied\u0101t", "J\u0101dodas \u0113st", "J\u0101atver logs"], 0, "Tas ir \u017Eests, kas aicina iev\u0113rot klusumu."]]);
-  BANK.vardskiras.push(...[["K\u0101da ir v\u0101rda \u201Cskol\u0113niem\u201D pamatforma?", ["skol\u0113ns", "skol\u0101", "skol\u0113ni", "skolot"], 0, "Lietv\u0101rda pamatforma ir vienskait\u013Ca nominat\u012Bvs."], ["K\u0101da ir v\u0101rda \u201Clas\u012Bja\u201D pamatforma?", ["las\u012Bt", "las\u012Bjums", "lasa", "las\u012Bt\u0101js"], 0, "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme."], ["K\u0101da ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cza\u013Caj\u0101m\u201D pamatforma?", ["za\u013C\u0161", "za\u013Ca", "za\u013Cums", "za\u013Cot"], 0, "Pamatforma ir v\u012Brie\u0161u dzimtes vienskait\u013Ca nominat\u012Bvs."], ["Zem lielajiem OZOLIEM auga s\u0113nes. K\u0101da ir izcelt\u0101 v\u0101rda pamatforma?", ["ozols", "ozolains", "ozoli", "ozoli\u0146\u0161"], 0, "Ozoliem \u2192 ozols."], ["K\u0101da ir v\u0101rda \u201Cskr\u0113j\u0101m\u201D pamatforma?", ["skriet", "skr\u0113jiens", "skrienam", "\u0101trs"], 0, "Darb\u012Bbas v\u0101rda nenoteiksme ir skriet."], ["K\u0101da ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cgudrajai\u201D pamatforma?", ["gudrs", "gudr\u012Bba", "gudri", "gudrot"], 0, "Gudrajai \u2192 gudrs."], ["K\u0101da ir v\u0101rda \u201Cpriec\u0101jamies\u201D pamatforma?", ["priec\u0101ties", "prieks", "priec\u012Bgs", "priec\u012Bgi"], 0, "Atgriezenisk\u0101 nenoteiksme ir priec\u0101ties."], ["K\u0101da ir v\u0101rda \u201Csnieg\u0101\u201D pamatforma?", ["sniegs", "sniegainais", "sniegot", "snieg\u0101"], 0, "Snieg\u0101 \u2192 sniegs; tas ir lietv\u0101rds."], ["K\u0101da ir lietv\u0101rda \u201Cm\u0101j\u0101m\u201D pamatforma?", ["m\u0101ja", "m\u0101jas", "m\u0101j\u012Bgs", "m\u0101jot"], 0, "M\u0101j\u0101m \u2192 m\u0101ja."], ["K\u0101du jaut\u0101jumu uzdod lietv\u0101rda pamatformai?", ["Kas?", "Ko dar\u012Bt?", "K\u0101ds?", "Kad?"], 0, "Lietv\u0101rda pamatforma atbild uz jaut\u0101jumu kas?."], ["K\u0101du jaut\u0101jumu uzdod darb\u012Bbas v\u0101rda nenoteiksmei?", ["Ko dar\u012Bt?", "Kas?", "K\u0101ds?", "Cik?"], 0, "Nenoteiksme atbild uz jaut\u0101jumu ko dar\u012Bt?."]]);
-  var EXTENDED = {
-    morfemas: [
-      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus radniec\u012Bgos v\u0101rdus v\u0101rdam \u201Cme\u017Es\u201D.", options: ["me\u017Ei\u0146\u0161", "me\u017Eains", "m\u0113ness", "me\u017Emala", "maiss"], answers: ["me\u017Ei\u0146\u0161", "me\u017Eains", "me\u017Emala"], explanation: "Radniec\u012Bgiem v\u0101rdiem ir kop\u012Bga sakne un saist\u012Bta noz\u012Bme." },
-      { kind: "multi", prompt: "Kuri no \u0161iem ir salikte\u0146i?", options: ["saulespu\u0137e", "skolas soma", "sniegav\u012Brs", "\u016Bdens pudele", "\u016Bdensroze"], answers: ["saulespu\u0137e", "sniegav\u012Brs", "\u016Bdensroze"], explanation: "Saliktenim ir vismaz divas saknes, un to raksta vien\u0101 v\u0101rd\u0101." },
-      { kind: "multi", prompt: "Atz\u012Bm\u0113 pareizos apgalvojumus par v\u0101rda sast\u0101vu.", options: ["Katram v\u0101rdam ir sakne.", "Katram v\u0101rdam ir pried\u0113klis.", "Pied\u0113klis var atrasties aiz saknes.", "Visi radniec\u012Bgie v\u0101rdi noz\u012Bm\u0113 vienu un to pa\u0161u."], answers: ["Katram v\u0101rdam ir sakne.", "Pied\u0113klis var atrasties aiz saknes."], explanation: "Pried\u0113k\u013Ca un pied\u0113k\u013Ca var neb\u016Bt; radniec\u012Bgiem v\u0101rdiem ir saist\u012Bta, nevis vien\u0101da noz\u012Bme." },
-      { kind: "text", prompt: "Uzraksti salikteni, ko veido v\u0101rdi \u201Csaule\u201D un \u201Cpu\u0137e\u201D.", answers: ["saulespu\u0137e"], explanation: "Saule + pu\u0137e \u2192 saulespu\u0137e." },
-      { kind: "text", prompt: "K\u0101 sauc v\u0101rda da\u013Cu, kas atrodas pirms saknes?", answers: ["pried\u0113klis"], explanation: "Pirms saknes var atrasties pried\u0113klis." }
-    ],
-    sazina: [
-      { kind: "multi", prompt: "Kuri ir rakstveida sazi\u0146as piem\u0113ri?", options: ["E-pasts", "\u012Aszi\u0146a", "Telefonsaruna", "V\u0113stule", "Saruna kl\u0101tien\u0113"], answers: ["E-pasts", "\u012Aszi\u0146a", "V\u0113stule"], explanation: "Rakstveida sazi\u0146\u0101 izmanto rakst\u012Btu tekstu." },
-      { kind: "multi", prompt: "Kas pal\u012Bdz veidot piekl\u0101j\u012Bgu sarunu?", options: ["Uzklaus\u012Bt otru", "Nep\u0101rtraukt run\u0101t\u0101ju", "Izsmiet k\u013C\u016Bdas", "Uzdot preciz\u0113jo\u0161u jaut\u0101jumu"], answers: ["Uzklaus\u012Bt otru", "Nep\u0101rtraukt run\u0101t\u0101ju", "Uzdot preciz\u0113jo\u0161u jaut\u0101jumu"], explanation: "Piekl\u0101j\u012Bga sazi\u0146a prasa savstarp\u0113ju cie\u0146u." },
-      { kind: "text", prompt: "K\u0101 sauc cilv\u0113ku, kur\u0161 sa\u0146em zi\u0146u?", answers: ["sa\u0146\u0113m\u0113js"], explanation: "Zi\u0146as sa\u0146\u0113m\u0113js uztver s\u016Bt\u012Bt\u0101ja nodoto inform\u0101ciju." },
-      { kind: "text", prompt: "K\u0101 sauc sejas izteiksmi, kas pal\u012Bdz sazin\u0101ties bez v\u0101rdiem?", answers: ["m\u012Bmika"], explanation: "M\u012Bmika ir neverb\u0101l\u0101s sazi\u0146as l\u012Bdzeklis." }
-    ],
-    vardskiras: [
-      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus darb\u012Bbas v\u0101rdus.", options: ["skrien", "las\u012Bt", "skaists", "dom\u0101ja", "m\u0101ja"], answers: ["skrien", "las\u012Bt", "dom\u0101ja"], explanation: "Darb\u012Bbas v\u0101rdi nosauc darb\u012Bbu vai st\u0101vokli." },
-      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus \u012Bpa\u0161\u012Bbas v\u0101rdus.", options: ["gudrs", "za\u013Ca", "\u0101tri", "skaists", "skola"], answers: ["gudrs", "za\u013Ca", "skaists"], explanation: "\u012Apa\u0161\u012Bbas v\u0101rdi nosauc paz\u012Bmi." },
-      { kind: "text", prompt: "Uzraksti darb\u012Bbas v\u0101rda \u201Cskr\u0113ja\u201D pamatformu.", answers: ["skriet"], explanation: "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme." },
-      { kind: "text", prompt: "Uzraksti lietv\u0101rda \u201Ckokiem\u201D pamatformu.", answers: ["koks"], explanation: "Lietv\u0101rda pamatforma parasti ir vienskait\u013Ca nominat\u012Bvs." }
-    ]
-  };
-  var normalize = (s2) => String(s2).trim().toLocaleLowerCase("lv-LV").replace(/\s+/g, " ");
-  var shuffle5 = (a) => {
-    let b2 = [...a];
-    for (let i2 = b2.length - 1; i2 > 0; i2--) {
-      const j = Math.floor(Math.random() * (i2 + 1));
-      [b2[i2], b2[j]] = [b2[j], b2[i2]];
-    }
-    return b2;
-  };
-  function renderLatvianSchool(container, { canSubmit = false, saveProgress = async () => {
-  }, askAI = null } = {}) {
-    const host = document.createElement("section");
-    host.className = "module learning-hub latvian-hub";
-    host.style.gridColumn = "1/-1";
-    host.innerHTML = '<div class="learning-heading"><span class="eyebrow">\u2726 MARKA VALODAS LABORATORIJA</span><h2>\u{1F4D5} V\u0101rdu piedz\u012Bvojums</h2><p>Atkl\u0101j v\u0101rdu nosl\u0113pumus, p\u0101rbaudi sevi un audz\u0113 prasmes! Izv\u0113lies t\u0113mu.</p></div>';
-    container.append(host);
-    const nav = document.createElement("div");
-    nav.className = "topic-grid";
-    host.append(nav);
-    const content = document.createElement("div");
-    host.append(content);
-    const historyKey2 = (topic) => "marks-lv-history-" + topic.id;
-    function readHistory(topic) {
-      if (!canSubmit) return [];
-      try {
-        const val = JSON.parse(localStorage.getItem(historyKey2(topic)) || "[]");
-        return Array.isArray(val) ? val.slice(-30) : [];
-      } catch {
-        return [];
-      }
-    }
-    function saveHistory(topic, row) {
-      if (!canSubmit) return;
-      try {
-        localStorage.setItem(historyKey2(topic), JSON.stringify([...readHistory(topic), row].slice(-30)));
-      } catch {
-      }
-    }
-    function skillOf(topic, q) {
-      const p2 = q.prompt.toLocaleLowerCase("lv-LV");
-      if (topic.id === "sazina") {
-        if (/žest|mīmik|neverbāl|sejas/.test(p2)) return "Neverb\u0101l\u0101 sazi\u0146a";
-        if (/pieklāj|uzklaus|sarun|saprast/.test(p2)) return "Sarun\u0101\u0161an\u0101s prasmes";
-        return "Sazi\u0146as veidi un j\u0113dzieni";
-      }
-      if (topic.id === "vardskiras") {
-        if (/pamatform|nenoteiksm/.test(p2)) return "V\u0101rda pamatforma";
-        return "V\u0101rd\u0161\u0137iru atpaz\u012B\u0161ana";
-      }
-      if (/salikten|vārdu savienojum/.test(p2)) return "Salikte\u0146i";
-      if (/radniecīg|sakn/.test(p2)) return "Sakne un radniec\u012Bgie v\u0101rdi";
-      if (/priedēkl|ieskrēj|izskrēj|brauca|kāpa|pārrakst/.test(p2)) return "Pried\u0113k\u013Ci";
-      if (/izskaņ|piedēkl|galotn/.test(p2)) return "V\u0101rda sast\u0101vs";
-      return "V\u0101rda sast\u0101vs un v\u0101rddarin\u0101\u0161ana";
-    }
-    function aiButton(parent, label, payload) {
-      if (!canSubmit || typeof askAI !== "function") return;
-      const button = addButton(parent, label, async () => {
-        button.disabled = true;
-        button.textContent = "\u{1F916} Dom\u0101ju\u2026";
-        const output = document.createElement("p");
-        output.setAttribute("role", "status");
-        parent.append(output);
-        try {
-          output.textContent = await askAI(payload);
-        } catch (e2) {
-          output.textContent = "MI treneris pa\u0161laik nav pieejams. Turpin\u0101m parasto treni\u0146u.";
-          console.warn("[Marka skola] MI:", e2?.message || "unknown");
-        } finally {
-          button.disabled = false;
-          button.textContent = label;
-        }
-      });
-    }
-    const pending = /* @__PURE__ */ new Map();
-    function pendingKey(topic) {
-      return "marks-lv-errors-" + topic.id;
-    }
-    function loadPending(topic) {
-      if (pending.has(topic.id)) return pending.get(topic.id);
-      if (!canSubmit) return [];
-      try {
-        const raw = JSON.parse(localStorage.getItem(pendingKey(topic)) || "[]");
-        const valid = Array.isArray(raw) ? raw.filter((prompt) => typeof prompt === "string").slice(0, 30) : [];
-        const all = [...BANK[topic.id].map((q) => q[0]), ...(EXTENDED[topic.id] || []).map((q) => q.prompt)];
-        const found = valid.filter((prompt) => all.includes(prompt)).map((prompt) => ({ prompt }));
-        pending.set(topic.id, found);
-        return found;
-      } catch {
-        return [];
-      }
-    }
-    function remember(topic, missed) {
-      if (!canSubmit) return;
-      const questions = missed.slice(0, 30);
-      pending.set(topic.id, questions);
-      try {
-        if (questions.length) localStorage.setItem(pendingKey(topic), JSON.stringify(questions.map((q) => q.prompt)));
-        else localStorage.removeItem(pendingKey(topic));
-      } catch {
-      }
-    }
-    function addButton(parent, title, onClick) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.textContent = title;
-      button.style.margin = "8px";
-      button.onclick = onClick;
-      parent.append(button);
-      return button;
-    }
-    for (const topic of TOPICS) {
-      const b2 = document.createElement("button");
-      b2.type = "button";
-      b2.className = "topic-tile";
-      b2.innerHTML = '<span class="topic-emoji">' + topic.icon + "</span><strong>" + topic.name + "</strong><small>Atv\u0113rt trena\u017Eieri \u2192</small>";
-      b2.onclick = () => choose(topic);
-      nav.append(b2);
-    }
-    function choose(topic) {
-      content.replaceChildren();
-      const h = document.createElement("h3");
-      h.textContent = "\u2726 " + topic.name;
-      content.append(h);
-      const past = readHistory(topic);
-      if (past.length) {
-        const best = Math.max(...past.map((p2) => p2.percent || 0));
-        const last = past[past.length - 1];
-        const summary = document.createElement("p");
-        summary.textContent = "\u{1F4C8} Mans progress \xB7 P\u0113d\u0113jais: " + last.percent + "% \xB7 Lab\u0101kais: " + best + "% \xB7 M\u0113\u0123in\u0101jumi: " + past.length;
-        content.append(summary);
-        const recent = past.slice(-5).map((p2) => p2.percent + "%").join(" \u2192 ");
-        const line = document.createElement("small");
-        line.textContent = "P\u0113d\u0113jie rezult\u0101ti: " + recent;
-        content.append(line);
-      }
-      const missed = loadPending(topic);
-      if (missed.length) {
-        const note = document.createElement("p");
-        note.textContent = "\u{1F409} V\u0113l vari nostiprin\u0101t " + missed.length + " jaut\u0101jumus, kuros k\u013C\u016Bd\u012Bjies.";
-        content.append(note);
-        addButton(content, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(topic, "errors", missed));
-      }
-      for (const [key, label] of [["learn", "\u{1F4D6} M\u0101cos"], ["practice", "\u{1F3AF} Tren\u0113jos"], ["exam", "\u{1F4DD} P\u0101rbaudu sevi"]]) {
-        const b2 = document.createElement("button");
-        b2.type = "button";
-        b2.textContent = label;
-        b2.className = "action-button";
-        b2.style.margin = "5px";
-        b2.onclick = () => start2(topic, key);
-        content.append(b2);
-      }
-    }
-    function start2(topic, mode, previousMisses = []) {
-      const base = BANK[topic.id].map((q) => ({ kind: "single", prompt: q[0], options: q[1].map((label, i2) => ({ label, correct: i2 === q[2] })), explanation: q[3] }));
-      const extras = EXTENDED[topic.id] || [];
-      const all = [...base, ...extras];
-      const targetedSkills = new Set(previousMisses.map((q) => skillOf(topic, q)));
-      const fresh = all.filter((q) => !previousMisses.some((old) => old.prompt === q.prompt));
-      const targeted = fresh.filter((q) => targetedSkills.has(skillOf(topic, q)));
-      const source = mode === "errors" ? [...shuffle5(targeted), ...shuffle5(fresh.filter((q) => !targeted.includes(q)))] : shuffle5(all);
-      const wanted = mode === "errors" ? Math.min(10, Math.max(4, previousMisses.length * 2)) : mode === "exam" ? 20 : mode === "practice" ? 12 : 8;
-      let items = source.slice(0, Math.min(wanted, source.length)).map((q) => ({ ...q, options: shuffle5(q.options || []) }));
-      let index = 0, correct = 0, streak = 0, maxStreak = 0;
-      const results = [];
-      const missed = [];
-      const skillStats = {};
-      render();
-      function render() {
-        content.replaceChildren();
-        if (index === items.length) {
-          void finish();
-          return;
-        }
-        const progress = document.createElement("div");
-        progress.className = "progress-track";
-        const fill = document.createElement("div");
-        fill.className = "progress-fill";
-        fill.style.width = Math.round(index / items.length * 100) + "%";
-        progress.append(fill);
-        content.append(progress);
-        const streakTag = document.createElement("p");
-        streakTag.className = "streak-label";
-        streakTag.textContent = "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak;
-        content.append(streakTag);
-        const q = items[index], h = document.createElement("h3");
-        h.className = "latvian-question";
-        h.textContent = index + 1 + "/" + items.length + " \xB7 " + q.prompt;
-        content.append(h);
-        const form = document.createElement("form");
-        form.className = "latvian-question-form";
-        content.append(form);
-        const feedback = document.createElement("p");
-        feedback.setAttribute("role", "status");
-        let input;
-        if (q.kind === "text") {
-          input = document.createElement("input");
-          input.type = "text";
-          input.required = true;
-          input.autocomplete = "off";
-          input.maxLength = 100;
-          input.style.cssText = "display:block;max-width:400px;width:100%;padding:12px;font:inherit;margin:12px 0;border:1px solid #aebdd0;border-radius:9px";
-          form.append(input);
-        } else {
-          if (q.kind === "multi") {
-            const hint = document.createElement("p");
-            hint.textContent = "Iesp\u0113jamas vair\u0101kas pareiz\u0101s atbildes.";
-            form.append(hint);
-          }
-          q.options.forEach((o2, i2) => {
-            const label = document.createElement("label");
-            label.style.cssText = "display:block;padding:10px;cursor:pointer";
-            const control = document.createElement("input");
-            control.type = q.kind === "multi" ? "checkbox" : "radio";
-            control.name = "choice";
-            control.value = String(i2);
-            label.append(control, document.createTextNode(" " + (typeof o2 === "string" ? o2 : o2.label)));
-            form.append(label);
-          });
-        }
-        if (mode === "learn") {
-          const hint = document.createElement("button");
-          hint.type = "button";
-          hint.textContent = "\u{1F4A1} Pal\u012Bdz\u012Bba";
-          hint.onclick = () => {
-            feedback.textContent = "Izlasi uzdevumu v\u0113lreiz. Sal\u012Bdzini variantu noz\u012Bmi un atceries t\u0113mas pamatprincipu.";
-          };
-          form.append(hint);
-        }
-        const btn = document.createElement("button");
-        btn.type = "submit";
-        btn.textContent = "P\u0101rbaud\u012Bt";
-        btn.style.margin = "8px";
-        form.append(btn);
-        content.append(feedback);
-        form.onsubmit = (e2) => {
-          e2.preventDefault();
-          let good = false;
-          if (q.kind === "text") {
-            good = q.answers.some((a) => normalize(a) === normalize(input.value));
-          } else if (q.kind === "multi") {
-            const selected = [...form.querySelectorAll("input:checked")].map((el) => q.options[Number(el.value)]);
-            if (selected.length === 0) {
-              feedback.textContent = "Izv\u0113lies vismaz vienu atbildi.";
-              return;
-            }
-            good = selected.length === q.answers.length && selected.every((x2) => q.answers.includes(x2));
-          } else {
-            const selection = form.querySelector("input:checked");
-            if (!selection) {
-              feedback.textContent = "Izv\u0113lies atbildi.";
-              return;
-            }
-            good = q.options[Number(selection.value)].correct;
-          }
-          correct += Number(good);
-          streak = good ? streak + 1 : 0;
-          maxStreak = Math.max(maxStreak, streak);
-          results.push(good);
-          if (!good) missed.push(q);
-          const skill = skillOf(topic, q);
-          const stats = skillStats[skill] || (skillStats[skill] = { correct: 0, total: 0 });
-          stats.total++;
-          stats.correct += Number(good);
-          if (!good && mode !== "exam") {
-            aiButton(content, "\u{1F916} Pal\u012Bdzi saprast", { mode: "hint", skill, question: q.prompt, studentAnswer: q.kind === "text" ? input.value : q.kind === "multi" ? [...form.querySelectorAll("input:checked")].map((el) => q.options[Number(el.value)]).join(", ") : String(q.options[Number(form.querySelector("input:checked")?.value)]?.label || ""), explanation: q.explanation, attempt: 1 });
-          }
-          form.querySelectorAll("input,button").forEach((el) => el.disabled = true);
-          feedback.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F504} V\u0113l ne. " + q.explanation;
-          const next = document.createElement("button");
-          next.className = "action-button";
-          next.type = "button";
-          next.textContent = index + 1 === items.length ? "Rezult\u0101ts" : "N\u0101kamais \u2192";
-          next.onclick = () => {
-            index++;
-            render();
-          };
-          content.append(next);
-        };
-      }
-      async function finish() {
-        const pct = Math.round(correct / items.length * 100);
-        const h = document.createElement("h3");
-        h.textContent = topic.name + ": " + pct + "% (" + correct + "/" + items.length + ")";
-        content.append(h);
-        const breakdown = Object.entries(skillStats).map(([skill, stat]) => ({ skill, percent: Math.round(100 * stat.correct / stat.total), correct: stat.correct, total: stat.total })).sort((a, b2) => a.percent - b2.percent);
-        if (breakdown.length) {
-          const heading = document.createElement("h4");
-          heading.textContent = "Prasmju p\u0101rskats";
-          content.append(heading);
-          for (const skill of breakdown) {
-            const line = document.createElement("p");
-            line.textContent = (skill.percent >= 80 ? "\u{1F7E2} " : skill.percent >= 60 ? "\u{1F7E1} " : "\u{1F7E0} ") + skill.skill + ": " + skill.percent + "% (" + skill.correct + "/" + skill.total + ")";
-            content.append(line);
-          }
-          if (breakdown[0].percent < 80) {
-            const suggestion = document.createElement("p");
-            suggestion.textContent = "Ieteikums: v\u0113l patren\u0113 \u201C" + breakdown[0].skill + "\u201D.";
-            content.append(suggestion);
-          }
-        }
-        const policy = calculatePracticePoints({ correct, total: items.length, maxStreak, mode });
-        const bestKey = "marks-lv-best-points-" + topic.id;
-        let bestBefore = 0;
-        try {
-          bestBefore = Number(localStorage.getItem(bestKey)) || 0;
-        } catch {
-        }
-        const award = previewImprovement(bestBefore, policy.potential);
-        if (canSubmit) try {
-          localStorage.setItem(bestKey, String(award.best));
-        } catch {
-        }
-        const points = document.createElement("div");
-        points.className = "soft-notice";
-        points.textContent = policy.eligible ? "\u{1F3C5} Punktu potenci\u0101ls " + policy.potential + "/20 \xB7 Uzlabojums +" + award.earned + " treni\u0146a BP \xB7 S\u0113rijas bonuss " + policy.streakBonus : "\u{1F331} M\u0101c\u012Bbu re\u017E\u012Bm\u0101 balvu punktus neieg\u016Bst.";
-        content.append(points);
-        const note = document.createElement("p");
-        note.className = "points-disclaimer";
-        note.textContent = "Treni\u0146a BP pa\u0161laik ir informat\u012Bvi un netiek pieskait\u012Bti balvu makam, l\u012Bdz ieviesta dro\u0161a servera p\u0101rbaude.";
-        content.append(note);
-        saveHistory(topic, { date: (/* @__PURE__ */ new Date()).toISOString(), mode, percent: pct, correct, total: items.length, skills: breakdown, maxStreak, pointsPotential: policy.potential, pointsPreview: award.earned });
-        if (breakdown.length) aiButton(content, "\u{1F916} MI trenera ieteikums", { mode: "result", skill: breakdown[0].skill, percent: pct });
-        if (mode !== "errors") remember(topic, missed);
-        else if (missed.length) remember(topic, missed);
-        else remember(topic, []);
-        if (missed.length) {
-          const callout = document.createElement("div");
-          callout.style.cssText = "border:1px solid #b7cfe3;border-radius:12px;padding:14px;margin:14px 0;background:#f3f8fd";
-          const title = document.createElement("strong");
-          title.textContent = "\u{1F409} V\u0113l viens neliels izaicin\u0101jums?";
-          callout.append(title);
-          const desc = document.createElement("p");
-          desc.textContent = "Tev bija " + missed.length + " nepareizas atbildes. Pam\u0113\u0123ini l\u012Bdz\u012Bgus uzdevumus ar citiem piem\u0113riem!";
-          callout.append(desc);
-          addButton(callout, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(topic, "errors", missed));
-          addButton(callout, "V\u0113l\u0101k", () => choose(topic));
-          content.append(callout);
-        } else if (mode === "errors") {
-          const done = document.createElement("p");
-          done.textContent = "\u{1F389} Labi! \u0160aj\u0101 k\u013C\u016Bdu treni\u0146\u0101 visi uzdevumi izpild\u012Bti pareizi.";
-          content.append(done);
-        }
-        const status = document.createElement("p");
-        content.append(status);
-        if (canSubmit) {
-          try {
-            await saveProgress({ studentRole: "marks", activityType: topic.name + " \xB7 " + mode, subject: "Latvie\u0161u valoda", score: pct, notes: JSON.stringify({ topicId: topic.id, mode, correct, total: items.length, skills: breakdown }) });
-            status.textContent = "\u2705 Rezult\u0101ts saglab\u0101ts Firebase.";
-          } catch {
-            status.textContent = "\u26A0\uFE0F Rezult\u0101tu neizdev\u0101s saglab\u0101t.";
-          }
-        } else status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums: rezult\u0101ts nav saglab\u0101ts.";
-        const again = document.createElement("button");
-        again.type = "button";
-        again.textContent = "Tren\u0113ties v\u0113lreiz";
-        again.onclick = () => start2(topic, mode);
-        content.append(again);
-        const back = document.createElement("button");
-        back.type = "button";
-        back.textContent = "Atpaka\u013C uz re\u017E\u012Bmiem";
-        back.style.margin = "8px";
-        back.onclick = () => choose(topic);
-        content.append(back);
-      }
-    }
   }
 
   // node_modules/@firebase/util/dist/postinstall.mjs
@@ -3939,6121 +3310,6 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
   }
   registerCoreComponents("");
 
-  // node_modules/firebase/app/dist/esm/index.esm.js
-  var name2 = "firebase";
-  var version2 = "13.0.0";
-  registerVersion(name2, version2, "app");
-
-  // node_modules/@firebase/auth/dist/esm/index-LY22yodV.js
-  function _prodErrorMap() {
-    return {
-      [
-        "dependent-sdk-initialized-before-auth"
-        /* AuthErrorCode.DEPENDENT_SDK_INIT_BEFORE_AUTH */
-      ]: "Another Firebase SDK was initialized and is trying to use Auth before Auth is initialized. Please be sure to call `initializeAuth` or `getAuth` before starting any other Firebase SDK."
-    };
-  }
-  var prodErrorMap = _prodErrorMap;
-  var _DEFAULT_AUTH_ERROR_FACTORY = new ErrorFactory("auth", "Firebase", _prodErrorMap());
-  var logClient = new Logger("@firebase/auth");
-  function _logWarn(msg, ...args) {
-    if (logClient.logLevel <= LogLevel.WARN) {
-      logClient.warn(`Auth (${SDK_VERSION}): ${msg}`, ...args);
-    }
-  }
-  function _logError(msg, ...args) {
-    if (logClient.logLevel <= LogLevel.ERROR) {
-      logClient.error(`Auth (${SDK_VERSION}): ${msg}`, ...args);
-    }
-  }
-  function _fail(authOrCode, ...rest) {
-    throw createErrorInternal(authOrCode, ...rest);
-  }
-  function _createError(authOrCode, ...rest) {
-    return createErrorInternal(authOrCode, ...rest);
-  }
-  function _errorWithCustomMessage(auth2, code, message2) {
-    const errorMap = {
-      ...prodErrorMap(),
-      [code]: message2
-    };
-    const factory = new ErrorFactory("auth", "Firebase", errorMap);
-    return factory.create(code, {
-      appName: auth2.name
-    });
-  }
-  function _serverAppCurrentUserOperationNotSupportedError(auth2) {
-    return _errorWithCustomMessage(auth2, "operation-not-supported-in-this-environment", "Operations that alter the current user are not supported in conjunction with FirebaseServerApp");
-  }
-  function createErrorInternal(authOrCode, ...rest) {
-    if (typeof authOrCode !== "string") {
-      const code = rest[0];
-      const fullParams = [...rest.slice(1)];
-      if (fullParams[0]) {
-        fullParams[0].appName = authOrCode.name;
-      }
-      return authOrCode._errorFactory.create(code, ...fullParams);
-    }
-    return _DEFAULT_AUTH_ERROR_FACTORY.create(authOrCode, ...rest);
-  }
-  function _assert(assertion, authOrCode, ...rest) {
-    if (!assertion) {
-      throw createErrorInternal(authOrCode, ...rest);
-    }
-  }
-  function debugFail(failure) {
-    const message2 = `INTERNAL ASSERTION FAILED: ` + failure;
-    _logError(message2);
-    throw new Error(message2);
-  }
-  function debugAssert(assertion, message2) {
-    if (!assertion) {
-      debugFail(message2);
-    }
-  }
-  function _getCurrentUrl() {
-    return typeof self !== "undefined" && self.location?.href || "";
-  }
-  function _isHttpOrHttps() {
-    return _getCurrentScheme() === "http:" || _getCurrentScheme() === "https:";
-  }
-  function _getCurrentScheme() {
-    return typeof self !== "undefined" && self.location?.protocol || null;
-  }
-  function _isOnline() {
-    if (typeof navigator !== "undefined" && navigator && "onLine" in navigator && typeof navigator.onLine === "boolean" && // Apply only for traditional web apps and Chrome extensions.
-    // This is especially true for Cordova apps which have unreliable
-    // navigator.onLine behavior unless cordova-plugin-network-information is
-    // installed which overwrites the native navigator.onLine value and
-    // defines navigator.connection.
-    (_isHttpOrHttps() || isBrowserExtension() || "connection" in navigator)) {
-      return navigator.onLine;
-    }
-    return true;
-  }
-  function _getUserLanguage() {
-    if (typeof navigator === "undefined") {
-      return null;
-    }
-    const navigatorLanguage = navigator;
-    return (
-      // Most reliable, but only supported in Chrome/Firefox.
-      navigatorLanguage.languages && navigatorLanguage.languages[0] || // Supported in most browsers, but returns the language of the browser
-      // UI, not the language set in browser settings.
-      navigatorLanguage.language || // Couldn't determine language.
-      null
-    );
-  }
-  var Delay = class {
-    constructor(shortDelay, longDelay) {
-      this.shortDelay = shortDelay;
-      this.longDelay = longDelay;
-      debugAssert(longDelay > shortDelay, "Short delay should be less than long delay!");
-      this.isMobile = isMobileCordova() || isReactNative();
-    }
-    get() {
-      if (!_isOnline()) {
-        return Math.min(5e3, this.shortDelay);
-      }
-      return this.isMobile ? this.longDelay : this.shortDelay;
-    }
-  };
-  function _emulatorUrl(config, path) {
-    debugAssert(config.emulator, "Emulator should always be set here");
-    const { url } = config.emulator;
-    if (!path) {
-      return url;
-    }
-    return `${url}${path.startsWith("/") ? path.slice(1) : path}`;
-  }
-  var FetchProvider = class {
-    static initialize(fetchImpl, headersImpl, responseImpl) {
-      this.fetchImpl = fetchImpl;
-      if (headersImpl) {
-        this.headersImpl = headersImpl;
-      }
-      if (responseImpl) {
-        this.responseImpl = responseImpl;
-      }
-    }
-    static fetch() {
-      if (this.fetchImpl) {
-        return this.fetchImpl;
-      }
-      if (typeof self !== "undefined" && "fetch" in self) {
-        return self.fetch;
-      }
-      if (typeof globalThis !== "undefined" && globalThis.fetch) {
-        return globalThis.fetch;
-      }
-      if (typeof fetch !== "undefined") {
-        return fetch;
-      }
-      debugFail("Could not find fetch implementation, make sure you call FetchProvider.initialize() with an appropriate polyfill");
-    }
-    static headers() {
-      if (this.headersImpl) {
-        return this.headersImpl;
-      }
-      if (typeof self !== "undefined" && "Headers" in self) {
-        return self.Headers;
-      }
-      if (typeof globalThis !== "undefined" && globalThis.Headers) {
-        return globalThis.Headers;
-      }
-      if (typeof Headers !== "undefined") {
-        return Headers;
-      }
-      debugFail("Could not find Headers implementation, make sure you call FetchProvider.initialize() with an appropriate polyfill");
-    }
-    static response() {
-      if (this.responseImpl) {
-        return this.responseImpl;
-      }
-      if (typeof self !== "undefined" && "Response" in self) {
-        return self.Response;
-      }
-      if (typeof globalThis !== "undefined" && globalThis.Response) {
-        return globalThis.Response;
-      }
-      if (typeof Response !== "undefined") {
-        return Response;
-      }
-      debugFail("Could not find Response implementation, make sure you call FetchProvider.initialize() with an appropriate polyfill");
-    }
-  };
-  var SERVER_ERROR_MAP = {
-    // Custom token errors.
-    [
-      "CREDENTIAL_MISMATCH"
-      /* ServerError.CREDENTIAL_MISMATCH */
-    ]: "custom-token-mismatch",
-    // This can only happen if the SDK sends a bad request.
-    [
-      "MISSING_CUSTOM_TOKEN"
-      /* ServerError.MISSING_CUSTOM_TOKEN */
-    ]: "internal-error",
-    // Create Auth URI errors.
-    [
-      "INVALID_IDENTIFIER"
-      /* ServerError.INVALID_IDENTIFIER */
-    ]: "invalid-email",
-    // This can only happen if the SDK sends a bad request.
-    [
-      "MISSING_CONTINUE_URI"
-      /* ServerError.MISSING_CONTINUE_URI */
-    ]: "internal-error",
-    // Sign in with email and password errors (some apply to sign up too).
-    [
-      "INVALID_PASSWORD"
-      /* ServerError.INVALID_PASSWORD */
-    ]: "wrong-password",
-    // This can only happen if the SDK sends a bad request.
-    [
-      "MISSING_PASSWORD"
-      /* ServerError.MISSING_PASSWORD */
-    ]: "missing-password",
-    // Thrown if Email Enumeration Protection is enabled in the project and the email or password is
-    // invalid.
-    [
-      "INVALID_LOGIN_CREDENTIALS"
-      /* ServerError.INVALID_LOGIN_CREDENTIALS */
-    ]: "invalid-credential",
-    // Sign up with email and password errors.
-    [
-      "EMAIL_EXISTS"
-      /* ServerError.EMAIL_EXISTS */
-    ]: "email-already-in-use",
-    [
-      "PASSWORD_LOGIN_DISABLED"
-      /* ServerError.PASSWORD_LOGIN_DISABLED */
-    ]: "operation-not-allowed",
-    // Verify assertion for sign in with credential errors:
-    [
-      "INVALID_IDP_RESPONSE"
-      /* ServerError.INVALID_IDP_RESPONSE */
-    ]: "invalid-credential",
-    [
-      "INVALID_PENDING_TOKEN"
-      /* ServerError.INVALID_PENDING_TOKEN */
-    ]: "invalid-credential",
-    [
-      "FEDERATED_USER_ID_ALREADY_LINKED"
-      /* ServerError.FEDERATED_USER_ID_ALREADY_LINKED */
-    ]: "credential-already-in-use",
-    // This can only happen if the SDK sends a bad request.
-    [
-      "MISSING_REQ_TYPE"
-      /* ServerError.MISSING_REQ_TYPE */
-    ]: "internal-error",
-    // Send Password reset email errors:
-    [
-      "EMAIL_NOT_FOUND"
-      /* ServerError.EMAIL_NOT_FOUND */
-    ]: "user-not-found",
-    [
-      "RESET_PASSWORD_EXCEED_LIMIT"
-      /* ServerError.RESET_PASSWORD_EXCEED_LIMIT */
-    ]: "too-many-requests",
-    [
-      "EXPIRED_OOB_CODE"
-      /* ServerError.EXPIRED_OOB_CODE */
-    ]: "expired-action-code",
-    [
-      "INVALID_OOB_CODE"
-      /* ServerError.INVALID_OOB_CODE */
-    ]: "invalid-action-code",
-    // This can only happen if the SDK sends a bad request.
-    [
-      "MISSING_OOB_CODE"
-      /* ServerError.MISSING_OOB_CODE */
-    ]: "internal-error",
-    // Operations that require ID token in request:
-    [
-      "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"
-      /* ServerError.CREDENTIAL_TOO_OLD_LOGIN_AGAIN */
-    ]: "requires-recent-login",
-    [
-      "INVALID_ID_TOKEN"
-      /* ServerError.INVALID_ID_TOKEN */
-    ]: "invalid-user-token",
-    [
-      "TOKEN_EXPIRED"
-      /* ServerError.TOKEN_EXPIRED */
-    ]: "user-token-expired",
-    [
-      "USER_NOT_FOUND"
-      /* ServerError.USER_NOT_FOUND */
-    ]: "user-token-expired",
-    // Other errors.
-    [
-      "TOO_MANY_ATTEMPTS_TRY_LATER"
-      /* ServerError.TOO_MANY_ATTEMPTS_TRY_LATER */
-    ]: "too-many-requests",
-    [
-      "PASSWORD_DOES_NOT_MEET_REQUIREMENTS"
-      /* ServerError.PASSWORD_DOES_NOT_MEET_REQUIREMENTS */
-    ]: "password-does-not-meet-requirements",
-    // Phone Auth related errors.
-    [
-      "INVALID_CODE"
-      /* ServerError.INVALID_CODE */
-    ]: "invalid-verification-code",
-    [
-      "INVALID_SESSION_INFO"
-      /* ServerError.INVALID_SESSION_INFO */
-    ]: "invalid-verification-id",
-    [
-      "INVALID_TEMPORARY_PROOF"
-      /* ServerError.INVALID_TEMPORARY_PROOF */
-    ]: "invalid-credential",
-    [
-      "MISSING_SESSION_INFO"
-      /* ServerError.MISSING_SESSION_INFO */
-    ]: "missing-verification-id",
-    [
-      "SESSION_EXPIRED"
-      /* ServerError.SESSION_EXPIRED */
-    ]: "code-expired",
-    // Other action code errors when additional settings passed.
-    // MISSING_CONTINUE_URI is getting mapped to INTERNAL_ERROR above.
-    // This is OK as this error will be caught by client side validation.
-    [
-      "MISSING_ANDROID_PACKAGE_NAME"
-      /* ServerError.MISSING_ANDROID_PACKAGE_NAME */
-    ]: "missing-android-pkg-name",
-    [
-      "UNAUTHORIZED_DOMAIN"
-      /* ServerError.UNAUTHORIZED_DOMAIN */
-    ]: "unauthorized-continue-uri",
-    // getProjectConfig errors when clientId is passed.
-    [
-      "INVALID_OAUTH_CLIENT_ID"
-      /* ServerError.INVALID_OAUTH_CLIENT_ID */
-    ]: "invalid-oauth-client-id",
-    // User actions (sign-up or deletion) disabled errors.
-    [
-      "ADMIN_ONLY_OPERATION"
-      /* ServerError.ADMIN_ONLY_OPERATION */
-    ]: "admin-restricted-operation",
-    // Multi factor related errors.
-    [
-      "INVALID_MFA_PENDING_CREDENTIAL"
-      /* ServerError.INVALID_MFA_PENDING_CREDENTIAL */
-    ]: "invalid-multi-factor-session",
-    [
-      "MFA_ENROLLMENT_NOT_FOUND"
-      /* ServerError.MFA_ENROLLMENT_NOT_FOUND */
-    ]: "multi-factor-info-not-found",
-    [
-      "MISSING_MFA_ENROLLMENT_ID"
-      /* ServerError.MISSING_MFA_ENROLLMENT_ID */
-    ]: "missing-multi-factor-info",
-    [
-      "MISSING_MFA_PENDING_CREDENTIAL"
-      /* ServerError.MISSING_MFA_PENDING_CREDENTIAL */
-    ]: "missing-multi-factor-session",
-    [
-      "SECOND_FACTOR_EXISTS"
-      /* ServerError.SECOND_FACTOR_EXISTS */
-    ]: "second-factor-already-in-use",
-    [
-      "SECOND_FACTOR_LIMIT_EXCEEDED"
-      /* ServerError.SECOND_FACTOR_LIMIT_EXCEEDED */
-    ]: "maximum-second-factor-count-exceeded",
-    // Blocking functions related errors.
-    [
-      "BLOCKING_FUNCTION_ERROR_RESPONSE"
-      /* ServerError.BLOCKING_FUNCTION_ERROR_RESPONSE */
-    ]: "internal-error",
-    // Recaptcha related errors.
-    [
-      "RECAPTCHA_NOT_ENABLED"
-      /* ServerError.RECAPTCHA_NOT_ENABLED */
-    ]: "recaptcha-not-enabled",
-    [
-      "MISSING_RECAPTCHA_TOKEN"
-      /* ServerError.MISSING_RECAPTCHA_TOKEN */
-    ]: "missing-recaptcha-token",
-    [
-      "INVALID_RECAPTCHA_TOKEN"
-      /* ServerError.INVALID_RECAPTCHA_TOKEN */
-    ]: "invalid-recaptcha-token",
-    [
-      "INVALID_RECAPTCHA_ACTION"
-      /* ServerError.INVALID_RECAPTCHA_ACTION */
-    ]: "invalid-recaptcha-action",
-    [
-      "MISSING_CLIENT_TYPE"
-      /* ServerError.MISSING_CLIENT_TYPE */
-    ]: "missing-client-type",
-    [
-      "MISSING_RECAPTCHA_VERSION"
-      /* ServerError.MISSING_RECAPTCHA_VERSION */
-    ]: "missing-recaptcha-version",
-    [
-      "INVALID_RECAPTCHA_VERSION"
-      /* ServerError.INVALID_RECAPTCHA_VERSION */
-    ]: "invalid-recaptcha-version",
-    [
-      "INVALID_REQ_TYPE"
-      /* ServerError.INVALID_REQ_TYPE */
-    ]: "invalid-req-type"
-    /* AuthErrorCode.INVALID_REQ_TYPE */
-  };
-  var CookieAuthProxiedEndpoints = [
-    "/v1/accounts:signInWithCustomToken",
-    "/v1/accounts:signInWithEmailLink",
-    "/v1/accounts:signInWithIdp",
-    "/v1/accounts:signInWithPassword",
-    "/v1/accounts:signInWithPhoneNumber",
-    "/v1/token"
-    /* Endpoint.TOKEN */
-  ];
-  var DEFAULT_API_TIMEOUT_MS = new Delay(3e4, 6e4);
-  function _addTidIfNecessary(auth2, request) {
-    if (auth2.tenantId && !request.tenantId) {
-      return {
-        ...request,
-        tenantId: auth2.tenantId
-      };
-    }
-    return request;
-  }
-  async function _performApiRequest(auth2, method, path, request, customErrorMap = {}) {
-    return _performFetchWithErrorHandling(auth2, customErrorMap, async () => {
-      let body = {};
-      let params = {};
-      if (request) {
-        if (method === "GET") {
-          params = request;
-        } else {
-          body = {
-            body: JSON.stringify(request)
-          };
-        }
-      }
-      const query2 = querystring({
-        ...params,
-        key: auth2.config.apiKey
-      }).slice(1);
-      const headers = await auth2._getAdditionalHeaders();
-      headers[
-        "Content-Type"
-        /* HttpHeader.CONTENT_TYPE */
-      ] = "application/json";
-      if (auth2.languageCode) {
-        headers[
-          "X-Firebase-Locale"
-          /* HttpHeader.X_FIREBASE_LOCALE */
-        ] = auth2.languageCode;
-      }
-      const fetchArgs = {
-        method,
-        headers,
-        ...body
-      };
-      if (!isCloudflareWorker()) {
-        fetchArgs.referrerPolicy = "strict-origin-when-cross-origin";
-      }
-      if (auth2.emulatorConfig && isCloudWorkstation(auth2.emulatorConfig.host)) {
-        fetchArgs.credentials = "include";
-      }
-      return FetchProvider.fetch()(await _getFinalTarget(auth2, auth2.config.apiHost, path, query2), fetchArgs);
-    });
-  }
-  async function _performFetchWithErrorHandling(auth2, customErrorMap, fetchFn) {
-    auth2._canInitEmulator = false;
-    const errorMap = { ...SERVER_ERROR_MAP, ...customErrorMap };
-    try {
-      const networkTimeout = new NetworkTimeout(auth2);
-      const response = await Promise.race([
-        fetchFn(),
-        networkTimeout.promise
-      ]);
-      networkTimeout.clearNetworkTimeout();
-      const json = await response.json();
-      if ("needConfirmation" in json) {
-        throw _makeTaggedError(auth2, "account-exists-with-different-credential", json);
-      }
-      if (response.ok && !("errorMessage" in json)) {
-        return json;
-      } else {
-        const errorMessage = response.ok ? json.errorMessage : json.error.message;
-        const [serverErrorCode, serverErrorMessage] = errorMessage.split(" : ");
-        if (serverErrorCode === "FEDERATED_USER_ID_ALREADY_LINKED") {
-          throw _makeTaggedError(auth2, "credential-already-in-use", json);
-        } else if (serverErrorCode === "EMAIL_EXISTS") {
-          throw _makeTaggedError(auth2, "email-already-in-use", json);
-        } else if (serverErrorCode === "USER_DISABLED") {
-          throw _makeTaggedError(auth2, "user-disabled", json);
-        }
-        const authError = errorMap[serverErrorCode] || serverErrorCode.toLowerCase().replace(/[_\s]+/g, "-");
-        if (serverErrorMessage) {
-          throw _errorWithCustomMessage(auth2, authError, serverErrorMessage);
-        } else {
-          _fail(auth2, authError);
-        }
-      }
-    } catch (e2) {
-      if (e2 instanceof FirebaseError) {
-        throw e2;
-      }
-      _fail(auth2, "network-request-failed", { "message": String(e2) });
-    }
-  }
-  async function _performSignInRequest(auth2, method, path, request, customErrorMap = {}) {
-    const serverResponse = await _performApiRequest(auth2, method, path, request, customErrorMap);
-    if ("mfaPendingCredential" in serverResponse) {
-      _fail(auth2, "multi-factor-auth-required", {
-        _serverResponse: serverResponse
-      });
-    }
-    return serverResponse;
-  }
-  async function _getFinalTarget(auth2, host, path, query2) {
-    const base = `${host}${path}?${query2}`;
-    const authInternal = auth2;
-    const finalTarget = authInternal.config.emulator ? _emulatorUrl(auth2.config, base) : `${auth2.config.apiScheme}://${base}`;
-    if (CookieAuthProxiedEndpoints.includes(path)) {
-      await authInternal._persistenceManagerAvailable;
-      if (authInternal._getPersistenceType() === "COOKIE") {
-        const cookiePersistence = authInternal._getPersistence();
-        return cookiePersistence._getFinalTarget(finalTarget).toString();
-      }
-    }
-    return finalTarget;
-  }
-  function _parseEnforcementState(enforcementStateStr) {
-    switch (enforcementStateStr) {
-      case "ENFORCE":
-        return "ENFORCE";
-      case "AUDIT":
-        return "AUDIT";
-      case "OFF":
-        return "OFF";
-      default:
-        return "ENFORCEMENT_STATE_UNSPECIFIED";
-    }
-  }
-  var NetworkTimeout = class {
-    clearNetworkTimeout() {
-      clearTimeout(this.timer);
-    }
-    constructor(auth2) {
-      this.auth = auth2;
-      this.timer = null;
-      this.promise = new Promise((_, reject) => {
-        this.timer = setTimeout(() => {
-          return reject(_createError(
-            this.auth,
-            "network-request-failed"
-            /* AuthErrorCode.NETWORK_REQUEST_FAILED */
-          ));
-        }, DEFAULT_API_TIMEOUT_MS.get());
-      });
-    }
-  };
-  function _makeTaggedError(auth2, code, response) {
-    const errorParams = {
-      appName: auth2.name
-    };
-    if (response.email) {
-      errorParams.email = response.email;
-    }
-    if (response.phoneNumber) {
-      errorParams.phoneNumber = response.phoneNumber;
-    }
-    const error = _createError(auth2, code, errorParams);
-    error.customData._tokenResponse = response;
-    return error;
-  }
-  function isEnterprise(grecaptcha) {
-    return grecaptcha !== void 0 && grecaptcha.enterprise !== void 0;
-  }
-  var RecaptchaConfig = class {
-    constructor(response) {
-      this.siteKey = "";
-      this.recaptchaEnforcementState = [];
-      if (response.recaptchaKey === void 0) {
-        throw new Error("recaptchaKey undefined");
-      }
-      this.siteKey = response.recaptchaKey.split("/")[3];
-      this.recaptchaEnforcementState = response.recaptchaEnforcementState;
-    }
-    /**
-     * Returns the reCAPTCHA Enterprise enforcement state for the given provider.
-     *
-     * @param providerStr - The provider whose enforcement state is to be returned.
-     * @returns The reCAPTCHA Enterprise enforcement state for the given provider.
-     */
-    getProviderEnforcementState(providerStr) {
-      if (!this.recaptchaEnforcementState || this.recaptchaEnforcementState.length === 0) {
-        return null;
-      }
-      for (const recaptchaEnforcementState of this.recaptchaEnforcementState) {
-        if (recaptchaEnforcementState.provider && recaptchaEnforcementState.provider === providerStr) {
-          return _parseEnforcementState(recaptchaEnforcementState.enforcementState);
-        }
-      }
-      return null;
-    }
-    /**
-     * Returns true if the reCAPTCHA Enterprise enforcement state for the provider is set to ENFORCE or AUDIT.
-     *
-     * @param providerStr - The provider whose enablement state is to be returned.
-     * @returns Whether or not reCAPTCHA Enterprise protection is enabled for the given provider.
-     */
-    isProviderEnabled(providerStr) {
-      return this.getProviderEnforcementState(providerStr) === "ENFORCE" || this.getProviderEnforcementState(providerStr) === "AUDIT";
-    }
-    /**
-     * Returns true if reCAPTCHA Enterprise protection is enabled in at least one provider, otherwise
-     * returns false.
-     *
-     * @returns Whether or not reCAPTCHA Enterprise protection is enabled for at least one provider.
-     */
-    isAnyProviderEnabled() {
-      return this.isProviderEnabled(
-        "EMAIL_PASSWORD_PROVIDER"
-        /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
-      ) || this.isProviderEnabled(
-        "PHONE_PROVIDER"
-        /* RecaptchaAuthProvider.PHONE_PROVIDER */
-      );
-    }
-  };
-  async function getRecaptchaConfig(auth2, request) {
-    return _performApiRequest(auth2, "GET", "/v2/recaptchaConfig", _addTidIfNecessary(auth2, request));
-  }
-  async function deleteAccount(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v1/accounts:delete", request);
-  }
-  async function getAccountInfo(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v1/accounts:lookup", request);
-  }
-  function utcTimestampToDateString(utcTimestamp) {
-    if (!utcTimestamp) {
-      return void 0;
-    }
-    try {
-      const date = new Date(Number(utcTimestamp));
-      if (!isNaN(date.getTime())) {
-        return date.toUTCString();
-      }
-    } catch (e2) {
-    }
-    return void 0;
-  }
-  async function getIdTokenResult(user, forceRefresh = false) {
-    const userInternal = getModularInstance(user);
-    const token = await userInternal.getIdToken(forceRefresh);
-    const claims = _parseToken(token);
-    _assert(
-      claims && claims.exp && claims.auth_time && claims.iat,
-      userInternal.auth,
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    const firebase = typeof claims.firebase === "object" ? claims.firebase : void 0;
-    const signInProvider = firebase?.["sign_in_provider"];
-    return {
-      claims,
-      token,
-      authTime: utcTimestampToDateString(secondsStringToMilliseconds(claims.auth_time)),
-      issuedAtTime: utcTimestampToDateString(secondsStringToMilliseconds(claims.iat)),
-      expirationTime: utcTimestampToDateString(secondsStringToMilliseconds(claims.exp)),
-      signInProvider: signInProvider || null,
-      signInSecondFactor: firebase?.["sign_in_second_factor"] || null
-    };
-  }
-  function secondsStringToMilliseconds(seconds) {
-    return Number(seconds) * 1e3;
-  }
-  function _parseToken(token) {
-    const [algorithm, payload, signature] = token.split(".");
-    if (algorithm === void 0 || payload === void 0 || signature === void 0) {
-      _logError("JWT malformed, contained fewer than 3 sections");
-      return null;
-    }
-    try {
-      const decoded = base64Decode(payload);
-      if (!decoded) {
-        _logError("Failed to decode base64 JWT payload");
-        return null;
-      }
-      return JSON.parse(decoded);
-    } catch (e2) {
-      _logError("Caught error parsing JWT payload as JSON", e2?.toString());
-      return null;
-    }
-  }
-  function _tokenExpiresIn(token) {
-    const parsedToken = _parseToken(token);
-    _assert(
-      parsedToken,
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    _assert(
-      typeof parsedToken.exp !== "undefined",
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    _assert(
-      typeof parsedToken.iat !== "undefined",
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    return Number(parsedToken.exp) - Number(parsedToken.iat);
-  }
-  async function _logoutIfInvalidated(user, promise, bypassAuthState = false) {
-    if (bypassAuthState) {
-      return promise;
-    }
-    try {
-      return await promise;
-    } catch (e2) {
-      if (e2 instanceof FirebaseError && isUserInvalidated(e2)) {
-        if (user.auth.currentUser === user) {
-          await user.auth.signOut();
-        }
-      }
-      throw e2;
-    }
-  }
-  function isUserInvalidated({ code }) {
-    return code === `auth/${"user-disabled"}` || code === `auth/${"user-token-expired"}`;
-  }
-  var ProactiveRefresh = class {
-    constructor(user) {
-      this.user = user;
-      this.isRunning = false;
-      this.timerId = null;
-      this.errorBackoff = 3e4;
-    }
-    _start() {
-      if (this.isRunning) {
-        return;
-      }
-      this.isRunning = true;
-      this.schedule();
-    }
-    _stop() {
-      if (!this.isRunning) {
-        return;
-      }
-      this.isRunning = false;
-      if (this.timerId !== null) {
-        clearTimeout(this.timerId);
-      }
-    }
-    getInterval(wasError) {
-      if (wasError) {
-        const interval = this.errorBackoff;
-        this.errorBackoff = Math.min(
-          this.errorBackoff * 2,
-          96e4
-          /* Duration.RETRY_BACKOFF_MAX */
-        );
-        return interval;
-      } else {
-        this.errorBackoff = 3e4;
-        const expTime = this.user.stsTokenManager.expirationTime ?? 0;
-        const interval = expTime - Date.now() - 3e5;
-        return Math.max(0, interval);
-      }
-    }
-    schedule(wasError = false) {
-      if (!this.isRunning) {
-        return;
-      }
-      const interval = this.getInterval(wasError);
-      this.timerId = setTimeout(async () => {
-        await this.iteration();
-      }, interval);
-    }
-    async iteration() {
-      try {
-        await this.user.getIdToken(true);
-      } catch (e2) {
-        if (e2?.code === `auth/${"network-request-failed"}`) {
-          this.schedule(
-            /* wasError */
-            true
-          );
-        }
-        return;
-      }
-      this.schedule();
-    }
-  };
-  var UserMetadata = class {
-    constructor(createdAt, lastLoginAt) {
-      this.createdAt = createdAt;
-      this.lastLoginAt = lastLoginAt;
-      this._initializeTime();
-    }
-    _initializeTime() {
-      this.lastSignInTime = utcTimestampToDateString(this.lastLoginAt);
-      this.creationTime = utcTimestampToDateString(this.createdAt);
-    }
-    _copy(metadata) {
-      this.createdAt = metadata.createdAt;
-      this.lastLoginAt = metadata.lastLoginAt;
-      this._initializeTime();
-    }
-    toJSON() {
-      return {
-        createdAt: this.createdAt,
-        lastLoginAt: this.lastLoginAt
-      };
-    }
-  };
-  async function _reloadWithoutSaving(user) {
-    const auth2 = user.auth;
-    const idToken = await user.getIdToken();
-    const response = await _logoutIfInvalidated(user, getAccountInfo(auth2, { idToken }));
-    _assert(
-      response?.users.length,
-      auth2,
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    const coreAccount = response.users[0];
-    user._notifyReloadListener(coreAccount);
-    const newProviderData = coreAccount.providerUserInfo?.length ? extractProviderData(coreAccount.providerUserInfo) : [];
-    const providerData = mergeProviderData(user.providerData, newProviderData);
-    const oldIsAnonymous = user.isAnonymous;
-    const newIsAnonymous = !(user.email && coreAccount.passwordHash) && !providerData?.length;
-    const isAnonymous = !oldIsAnonymous ? false : newIsAnonymous;
-    const updates = {
-      uid: coreAccount.localId,
-      displayName: coreAccount.displayName || null,
-      photoURL: coreAccount.photoUrl || null,
-      email: coreAccount.email || null,
-      emailVerified: coreAccount.emailVerified || false,
-      phoneNumber: coreAccount.phoneNumber || null,
-      tenantId: coreAccount.tenantId || null,
-      providerData,
-      metadata: new UserMetadata(coreAccount.createdAt, coreAccount.lastLoginAt),
-      isAnonymous
-    };
-    Object.assign(user, updates);
-  }
-  async function reload(user) {
-    const userInternal = getModularInstance(user);
-    await _reloadWithoutSaving(userInternal);
-    await userInternal.auth._persistUserIfCurrent(userInternal);
-    userInternal.auth._notifyListenersIfCurrent(userInternal);
-  }
-  function mergeProviderData(original, newData) {
-    const deduped = original.filter((o2) => !newData.some((n2) => n2.providerId === o2.providerId));
-    return [...deduped, ...newData];
-  }
-  function extractProviderData(providers) {
-    return providers.map(({ providerId, ...provider }) => {
-      return {
-        providerId,
-        uid: provider.rawId || "",
-        displayName: provider.displayName || null,
-        email: provider.email || null,
-        phoneNumber: provider.phoneNumber || null,
-        photoURL: provider.photoUrl || null
-      };
-    });
-  }
-  async function requestStsToken(auth2, refreshToken) {
-    const response = await _performFetchWithErrorHandling(auth2, {}, async () => {
-      const body = querystring({
-        "grant_type": "refresh_token",
-        "refresh_token": refreshToken
-      }).slice(1);
-      const { tokenApiHost, apiKey } = auth2.config;
-      const url = await _getFinalTarget(auth2, tokenApiHost, "/v1/token", `key=${apiKey}`);
-      const headers = await auth2._getAdditionalHeaders();
-      headers[
-        "Content-Type"
-        /* HttpHeader.CONTENT_TYPE */
-      ] = "application/x-www-form-urlencoded";
-      const options = {
-        method: "POST",
-        headers,
-        body
-      };
-      if (auth2.emulatorConfig && isCloudWorkstation(auth2.emulatorConfig.host)) {
-        options.credentials = "include";
-      }
-      return FetchProvider.fetch()(url, options);
-    });
-    return {
-      accessToken: response.access_token,
-      expiresIn: response.expires_in,
-      refreshToken: response.refresh_token
-    };
-  }
-  async function revokeToken(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts:revokeToken", _addTidIfNecessary(auth2, request));
-  }
-  var StsTokenManager = class _StsTokenManager {
-    constructor() {
-      this.refreshToken = null;
-      this.accessToken = null;
-      this.expirationTime = null;
-    }
-    get isExpired() {
-      return !this.expirationTime || Date.now() > this.expirationTime - 3e4;
-    }
-    updateFromServerResponse(response) {
-      _assert(
-        response.idToken,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      _assert(
-        typeof response.idToken !== "undefined",
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      _assert(
-        typeof response.refreshToken !== "undefined",
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const expiresIn = "expiresIn" in response && typeof response.expiresIn !== "undefined" ? Number(response.expiresIn) : _tokenExpiresIn(response.idToken);
-      this.updateTokensAndExpiration(response.idToken, response.refreshToken, expiresIn);
-    }
-    updateFromIdToken(idToken) {
-      _assert(
-        idToken.length !== 0,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const expiresIn = _tokenExpiresIn(idToken);
-      this.updateTokensAndExpiration(idToken, null, expiresIn);
-    }
-    async getToken(auth2, forceRefresh = false) {
-      if (!forceRefresh && this.accessToken && !this.isExpired) {
-        return this.accessToken;
-      }
-      _assert(
-        this.refreshToken,
-        auth2,
-        "user-token-expired"
-        /* AuthErrorCode.TOKEN_EXPIRED */
-      );
-      if (this.refreshToken) {
-        await this.refresh(auth2, this.refreshToken);
-        return this.accessToken;
-      }
-      return null;
-    }
-    clearRefreshToken() {
-      this.refreshToken = null;
-    }
-    async refresh(auth2, oldToken) {
-      const { accessToken, refreshToken, expiresIn } = await requestStsToken(auth2, oldToken);
-      this.updateTokensAndExpiration(accessToken, refreshToken, Number(expiresIn));
-    }
-    updateTokensAndExpiration(accessToken, refreshToken, expiresInSec) {
-      this.refreshToken = refreshToken || null;
-      this.accessToken = accessToken || null;
-      this.expirationTime = Date.now() + expiresInSec * 1e3;
-    }
-    static fromJSON(appName, object) {
-      const { refreshToken, accessToken, expirationTime } = object;
-      const manager = new _StsTokenManager();
-      if (refreshToken) {
-        _assert(typeof refreshToken === "string", "internal-error", {
-          appName
-        });
-        manager.refreshToken = refreshToken;
-      }
-      if (accessToken) {
-        _assert(typeof accessToken === "string", "internal-error", {
-          appName
-        });
-        manager.accessToken = accessToken;
-      }
-      if (expirationTime) {
-        _assert(typeof expirationTime === "number", "internal-error", {
-          appName
-        });
-        manager.expirationTime = expirationTime;
-      }
-      return manager;
-    }
-    toJSON() {
-      return {
-        refreshToken: this.refreshToken,
-        accessToken: this.accessToken,
-        expirationTime: this.expirationTime
-      };
-    }
-    _assign(stsTokenManager) {
-      this.accessToken = stsTokenManager.accessToken;
-      this.refreshToken = stsTokenManager.refreshToken;
-      this.expirationTime = stsTokenManager.expirationTime;
-    }
-    _clone() {
-      return Object.assign(new _StsTokenManager(), this.toJSON());
-    }
-    _performRefresh() {
-      return debugFail("not implemented");
-    }
-  };
-  function assertStringOrUndefined(assertion, appName) {
-    _assert(typeof assertion === "string" || typeof assertion === "undefined", "internal-error", { appName });
-  }
-  var UserImpl = class _UserImpl {
-    constructor({ uid, auth: auth2, stsTokenManager, ...opt }) {
-      this.providerId = "firebase";
-      this.proactiveRefresh = new ProactiveRefresh(this);
-      this.reloadUserInfo = null;
-      this.reloadListener = null;
-      this.uid = uid;
-      this.auth = auth2;
-      this.stsTokenManager = stsTokenManager;
-      this.accessToken = stsTokenManager.accessToken;
-      this.displayName = opt.displayName || null;
-      this.email = opt.email || null;
-      this.emailVerified = opt.emailVerified || false;
-      this.phoneNumber = opt.phoneNumber || null;
-      this.photoURL = opt.photoURL || null;
-      this.isAnonymous = opt.isAnonymous || false;
-      this.tenantId = opt.tenantId || null;
-      this.providerData = opt.providerData ? [...opt.providerData] : [];
-      this.metadata = new UserMetadata(opt.createdAt || void 0, opt.lastLoginAt || void 0);
-    }
-    async getIdToken(forceRefresh) {
-      const accessToken = await _logoutIfInvalidated(this, this.stsTokenManager.getToken(this.auth, forceRefresh));
-      _assert(
-        accessToken,
-        this.auth,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      if (this.accessToken !== accessToken) {
-        this.accessToken = accessToken;
-        await this.auth._persistUserIfCurrent(this);
-        this.auth._notifyListenersIfCurrent(this);
-      }
-      return accessToken;
-    }
-    getIdTokenResult(forceRefresh) {
-      return getIdTokenResult(this, forceRefresh);
-    }
-    reload() {
-      return reload(this);
-    }
-    _assign(user) {
-      if (this === user) {
-        return;
-      }
-      _assert(
-        this.uid === user.uid,
-        this.auth,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      this.displayName = user.displayName;
-      this.photoURL = user.photoURL;
-      this.email = user.email;
-      this.emailVerified = user.emailVerified;
-      this.phoneNumber = user.phoneNumber;
-      this.isAnonymous = user.isAnonymous;
-      this.tenantId = user.tenantId;
-      this.providerData = user.providerData.map((userInfo) => ({ ...userInfo }));
-      this.metadata._copy(user.metadata);
-      this.stsTokenManager._assign(user.stsTokenManager);
-    }
-    _clone(auth2) {
-      const newUser = new _UserImpl({
-        ...this,
-        auth: auth2,
-        stsTokenManager: this.stsTokenManager._clone()
-      });
-      newUser.metadata._copy(this.metadata);
-      return newUser;
-    }
-    _onReload(callback) {
-      _assert(
-        !this.reloadListener,
-        this.auth,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      this.reloadListener = callback;
-      if (this.reloadUserInfo) {
-        this._notifyReloadListener(this.reloadUserInfo);
-        this.reloadUserInfo = null;
-      }
-    }
-    _notifyReloadListener(userInfo) {
-      if (this.reloadListener) {
-        this.reloadListener(userInfo);
-      } else {
-        this.reloadUserInfo = userInfo;
-      }
-    }
-    _startProactiveRefresh() {
-      this.proactiveRefresh._start();
-    }
-    _stopProactiveRefresh() {
-      this.proactiveRefresh._stop();
-    }
-    async _updateTokensIfNecessary(response, reload2 = false) {
-      let tokensRefreshed = false;
-      if (response.idToken && response.idToken !== this.stsTokenManager.accessToken) {
-        this.stsTokenManager.updateFromServerResponse(response);
-        tokensRefreshed = true;
-      }
-      if (reload2) {
-        await _reloadWithoutSaving(this);
-      }
-      await this.auth._persistUserIfCurrent(this);
-      if (tokensRefreshed) {
-        this.auth._notifyListenersIfCurrent(this);
-      }
-    }
-    async delete() {
-      if (_isFirebaseServerApp(this.auth.app)) {
-        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this.auth));
-      }
-      const idToken = await this.getIdToken();
-      await _logoutIfInvalidated(this, deleteAccount(this.auth, { idToken }));
-      this.stsTokenManager.clearRefreshToken();
-      return this.auth.signOut();
-    }
-    toJSON() {
-      return {
-        uid: this.uid,
-        email: this.email || void 0,
-        emailVerified: this.emailVerified,
-        displayName: this.displayName || void 0,
-        isAnonymous: this.isAnonymous,
-        photoURL: this.photoURL || void 0,
-        phoneNumber: this.phoneNumber || void 0,
-        tenantId: this.tenantId || void 0,
-        providerData: this.providerData.map((userInfo) => ({ ...userInfo })),
-        stsTokenManager: this.stsTokenManager.toJSON(),
-        // Redirect event ID must be maintained in case there is a pending
-        // redirect event.
-        _redirectEventId: this._redirectEventId,
-        ...this.metadata.toJSON(),
-        // Required for compatibility with the legacy SDK (go/firebase-auth-sdk-persistence-parsing):
-        apiKey: this.auth.config.apiKey,
-        appName: this.auth.name
-        // Missing authDomain will be tolerated by the legacy SDK.
-        // stsTokenManager.apiKey isn't actually required (despite the legacy SDK persisting it).
-      };
-    }
-    get refreshToken() {
-      return this.stsTokenManager.refreshToken || "";
-    }
-    static _fromJSON(auth2, object) {
-      const displayName = object.displayName ?? void 0;
-      const email = object.email ?? void 0;
-      const phoneNumber = object.phoneNumber ?? void 0;
-      const photoURL = object.photoURL ?? void 0;
-      const tenantId = object.tenantId ?? void 0;
-      const _redirectEventId = object._redirectEventId ?? void 0;
-      const createdAt = object.createdAt ?? void 0;
-      const lastLoginAt = object.lastLoginAt ?? void 0;
-      const { uid, emailVerified, isAnonymous, providerData, stsTokenManager: plainObjectTokenManager } = object;
-      _assert(
-        uid && plainObjectTokenManager,
-        auth2,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const stsTokenManager = StsTokenManager.fromJSON(this.name, plainObjectTokenManager);
-      _assert(
-        typeof uid === "string",
-        auth2,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      assertStringOrUndefined(displayName, auth2.name);
-      assertStringOrUndefined(email, auth2.name);
-      _assert(
-        typeof emailVerified === "boolean",
-        auth2,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      _assert(
-        typeof isAnonymous === "boolean",
-        auth2,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      assertStringOrUndefined(phoneNumber, auth2.name);
-      assertStringOrUndefined(photoURL, auth2.name);
-      assertStringOrUndefined(tenantId, auth2.name);
-      assertStringOrUndefined(_redirectEventId, auth2.name);
-      assertStringOrUndefined(createdAt, auth2.name);
-      assertStringOrUndefined(lastLoginAt, auth2.name);
-      const user = new _UserImpl({
-        uid,
-        auth: auth2,
-        email,
-        emailVerified,
-        displayName,
-        isAnonymous,
-        photoURL,
-        phoneNumber,
-        tenantId,
-        stsTokenManager,
-        createdAt,
-        lastLoginAt
-      });
-      if (providerData && Array.isArray(providerData)) {
-        user.providerData = providerData.map((userInfo) => ({ ...userInfo }));
-      }
-      if (_redirectEventId) {
-        user._redirectEventId = _redirectEventId;
-      }
-      return user;
-    }
-    /**
-     * Initialize a User from an idToken server response
-     * @param auth
-     * @param idTokenResponse
-     */
-    static async _fromIdTokenResponse(auth2, idTokenResponse, isAnonymous = false) {
-      const stsTokenManager = new StsTokenManager();
-      stsTokenManager.updateFromServerResponse(idTokenResponse);
-      const user = new _UserImpl({
-        uid: idTokenResponse.localId,
-        auth: auth2,
-        stsTokenManager,
-        isAnonymous
-      });
-      await _reloadWithoutSaving(user);
-      return user;
-    }
-    /**
-     * Initialize a User from an idToken server response
-     * @param auth
-     * @param idTokenResponse
-     */
-    static async _fromGetAccountInfoResponse(auth2, response, idToken) {
-      const coreAccount = response.users[0];
-      _assert(
-        coreAccount.localId !== void 0,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const providerData = coreAccount.providerUserInfo !== void 0 ? extractProviderData(coreAccount.providerUserInfo) : [];
-      const isAnonymous = !(coreAccount.email && coreAccount.passwordHash) && !providerData?.length;
-      const stsTokenManager = new StsTokenManager();
-      stsTokenManager.updateFromIdToken(idToken);
-      const user = new _UserImpl({
-        uid: coreAccount.localId,
-        auth: auth2,
-        stsTokenManager,
-        isAnonymous
-      });
-      const updates = {
-        uid: coreAccount.localId,
-        displayName: coreAccount.displayName || null,
-        photoURL: coreAccount.photoUrl || null,
-        email: coreAccount.email || null,
-        emailVerified: coreAccount.emailVerified || false,
-        phoneNumber: coreAccount.phoneNumber || null,
-        tenantId: coreAccount.tenantId || null,
-        providerData,
-        metadata: new UserMetadata(coreAccount.createdAt, coreAccount.lastLoginAt),
-        isAnonymous: !(coreAccount.email && coreAccount.passwordHash) && !providerData?.length
-      };
-      Object.assign(user, updates);
-      return user;
-    }
-  };
-  var instanceCache = /* @__PURE__ */ new Map();
-  function _getInstance(cls) {
-    debugAssert(cls instanceof Function, "Expected a class definition");
-    let instance = instanceCache.get(cls);
-    if (instance) {
-      debugAssert(instance instanceof cls, "Instance stored in cache mismatched with class");
-      return instance;
-    }
-    instance = new cls();
-    instanceCache.set(cls, instance);
-    return instance;
-  }
-  var InMemoryPersistence = class {
-    constructor() {
-      this.type = "NONE";
-      this.storage = {};
-    }
-    async _isAvailable() {
-      return true;
-    }
-    async _set(key, value) {
-      this.storage[key] = value;
-    }
-    async _get(key) {
-      const value = this.storage[key];
-      return value === void 0 ? null : value;
-    }
-    async _remove(key) {
-      delete this.storage[key];
-    }
-    _addListener(_key, _listener) {
-      return;
-    }
-    _removeListener(_key, _listener) {
-      return;
-    }
-  };
-  InMemoryPersistence.type = "NONE";
-  var inMemoryPersistence = InMemoryPersistence;
-  function _persistenceKeyName(key, apiKey, appName) {
-    return `${"firebase"}:${key}:${apiKey}:${appName}`;
-  }
-  var PersistenceUserManager = class _PersistenceUserManager {
-    constructor(persistence, auth2, userKey) {
-      this.persistence = persistence;
-      this.auth = auth2;
-      this.userKey = userKey;
-      const { config, name: name4 } = this.auth;
-      this.fullUserKey = _persistenceKeyName(this.userKey, config.apiKey, name4);
-      this.fullPersistenceKey = _persistenceKeyName("persistence", config.apiKey, name4);
-      this.boundEventHandler = auth2._onStorageEvent.bind(auth2);
-      try {
-        this.persistence._addListener(this.fullUserKey, this.boundEventHandler);
-      } catch {
-      }
-    }
-    setCurrentUser(user) {
-      return this.persistence._set(this.fullUserKey, user.toJSON());
-    }
-    async getCurrentUser() {
-      const blob = await this.persistence._get(this.fullUserKey);
-      if (!blob) {
-        return null;
-      }
-      if (typeof blob === "string") {
-        const response = await getAccountInfo(this.auth, { idToken: blob }).catch(() => void 0);
-        if (!response) {
-          return null;
-        }
-        return UserImpl._fromGetAccountInfoResponse(this.auth, response, blob);
-      }
-      return UserImpl._fromJSON(this.auth, blob);
-    }
-    removeCurrentUser() {
-      return this.persistence._remove(this.fullUserKey);
-    }
-    savePersistenceForRedirect() {
-      return this.persistence._set(this.fullPersistenceKey, this.persistence.type);
-    }
-    async setPersistence(newPersistence) {
-      if (this.persistence === newPersistence) {
-        return;
-      }
-      const currentUser = await this.getCurrentUser();
-      await this.removeCurrentUser();
-      this.persistence = newPersistence;
-      if (currentUser) {
-        return this.setCurrentUser(currentUser);
-      }
-    }
-    delete() {
-      try {
-        this.persistence._removeListener(this.fullUserKey, this.boundEventHandler);
-      } catch {
-      }
-    }
-    static async create(auth2, persistenceHierarchy, userKey = "authUser") {
-      if (!persistenceHierarchy.length) {
-        return new _PersistenceUserManager(_getInstance(inMemoryPersistence), auth2, userKey);
-      }
-      const availablePersistences = (await Promise.all(persistenceHierarchy.map(async (persistence) => {
-        try {
-          if (await persistence._isAvailable()) {
-            return persistence;
-          }
-        } catch {
-          return void 0;
-        }
-        return void 0;
-      }))).filter((persistence) => persistence);
-      let selectedPersistence = availablePersistences[0] || _getInstance(inMemoryPersistence);
-      const key = _persistenceKeyName(userKey, auth2.config.apiKey, auth2.name);
-      let userToMigrate = null;
-      for (const persistence of persistenceHierarchy) {
-        try {
-          const blob = await persistence._get(key);
-          if (blob) {
-            let user;
-            if (typeof blob === "string") {
-              const response = await getAccountInfo(auth2, {
-                idToken: blob
-              }).catch(() => void 0);
-              if (!response) {
-                break;
-              }
-              user = await UserImpl._fromGetAccountInfoResponse(auth2, response, blob);
-            } else {
-              user = UserImpl._fromJSON(auth2, blob);
-            }
-            if (persistence !== selectedPersistence) {
-              userToMigrate = user;
-            }
-            selectedPersistence = persistence;
-            break;
-          }
-        } catch {
-        }
-      }
-      const migrationHierarchy = availablePersistences.filter((p2) => p2._shouldAllowMigration);
-      if (!selectedPersistence._shouldAllowMigration || !migrationHierarchy.length) {
-        return new _PersistenceUserManager(selectedPersistence, auth2, userKey);
-      }
-      selectedPersistence = migrationHierarchy[0];
-      if (userToMigrate) {
-        await selectedPersistence._set(key, userToMigrate.toJSON());
-      }
-      await Promise.all(persistenceHierarchy.map(async (persistence) => {
-        if (persistence !== selectedPersistence) {
-          try {
-            await persistence._remove(key);
-          } catch {
-          }
-        }
-      }));
-      return new _PersistenceUserManager(selectedPersistence, auth2, userKey);
-    }
-  };
-  function _getBrowserName(userAgent) {
-    const ua2 = userAgent.toLowerCase();
-    if (ua2.includes("opera/") || ua2.includes("opr/") || ua2.includes("opios/")) {
-      return "Opera";
-    } else if (_isIEMobile(ua2)) {
-      return "IEMobile";
-    } else if (ua2.includes("msie") || ua2.includes("trident/")) {
-      return "IE";
-    } else if (ua2.includes("edge/")) {
-      return "Edge";
-    } else if (_isFirefox(ua2)) {
-      return "Firefox";
-    } else if (ua2.includes("silk/")) {
-      return "Silk";
-    } else if (_isBlackBerry(ua2)) {
-      return "Blackberry";
-    } else if (_isWebOS(ua2)) {
-      return "Webos";
-    } else if (_isSafari(ua2)) {
-      return "Safari";
-    } else if ((ua2.includes("chrome/") || _isChromeIOS(ua2)) && !ua2.includes("edge/")) {
-      return "Chrome";
-    } else if (_isAndroid(ua2)) {
-      return "Android";
-    } else {
-      const re = /([a-zA-Z\d\.]+)\/[a-zA-Z\d\.]*$/;
-      const matches = userAgent.match(re);
-      if (matches?.length === 2) {
-        return matches[1];
-      }
-    }
-    return "Other";
-  }
-  function _isFirefox(ua2 = getUA()) {
-    return /firefox\//i.test(ua2);
-  }
-  function _isSafari(userAgent = getUA()) {
-    const ua2 = userAgent.toLowerCase();
-    return ua2.includes("safari/") && !ua2.includes("chrome/") && !ua2.includes("crios/") && !ua2.includes("android");
-  }
-  function _isChromeIOS(ua2 = getUA()) {
-    return /crios\//i.test(ua2);
-  }
-  function _isIEMobile(ua2 = getUA()) {
-    return /iemobile/i.test(ua2);
-  }
-  function _isAndroid(ua2 = getUA()) {
-    return /android/i.test(ua2);
-  }
-  function _isBlackBerry(ua2 = getUA()) {
-    return /blackberry/i.test(ua2);
-  }
-  function _isWebOS(ua2 = getUA()) {
-    return /webos/i.test(ua2);
-  }
-  function _isIOS(ua2 = getUA()) {
-    return /iphone|ipad|ipod/i.test(ua2) || /macintosh/i.test(ua2) && /mobile/i.test(ua2);
-  }
-  function _isIOSStandalone(ua2 = getUA()) {
-    return _isIOS(ua2) && !!window.navigator?.standalone;
-  }
-  function _isIE10() {
-    return isIE() && document.documentMode === 10;
-  }
-  function _isMobileBrowser(ua2 = getUA()) {
-    return _isIOS(ua2) || _isAndroid(ua2) || _isWebOS(ua2) || _isBlackBerry(ua2) || /windows phone/i.test(ua2) || _isIEMobile(ua2);
-  }
-  function _getClientVersion(clientPlatform, frameworks = []) {
-    let reportedPlatform;
-    switch (clientPlatform) {
-      case "Browser":
-        reportedPlatform = _getBrowserName(getUA());
-        break;
-      case "Worker":
-        reportedPlatform = `${_getBrowserName(getUA())}-${clientPlatform}`;
-        break;
-      default:
-        reportedPlatform = clientPlatform;
-    }
-    const reportedFrameworks = frameworks.length ? frameworks.join(",") : "FirebaseCore-web";
-    return `${reportedPlatform}/${"JsCore"}/${SDK_VERSION}/${reportedFrameworks}`;
-  }
-  var AuthMiddlewareQueue = class {
-    constructor(auth2) {
-      this.auth = auth2;
-      this.queue = [];
-    }
-    pushCallback(callback, onAbort) {
-      const wrappedCallback = (user) => new Promise((resolve, reject) => {
-        try {
-          const result = callback(user);
-          resolve(result);
-        } catch (e2) {
-          reject(e2);
-        }
-      });
-      wrappedCallback.onAbort = onAbort;
-      this.queue.push(wrappedCallback);
-      const index = this.queue.length - 1;
-      return () => {
-        this.queue[index] = () => Promise.resolve();
-      };
-    }
-    async runMiddleware(nextUser) {
-      if (this.auth.currentUser === nextUser) {
-        return;
-      }
-      const onAbortStack = [];
-      try {
-        for (const beforeStateCallback of this.queue) {
-          await beforeStateCallback(nextUser);
-          if (beforeStateCallback.onAbort) {
-            onAbortStack.push(beforeStateCallback.onAbort);
-          }
-        }
-      } catch (e2) {
-        onAbortStack.reverse();
-        for (const onAbort of onAbortStack) {
-          try {
-            onAbort();
-          } catch (_) {
-          }
-        }
-        throw this.auth._errorFactory.create("login-blocked", {
-          originalMessage: e2?.message
-        });
-      }
-    }
-  };
-  async function _getPasswordPolicy(auth2, request = {}) {
-    return _performApiRequest(auth2, "GET", "/v2/passwordPolicy", _addTidIfNecessary(auth2, request));
-  }
-  var MINIMUM_MIN_PASSWORD_LENGTH = 6;
-  var PasswordPolicyImpl = class {
-    constructor(response) {
-      const responseOptions = response.customStrengthOptions;
-      this.customStrengthOptions = {};
-      this.customStrengthOptions.minPasswordLength = responseOptions.minPasswordLength ?? MINIMUM_MIN_PASSWORD_LENGTH;
-      if (responseOptions.maxPasswordLength) {
-        this.customStrengthOptions.maxPasswordLength = responseOptions.maxPasswordLength;
-      }
-      if (responseOptions.containsLowercaseCharacter !== void 0) {
-        this.customStrengthOptions.containsLowercaseLetter = responseOptions.containsLowercaseCharacter;
-      }
-      if (responseOptions.containsUppercaseCharacter !== void 0) {
-        this.customStrengthOptions.containsUppercaseLetter = responseOptions.containsUppercaseCharacter;
-      }
-      if (responseOptions.containsNumericCharacter !== void 0) {
-        this.customStrengthOptions.containsNumericCharacter = responseOptions.containsNumericCharacter;
-      }
-      if (responseOptions.containsNonAlphanumericCharacter !== void 0) {
-        this.customStrengthOptions.containsNonAlphanumericCharacter = responseOptions.containsNonAlphanumericCharacter;
-      }
-      this.enforcementState = response.enforcementState;
-      if (this.enforcementState === "ENFORCEMENT_STATE_UNSPECIFIED") {
-        this.enforcementState = "OFF";
-      }
-      this.allowedNonAlphanumericCharacters = response.allowedNonAlphanumericCharacters?.join("") ?? "";
-      this.forceUpgradeOnSignin = response.forceUpgradeOnSignin ?? false;
-      this.schemaVersion = response.schemaVersion;
-    }
-    validatePassword(password) {
-      const status = {
-        isValid: true,
-        passwordPolicy: this
-      };
-      this.validatePasswordLengthOptions(password, status);
-      this.validatePasswordCharacterOptions(password, status);
-      status.isValid && (status.isValid = status.meetsMinPasswordLength ?? true);
-      status.isValid && (status.isValid = status.meetsMaxPasswordLength ?? true);
-      status.isValid && (status.isValid = status.containsLowercaseLetter ?? true);
-      status.isValid && (status.isValid = status.containsUppercaseLetter ?? true);
-      status.isValid && (status.isValid = status.containsNumericCharacter ?? true);
-      status.isValid && (status.isValid = status.containsNonAlphanumericCharacter ?? true);
-      return status;
-    }
-    /**
-     * Validates that the password meets the length options for the policy.
-     *
-     * @param password Password to validate.
-     * @param status Validation status.
-     */
-    validatePasswordLengthOptions(password, status) {
-      const minPasswordLength = this.customStrengthOptions.minPasswordLength;
-      const maxPasswordLength = this.customStrengthOptions.maxPasswordLength;
-      if (minPasswordLength) {
-        status.meetsMinPasswordLength = password.length >= minPasswordLength;
-      }
-      if (maxPasswordLength) {
-        status.meetsMaxPasswordLength = password.length <= maxPasswordLength;
-      }
-    }
-    /**
-     * Validates that the password meets the character options for the policy.
-     *
-     * @param password Password to validate.
-     * @param status Validation status.
-     */
-    validatePasswordCharacterOptions(password, status) {
-      this.updatePasswordCharacterOptionsStatuses(
-        status,
-        /* containsLowercaseCharacter= */
-        false,
-        /* containsUppercaseCharacter= */
-        false,
-        /* containsNumericCharacter= */
-        false,
-        /* containsNonAlphanumericCharacter= */
-        false
-      );
-      let passwordChar;
-      for (let i2 = 0; i2 < password.length; i2++) {
-        passwordChar = password.charAt(i2);
-        this.updatePasswordCharacterOptionsStatuses(
-          status,
-          /* containsLowercaseCharacter= */
-          passwordChar >= "a" && passwordChar <= "z",
-          /* containsUppercaseCharacter= */
-          passwordChar >= "A" && passwordChar <= "Z",
-          /* containsNumericCharacter= */
-          passwordChar >= "0" && passwordChar <= "9",
-          /* containsNonAlphanumericCharacter= */
-          this.allowedNonAlphanumericCharacters.includes(passwordChar)
-        );
-      }
-    }
-    /**
-     * Updates the running validation status with the statuses for the character options.
-     * Expected to be called each time a character is processed to update each option status
-     * based on the current character.
-     *
-     * @param status Validation status.
-     * @param containsLowercaseCharacter Whether the character is a lowercase letter.
-     * @param containsUppercaseCharacter Whether the character is an uppercase letter.
-     * @param containsNumericCharacter Whether the character is a numeric character.
-     * @param containsNonAlphanumericCharacter Whether the character is a non-alphanumeric character.
-     */
-    updatePasswordCharacterOptionsStatuses(status, containsLowercaseCharacter, containsUppercaseCharacter, containsNumericCharacter, containsNonAlphanumericCharacter) {
-      if (this.customStrengthOptions.containsLowercaseLetter) {
-        status.containsLowercaseLetter || (status.containsLowercaseLetter = containsLowercaseCharacter);
-      }
-      if (this.customStrengthOptions.containsUppercaseLetter) {
-        status.containsUppercaseLetter || (status.containsUppercaseLetter = containsUppercaseCharacter);
-      }
-      if (this.customStrengthOptions.containsNumericCharacter) {
-        status.containsNumericCharacter || (status.containsNumericCharacter = containsNumericCharacter);
-      }
-      if (this.customStrengthOptions.containsNonAlphanumericCharacter) {
-        status.containsNonAlphanumericCharacter || (status.containsNonAlphanumericCharacter = containsNonAlphanumericCharacter);
-      }
-    }
-  };
-  var AuthImpl = class {
-    constructor(app2, heartbeatServiceProvider, appCheckServiceProvider, config) {
-      this.app = app2;
-      this.heartbeatServiceProvider = heartbeatServiceProvider;
-      this.appCheckServiceProvider = appCheckServiceProvider;
-      this.config = config;
-      this.currentUser = null;
-      this.emulatorConfig = null;
-      this.operations = Promise.resolve();
-      this.authStateSubscription = new Subscription(this);
-      this.idTokenSubscription = new Subscription(this);
-      this.beforeStateQueue = new AuthMiddlewareQueue(this);
-      this.redirectUser = null;
-      this.isProactiveRefreshEnabled = false;
-      this.EXPECTED_PASSWORD_POLICY_SCHEMA_VERSION = 1;
-      this._canInitEmulator = true;
-      this._isInitialized = false;
-      this._deleted = false;
-      this._initializationPromise = null;
-      this._popupRedirectResolver = null;
-      this._errorFactory = _DEFAULT_AUTH_ERROR_FACTORY;
-      this._agentRecaptchaConfig = null;
-      this._tenantRecaptchaConfigs = {};
-      this._projectPasswordPolicy = null;
-      this._tenantPasswordPolicies = {};
-      this._resolvePersistenceManagerAvailable = void 0;
-      this.lastNotifiedUid = void 0;
-      this.languageCode = null;
-      this.tenantId = null;
-      this.settings = { appVerificationDisabledForTesting: false };
-      this.frameworks = [];
-      this.name = app2.name;
-      this.clientVersion = config.sdkClientVersion;
-      this._persistenceManagerAvailable = new Promise((resolve) => this._resolvePersistenceManagerAvailable = resolve);
-    }
-    _initializeWithPersistence(persistenceHierarchy, popupRedirectResolver) {
-      if (popupRedirectResolver) {
-        this._popupRedirectResolver = _getInstance(popupRedirectResolver);
-      }
-      this._initializationPromise = this.queue(async () => {
-        if (this._deleted) {
-          return;
-        }
-        try {
-          this.persistenceManager = await PersistenceUserManager.create(this, persistenceHierarchy);
-        } catch (e2) {
-          _logWarn(`Failed to initialize persistence: ${e2}`);
-          this.persistenceManager = await PersistenceUserManager.create(this, []);
-        } finally {
-          this._resolvePersistenceManagerAvailable?.();
-        }
-        if (this._deleted) {
-          return;
-        }
-        if (this._popupRedirectResolver?._shouldInitProactively) {
-          try {
-            await this._popupRedirectResolver._initialize(this);
-          } catch (e2) {
-          }
-        }
-        try {
-          await this.initializeCurrentUser(popupRedirectResolver);
-        } catch (e2) {
-          _logWarn(`Failed to initialize current user: ${e2}`);
-          await this.directlySetCurrentUser(null).catch(() => {
-          });
-        }
-        this.lastNotifiedUid = this.currentUser?.uid || null;
-        if (this._deleted) {
-          return;
-        }
-        this._isInitialized = true;
-      });
-      return this._initializationPromise;
-    }
-    /**
-     * If the persistence is changed in another window, the user manager will let us know
-     */
-    async _onStorageEvent() {
-      if (this._deleted) {
-        return;
-      }
-      const user = await this.assertedPersistence.getCurrentUser();
-      if (!this.currentUser && !user) {
-        return;
-      }
-      if (this.currentUser && user && this.currentUser.uid === user.uid) {
-        this._currentUser._assign(user);
-        await this.currentUser.getIdToken();
-        return;
-      }
-      await this._updateCurrentUser(
-        user,
-        /* skipBeforeStateCallbacks */
-        true
-      );
-    }
-    async initializeCurrentUserFromIdToken(idToken) {
-      try {
-        const response = await getAccountInfo(this, { idToken });
-        const user = await UserImpl._fromGetAccountInfoResponse(this, response, idToken);
-        await this.directlySetCurrentUser(user);
-      } catch (err) {
-        console.warn("FirebaseServerApp could not login user with provided authIdToken: ", err);
-        await this.directlySetCurrentUser(null);
-      }
-    }
-    async initializeCurrentUser(popupRedirectResolver) {
-      if (_isFirebaseServerApp(this.app)) {
-        const idToken = this.app.settings.authIdToken;
-        if (idToken) {
-          return new Promise((resolve) => {
-            setTimeout(() => this.initializeCurrentUserFromIdToken(idToken).then(resolve, resolve));
-          });
-        } else {
-          return this.directlySetCurrentUser(null);
-        }
-      }
-      const previouslyStoredUser = await this.assertedPersistence.getCurrentUser();
-      let futureCurrentUser = previouslyStoredUser;
-      let needsTocheckMiddleware = false;
-      if (popupRedirectResolver && this.config.authDomain) {
-        await this.getOrInitRedirectPersistenceManager();
-        const redirectUserEventId = this.redirectUser?._redirectEventId;
-        const storedUserEventId = futureCurrentUser?._redirectEventId;
-        const result = await this.tryRedirectSignIn(popupRedirectResolver);
-        if ((!redirectUserEventId || redirectUserEventId === storedUserEventId) && result?.user) {
-          futureCurrentUser = result.user;
-          needsTocheckMiddleware = true;
-        }
-      }
-      if (!futureCurrentUser) {
-        return this.directlySetCurrentUser(null);
-      }
-      if (!futureCurrentUser._redirectEventId) {
-        if (needsTocheckMiddleware) {
-          try {
-            await this.beforeStateQueue.runMiddleware(futureCurrentUser);
-          } catch (e2) {
-            futureCurrentUser = previouslyStoredUser;
-            this._popupRedirectResolver._overrideRedirectResult(this, () => Promise.reject(e2));
-          }
-        }
-        if (futureCurrentUser) {
-          return this.reloadAndSetCurrentUserOrClear(futureCurrentUser);
-        } else {
-          return this.directlySetCurrentUser(null);
-        }
-      }
-      _assert(
-        this._popupRedirectResolver,
-        this,
-        "argument-error"
-        /* AuthErrorCode.ARGUMENT_ERROR */
-      );
-      await this.getOrInitRedirectPersistenceManager();
-      if (this.redirectUser && this.redirectUser._redirectEventId === futureCurrentUser._redirectEventId) {
-        return this.directlySetCurrentUser(futureCurrentUser);
-      }
-      return this.reloadAndSetCurrentUserOrClear(futureCurrentUser);
-    }
-    async tryRedirectSignIn(redirectResolver) {
-      let result = null;
-      try {
-        result = await this._popupRedirectResolver._completeRedirectFn(this, redirectResolver, true);
-      } catch (e2) {
-        await this._setRedirectUser(null);
-      }
-      return result;
-    }
-    async reloadAndSetCurrentUserOrClear(user) {
-      try {
-        await _reloadWithoutSaving(user);
-      } catch (e2) {
-        const code = e2?.code;
-        if (code !== `auth/${"network-request-failed"}` && code !== `auth/${"too-many-requests"}` && !code?.startsWith(`auth/${"quota-exceeded"}`)) {
-          return this.directlySetCurrentUser(null);
-        }
-      }
-      return this.directlySetCurrentUser(user);
-    }
-    useDeviceLanguage() {
-      this.languageCode = _getUserLanguage();
-    }
-    async _delete() {
-      this._deleted = true;
-    }
-    async updateCurrentUser(userExtern) {
-      if (_isFirebaseServerApp(this.app)) {
-        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this));
-      }
-      const user = userExtern ? getModularInstance(userExtern) : null;
-      if (user) {
-        _assert(
-          user.auth.config.apiKey === this.config.apiKey,
-          this,
-          "invalid-user-token"
-          /* AuthErrorCode.INVALID_AUTH */
-        );
-      }
-      return this._updateCurrentUser(user && user._clone(this));
-    }
-    async _updateCurrentUser(user, skipBeforeStateCallbacks = false) {
-      if (this._deleted) {
-        return;
-      }
-      if (user) {
-        _assert(
-          this.tenantId === user.tenantId,
-          this,
-          "tenant-id-mismatch"
-          /* AuthErrorCode.TENANT_ID_MISMATCH */
-        );
-      }
-      if (!skipBeforeStateCallbacks) {
-        await this.beforeStateQueue.runMiddleware(user);
-      }
-      return this.queue(async () => {
-        await this.directlySetCurrentUser(user);
-        this.notifyAuthListeners();
-      });
-    }
-    async signOut() {
-      if (_isFirebaseServerApp(this.app)) {
-        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this));
-      }
-      await this.beforeStateQueue.runMiddleware(null);
-      if (this.redirectPersistenceManager || this._popupRedirectResolver) {
-        await this._setRedirectUser(null);
-      }
-      return this._updateCurrentUser(
-        null,
-        /* skipBeforeStateCallbacks */
-        true
-      );
-    }
-    setPersistence(persistence) {
-      if (_isFirebaseServerApp(this.app)) {
-        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this));
-      }
-      return this.queue(async () => {
-        await this.assertedPersistence.setPersistence(_getInstance(persistence));
-      });
-    }
-    _getRecaptchaConfig() {
-      if (this.tenantId == null) {
-        return this._agentRecaptchaConfig;
-      } else {
-        return this._tenantRecaptchaConfigs[this.tenantId];
-      }
-    }
-    async validatePassword(password) {
-      if (!this._getPasswordPolicyInternal()) {
-        await this._updatePasswordPolicy();
-      }
-      const passwordPolicy = this._getPasswordPolicyInternal();
-      if (passwordPolicy.schemaVersion !== this.EXPECTED_PASSWORD_POLICY_SCHEMA_VERSION) {
-        return Promise.reject(this._errorFactory.create("unsupported-password-policy-schema-version", {}));
-      }
-      return passwordPolicy.validatePassword(password);
-    }
-    _getPasswordPolicyInternal() {
-      if (this.tenantId === null) {
-        return this._projectPasswordPolicy;
-      } else {
-        return this._tenantPasswordPolicies[this.tenantId];
-      }
-    }
-    async _updatePasswordPolicy() {
-      const response = await _getPasswordPolicy(this);
-      const passwordPolicy = new PasswordPolicyImpl(response);
-      if (this.tenantId === null) {
-        this._projectPasswordPolicy = passwordPolicy;
-      } else {
-        this._tenantPasswordPolicies[this.tenantId] = passwordPolicy;
-      }
-    }
-    _getPersistenceType() {
-      return this.assertedPersistence.persistence.type;
-    }
-    _getPersistence() {
-      return this.assertedPersistence.persistence;
-    }
-    _updateErrorMap(errorMap) {
-      this._errorFactory = new ErrorFactory("auth", "Firebase", errorMap());
-    }
-    onAuthStateChanged(nextOrObserver, error, completed) {
-      return this.registerStateListener(this.authStateSubscription, nextOrObserver, error, completed);
-    }
-    beforeAuthStateChanged(callback, onAbort) {
-      return this.beforeStateQueue.pushCallback(callback, onAbort);
-    }
-    onIdTokenChanged(nextOrObserver, error, completed) {
-      return this.registerStateListener(this.idTokenSubscription, nextOrObserver, error, completed);
-    }
-    authStateReady() {
-      return new Promise((resolve, reject) => {
-        if (this.currentUser) {
-          resolve();
-        } else {
-          const unsubscribe = this.onAuthStateChanged(() => {
-            unsubscribe();
-            resolve();
-          }, reject);
-        }
-      });
-    }
-    /**
-     * Revokes the given access token. Currently only supports Apple OAuth access tokens.
-     */
-    async revokeAccessToken(token) {
-      if (this.currentUser) {
-        const idToken = await this.currentUser.getIdToken();
-        const request = {
-          providerId: "apple.com",
-          tokenType: "ACCESS_TOKEN",
-          token,
-          idToken
-        };
-        if (this.tenantId != null) {
-          request.tenantId = this.tenantId;
-        }
-        await revokeToken(this, request);
-      }
-    }
-    toJSON() {
-      return {
-        apiKey: this.config.apiKey,
-        authDomain: this.config.authDomain,
-        appName: this.name,
-        currentUser: this._currentUser?.toJSON()
-      };
-    }
-    async _setRedirectUser(user, popupRedirectResolver) {
-      const redirectManager = await this.getOrInitRedirectPersistenceManager(popupRedirectResolver);
-      return user === null ? redirectManager.removeCurrentUser() : redirectManager.setCurrentUser(user);
-    }
-    async getOrInitRedirectPersistenceManager(popupRedirectResolver) {
-      if (!this.redirectPersistenceManager) {
-        const resolver = popupRedirectResolver && _getInstance(popupRedirectResolver) || this._popupRedirectResolver;
-        _assert(
-          resolver,
-          this,
-          "argument-error"
-          /* AuthErrorCode.ARGUMENT_ERROR */
-        );
-        this.redirectPersistenceManager = await PersistenceUserManager.create(
-          this,
-          [_getInstance(resolver._redirectPersistence)],
-          "redirectUser"
-          /* KeyName.REDIRECT_USER */
-        );
-        this.redirectUser = await this.redirectPersistenceManager.getCurrentUser();
-      }
-      return this.redirectPersistenceManager;
-    }
-    async _redirectUserForId(id) {
-      if (this._isInitialized) {
-        await this.queue(async () => {
-        });
-      }
-      if (this._currentUser?._redirectEventId === id) {
-        return this._currentUser;
-      }
-      if (this.redirectUser?._redirectEventId === id) {
-        return this.redirectUser;
-      }
-      return null;
-    }
-    async _persistUserIfCurrent(user) {
-      if (user === this.currentUser) {
-        return this.queue(async () => this.directlySetCurrentUser(user));
-      }
-    }
-    /** Notifies listeners only if the user is current */
-    _notifyListenersIfCurrent(user) {
-      if (user === this.currentUser) {
-        this.notifyAuthListeners();
-      }
-    }
-    _key() {
-      return `${this.config.authDomain}:${this.config.apiKey}:${this.name}`;
-    }
-    _startProactiveRefresh() {
-      this.isProactiveRefreshEnabled = true;
-      if (this.currentUser) {
-        this._currentUser._startProactiveRefresh();
-      }
-    }
-    _stopProactiveRefresh() {
-      this.isProactiveRefreshEnabled = false;
-      if (this.currentUser) {
-        this._currentUser._stopProactiveRefresh();
-      }
-    }
-    /** Returns the current user cast as the internal type */
-    get _currentUser() {
-      return this.currentUser;
-    }
-    notifyAuthListeners() {
-      if (!this._isInitialized) {
-        return;
-      }
-      this.idTokenSubscription.next(this.currentUser);
-      const currentUid = this.currentUser?.uid ?? null;
-      if (this.lastNotifiedUid !== currentUid) {
-        this.lastNotifiedUid = currentUid;
-        this.authStateSubscription.next(this.currentUser);
-      }
-    }
-    registerStateListener(subscription, nextOrObserver, error, completed) {
-      if (this._deleted) {
-        return () => {
-        };
-      }
-      const cb = typeof nextOrObserver === "function" ? nextOrObserver : nextOrObserver.next.bind(nextOrObserver);
-      let isUnsubscribed = false;
-      const promise = this._isInitialized ? Promise.resolve() : this._initializationPromise;
-      _assert(
-        promise,
-        this,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      promise.then(() => {
-        if (isUnsubscribed) {
-          return;
-        }
-        cb(this.currentUser);
-      }).catch((err) => {
-        if (isUnsubscribed) {
-          return;
-        }
-        if (typeof nextOrObserver !== "function" && nextOrObserver.error) {
-          nextOrObserver.error(err);
-        } else if (error) {
-          error(err);
-        } else {
-          throw err;
-        }
-      });
-      if (typeof nextOrObserver === "function") {
-        const unsubscribe = subscription.addObserver(nextOrObserver, error, completed);
-        return () => {
-          isUnsubscribed = true;
-          unsubscribe();
-        };
-      } else {
-        const unsubscribe = subscription.addObserver(nextOrObserver);
-        return () => {
-          isUnsubscribed = true;
-          unsubscribe();
-        };
-      }
-    }
-    /**
-     * Unprotected (from race conditions) method to set the current user. This
-     * should only be called from within a queued callback. This is necessary
-     * because the queue shouldn't rely on another queued callback.
-     */
-    async directlySetCurrentUser(user) {
-      if (this.currentUser && this.currentUser !== user) {
-        this._currentUser._stopProactiveRefresh();
-      }
-      if (user && this.isProactiveRefreshEnabled) {
-        user._startProactiveRefresh();
-      }
-      this.currentUser = user;
-      if (this.persistenceManager) {
-        try {
-          if (user) {
-            await this.persistenceManager.setCurrentUser(user);
-          } else {
-            await this.persistenceManager.removeCurrentUser();
-          }
-        } catch (e2) {
-          const originalMessage = e2?.message || String(e2);
-          const error = _errorWithCustomMessage(this, "internal-error", `An internal AuthError has occurred: ${originalMessage}`);
-          error.customData = { originalError: e2 };
-          throw error;
-        }
-      }
-    }
-    queue(action) {
-      this.operations = this.operations.then(action, action);
-      return this.operations;
-    }
-    get assertedPersistence() {
-      _assert(
-        this.persistenceManager,
-        this,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      return this.persistenceManager;
-    }
-    _logFramework(framework) {
-      if (!framework || this.frameworks.includes(framework)) {
-        return;
-      }
-      this.frameworks.push(framework);
-      this.frameworks.sort();
-      this.clientVersion = _getClientVersion(this.config.clientPlatform, this._getFrameworks());
-    }
-    _getFrameworks() {
-      return this.frameworks;
-    }
-    async _getAdditionalHeaders() {
-      const headers = {
-        [
-          "X-Client-Version"
-          /* HttpHeader.X_CLIENT_VERSION */
-        ]: this.clientVersion
-      };
-      if (this.app.options.appId) {
-        headers[
-          "X-Firebase-gmpid"
-          /* HttpHeader.X_FIREBASE_GMPID */
-        ] = this.app.options.appId;
-      }
-      const heartbeatsHeader = await this.heartbeatServiceProvider.getImmediate({
-        optional: true
-      })?.getHeartbeatsHeader();
-      if (heartbeatsHeader) {
-        headers[
-          "X-Firebase-Client"
-          /* HttpHeader.X_FIREBASE_CLIENT */
-        ] = heartbeatsHeader;
-      }
-      const appCheckToken = await this._getAppCheckToken();
-      if (appCheckToken) {
-        headers[
-          "X-Firebase-AppCheck"
-          /* HttpHeader.X_FIREBASE_APP_CHECK */
-        ] = appCheckToken;
-      }
-      return headers;
-    }
-    async _getAppCheckToken() {
-      if (_isFirebaseServerApp(this.app) && this.app.settings.appCheckToken) {
-        return this.app.settings.appCheckToken;
-      }
-      const appCheckTokenResult = await this.appCheckServiceProvider.getImmediate({ optional: true })?.getToken();
-      if (appCheckTokenResult?.error) {
-        _logWarn(`Error while retrieving App Check token: ${appCheckTokenResult.error}`);
-      }
-      return appCheckTokenResult?.token;
-    }
-  };
-  function _castAuth(auth2) {
-    return getModularInstance(auth2);
-  }
-  var Subscription = class {
-    constructor(auth2) {
-      this.auth = auth2;
-      this.observer = null;
-      this.addObserver = createSubscribe((observer) => this.observer = observer);
-    }
-    get next() {
-      _assert(
-        this.observer,
-        this.auth,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      return this.observer.next.bind(this.observer);
-    }
-  };
-  var externalJSProvider = {
-    async loadJS() {
-      throw new Error("Unable to load external scripts");
-    },
-    recaptchaV2Script: "",
-    recaptchaEnterpriseScript: "",
-    gapiScript: ""
-  };
-  function _setExternalJSProvider(p2) {
-    externalJSProvider = p2;
-  }
-  function _loadJS(url) {
-    return externalJSProvider.loadJS(url);
-  }
-  function _recaptchaEnterpriseScriptUrl() {
-    return externalJSProvider.recaptchaEnterpriseScript;
-  }
-  function _gapiScriptUrl() {
-    return externalJSProvider.gapiScript;
-  }
-  function _generateCallbackName(prefix) {
-    return `__${prefix}${Math.floor(Math.random() * 1e6)}`;
-  }
-  var MockGreCAPTCHATopLevel = class {
-    constructor() {
-      this.enterprise = new MockGreCAPTCHA();
-    }
-    ready(callback) {
-      callback();
-    }
-    execute(_siteKey, _options) {
-      return Promise.resolve("token");
-    }
-    render(_container, _parameters) {
-      return "";
-    }
-  };
-  var MockGreCAPTCHA = class {
-    ready(callback) {
-      callback();
-    }
-    execute(_siteKey, _options) {
-      return Promise.resolve("token");
-    }
-    render(_container, _parameters) {
-      return "";
-    }
-  };
-  var RECAPTCHA_ENTERPRISE_VERIFIER_TYPE = "recaptcha-enterprise";
-  var FAKE_TOKEN = "NO_RECAPTCHA";
-  var RECAPTCHA_ENTERPRISE_ONLOAD_CALLBACK_NAME = "onFirebaseAuthREInstanceReady";
-  var RecaptchaEnterpriseVerifier = class _RecaptchaEnterpriseVerifier {
-    /**
-     *
-     * @param authExtern - The corresponding Firebase {@link Auth} instance.
-     *
-     */
-    constructor(authExtern) {
-      this.type = RECAPTCHA_ENTERPRISE_VERIFIER_TYPE;
-      this.auth = _castAuth(authExtern);
-    }
-    /**
-     * Executes the verification process.
-     *
-     * @returns A Promise for a token that can be used to assert the validity of a request.
-     */
-    async verify(action = "verify", forceRefresh = false) {
-      async function retrieveSiteKey(auth2) {
-        if (!forceRefresh) {
-          if (auth2.tenantId == null && auth2._agentRecaptchaConfig != null) {
-            return auth2._agentRecaptchaConfig.siteKey;
-          }
-          if (auth2.tenantId != null && auth2._tenantRecaptchaConfigs[auth2.tenantId] !== void 0) {
-            return auth2._tenantRecaptchaConfigs[auth2.tenantId].siteKey;
-          }
-        }
-        return new Promise(async (resolve, reject) => {
-          getRecaptchaConfig(auth2, {
-            clientType: "CLIENT_TYPE_WEB",
-            version: "RECAPTCHA_ENTERPRISE"
-            /* RecaptchaVersion.ENTERPRISE */
-          }).then((response) => {
-            if (response.recaptchaKey === void 0) {
-              reject(new Error("recaptcha Enterprise site key undefined"));
-            } else {
-              const config = new RecaptchaConfig(response);
-              if (auth2.tenantId == null) {
-                auth2._agentRecaptchaConfig = config;
-              } else {
-                auth2._tenantRecaptchaConfigs[auth2.tenantId] = config;
-              }
-              return resolve(config.siteKey);
-            }
-          }).catch((error) => {
-            reject(error);
-          });
-        });
-      }
-      function retrieveRecaptchaToken(siteKey, resolve, reject) {
-        const grecaptcha = window.grecaptcha;
-        if (isEnterprise(grecaptcha)) {
-          grecaptcha.enterprise.ready(() => {
-            grecaptcha.enterprise.execute(siteKey, { action }).then((token) => {
-              resolve(token);
-            }).catch(() => {
-              resolve(FAKE_TOKEN);
-            });
-          });
-        } else {
-          reject(Error("No reCAPTCHA enterprise script loaded."));
-        }
-      }
-      if (this.auth.settings.appVerificationDisabledForTesting) {
-        const mockRecaptcha = new MockGreCAPTCHATopLevel();
-        return mockRecaptcha.execute("siteKey", { action: "verify" });
-      }
-      return new Promise((resolve, reject) => {
-        retrieveSiteKey(this.auth).then(async (siteKey) => {
-          if (!forceRefresh && isEnterprise(window.grecaptcha) && // If download has already been initiated, do not trigger another
-          // download, await the promise here.
-          _RecaptchaEnterpriseVerifier.scriptInjectionDeferred) {
-            await _RecaptchaEnterpriseVerifier.scriptInjectionDeferred.promise;
-            retrieveRecaptchaToken(siteKey, resolve, reject);
-          } else {
-            if (typeof window === "undefined") {
-              reject(new Error("RecaptchaVerifier is only supported in browser"));
-              return;
-            }
-            let url = _recaptchaEnterpriseScriptUrl();
-            if (url.length !== 0) {
-              url += siteKey + `&onload=${RECAPTCHA_ENTERPRISE_ONLOAD_CALLBACK_NAME}`;
-            }
-            _RecaptchaEnterpriseVerifier.scriptInjectionDeferred = new Deferred();
-            window[RECAPTCHA_ENTERPRISE_ONLOAD_CALLBACK_NAME] = () => {
-              _RecaptchaEnterpriseVerifier.scriptInjectionDeferred?.resolve();
-            };
-            _loadJS(url).then(() => _RecaptchaEnterpriseVerifier.scriptInjectionDeferred?.promise).then(() => {
-              retrieveRecaptchaToken(siteKey, resolve, reject);
-            }).catch((error) => {
-              reject(error);
-            });
-          }
-        }).catch((error) => {
-          reject(error);
-        });
-      });
-    }
-  };
-  RecaptchaEnterpriseVerifier.scriptInjectionDeferred = null;
-  async function injectRecaptchaFields(auth2, request, action, isCaptchaResp = false, isFakeToken = false) {
-    const verifier = new RecaptchaEnterpriseVerifier(auth2);
-    let captchaResponse;
-    if (isFakeToken) {
-      captchaResponse = FAKE_TOKEN;
-    } else {
-      try {
-        captchaResponse = await verifier.verify(action);
-      } catch (error) {
-        captchaResponse = await verifier.verify(action, true);
-      }
-    }
-    const newRequest = { ...request };
-    if (action === "mfaSmsEnrollment" || action === "mfaSmsSignIn") {
-      if ("phoneEnrollmentInfo" in newRequest) {
-        const phoneNumber = newRequest.phoneEnrollmentInfo.phoneNumber;
-        const recaptchaToken = newRequest.phoneEnrollmentInfo.recaptchaToken;
-        Object.assign(newRequest, {
-          "phoneEnrollmentInfo": {
-            phoneNumber,
-            recaptchaToken,
-            captchaResponse,
-            "clientType": "CLIENT_TYPE_WEB",
-            "recaptchaVersion": "RECAPTCHA_ENTERPRISE"
-            /* RecaptchaVersion.ENTERPRISE */
-          }
-        });
-      } else if ("phoneSignInInfo" in newRequest) {
-        const recaptchaToken = newRequest.phoneSignInInfo.recaptchaToken;
-        Object.assign(newRequest, {
-          "phoneSignInInfo": {
-            recaptchaToken,
-            captchaResponse,
-            "clientType": "CLIENT_TYPE_WEB",
-            "recaptchaVersion": "RECAPTCHA_ENTERPRISE"
-            /* RecaptchaVersion.ENTERPRISE */
-          }
-        });
-      }
-      return newRequest;
-    }
-    if (!isCaptchaResp) {
-      Object.assign(newRequest, { captchaResponse });
-    } else {
-      Object.assign(newRequest, { "captchaResp": captchaResponse });
-    }
-    Object.assign(newRequest, {
-      "clientType": "CLIENT_TYPE_WEB"
-      /* RecaptchaClientType.WEB */
-    });
-    Object.assign(newRequest, {
-      "recaptchaVersion": "RECAPTCHA_ENTERPRISE"
-      /* RecaptchaVersion.ENTERPRISE */
-    });
-    return newRequest;
-  }
-  async function handleRecaptchaFlow(authInstance, request, actionName, actionMethod, recaptchaAuthProvider) {
-    if (recaptchaAuthProvider === "EMAIL_PASSWORD_PROVIDER") {
-      if (authInstance._getRecaptchaConfig()?.isProviderEnabled(
-        "EMAIL_PASSWORD_PROVIDER"
-        /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
-      )) {
-        const requestWithRecaptcha = await injectRecaptchaFields(
-          authInstance,
-          request,
-          actionName,
-          actionName === "getOobCode"
-          /* RecaptchaActionName.GET_OOB_CODE */
-        );
-        return actionMethod(authInstance, requestWithRecaptcha);
-      } else {
-        return actionMethod(authInstance, request).catch(async (error) => {
-          if (error.code === `auth/${"missing-recaptcha-token"}`) {
-            console.log(`${actionName} is protected by reCAPTCHA Enterprise for this project. Automatically triggering the reCAPTCHA flow and restarting the flow.`);
-            const requestWithRecaptcha = await injectRecaptchaFields(
-              authInstance,
-              request,
-              actionName,
-              actionName === "getOobCode"
-              /* RecaptchaActionName.GET_OOB_CODE */
-            );
-            return actionMethod(authInstance, requestWithRecaptcha);
-          } else {
-            return Promise.reject(error);
-          }
-        });
-      }
-    } else if (recaptchaAuthProvider === "PHONE_PROVIDER") {
-      if (authInstance._getRecaptchaConfig()?.isProviderEnabled(
-        "PHONE_PROVIDER"
-        /* RecaptchaAuthProvider.PHONE_PROVIDER */
-      )) {
-        const requestWithRecaptcha = await injectRecaptchaFields(authInstance, request, actionName);
-        return actionMethod(authInstance, requestWithRecaptcha).catch(async (error) => {
-          if (authInstance._getRecaptchaConfig()?.getProviderEnforcementState(
-            "PHONE_PROVIDER"
-            /* RecaptchaAuthProvider.PHONE_PROVIDER */
-          ) === "AUDIT") {
-            if (error.code === `auth/${"missing-recaptcha-token"}` || error.code === `auth/${"invalid-app-credential"}`) {
-              console.log(`Failed to verify with reCAPTCHA Enterprise. Automatically triggering the reCAPTCHA v2 flow to complete the ${actionName} flow.`);
-              const requestWithRecaptchaFields = await injectRecaptchaFields(
-                authInstance,
-                request,
-                actionName,
-                false,
-                // isCaptchaResp
-                true
-                // isFakeToken
-              );
-              return actionMethod(authInstance, requestWithRecaptchaFields);
-            }
-          }
-          return Promise.reject(error);
-        });
-      } else {
-        const requestWithRecaptchaFields = await injectRecaptchaFields(
-          authInstance,
-          request,
-          actionName,
-          false,
-          // isCaptchaResp
-          true
-          // isFakeToken
-        );
-        return actionMethod(authInstance, requestWithRecaptchaFields);
-      }
-    } else {
-      return Promise.reject(recaptchaAuthProvider + " provider is not supported.");
-    }
-  }
-  async function _initializeRecaptchaConfig(auth2) {
-    const authInternal = _castAuth(auth2);
-    const response = await getRecaptchaConfig(authInternal, {
-      clientType: "CLIENT_TYPE_WEB",
-      version: "RECAPTCHA_ENTERPRISE"
-      /* RecaptchaVersion.ENTERPRISE */
-    });
-    const config = new RecaptchaConfig(response);
-    if (authInternal.tenantId == null) {
-      authInternal._agentRecaptchaConfig = config;
-    } else {
-      authInternal._tenantRecaptchaConfigs[authInternal.tenantId] = config;
-    }
-    if (config.isAnyProviderEnabled()) {
-      const verifier = new RecaptchaEnterpriseVerifier(authInternal);
-      void verifier.verify();
-    }
-  }
-  function initializeAuth(app2, deps) {
-    const provider = _getProvider(app2, "auth");
-    if (provider.isInitialized()) {
-      const auth3 = provider.getImmediate();
-      const initialOptions = provider.getOptions();
-      if (deepEqual(initialOptions, deps ?? {})) {
-        return auth3;
-      } else {
-        _fail(
-          auth3,
-          "already-initialized"
-          /* AuthErrorCode.ALREADY_INITIALIZED */
-        );
-      }
-    }
-    const auth2 = provider.initialize({ options: deps });
-    return auth2;
-  }
-  function _initializeAuthInstance(auth2, deps) {
-    const persistence = deps?.persistence || [];
-    const hierarchy = (Array.isArray(persistence) ? persistence : [persistence]).map(_getInstance);
-    if (deps?.errorMap) {
-      auth2._updateErrorMap(deps.errorMap);
-    }
-    auth2._initializeWithPersistence(hierarchy, deps?.popupRedirectResolver);
-  }
-  function connectAuthEmulator(auth2, url, options) {
-    const authInternal = _castAuth(auth2);
-    _assert(
-      /^https?:\/\//.test(url),
-      authInternal,
-      "invalid-emulator-scheme"
-      /* AuthErrorCode.INVALID_EMULATOR_SCHEME */
-    );
-    const disableWarnings = !!options?.disableWarnings;
-    const protocol = extractProtocol(url);
-    const { host, port } = extractHostAndPort(url);
-    const portStr = port === null ? "" : `:${port}`;
-    const emulator = { url: `${protocol}//${host}${portStr}/` };
-    const emulatorConfig = Object.freeze({
-      host,
-      port,
-      protocol: protocol.replace(":", ""),
-      options: Object.freeze({ disableWarnings })
-    });
-    if (!authInternal._canInitEmulator) {
-      _assert(
-        authInternal.config.emulator && authInternal.emulatorConfig,
-        authInternal,
-        "emulator-config-failed"
-        /* AuthErrorCode.EMULATOR_CONFIG_FAILED */
-      );
-      _assert(
-        deepEqual(emulator, authInternal.config.emulator) && deepEqual(emulatorConfig, authInternal.emulatorConfig),
-        authInternal,
-        "emulator-config-failed"
-        /* AuthErrorCode.EMULATOR_CONFIG_FAILED */
-      );
-      return;
-    }
-    authInternal.config.emulator = emulator;
-    authInternal.emulatorConfig = emulatorConfig;
-    authInternal.settings.appVerificationDisabledForTesting = true;
-    if (isCloudWorkstation(host)) {
-      void pingServer(`${protocol}//${host}${portStr}`);
-    } else if (!disableWarnings) {
-      emitEmulatorWarning();
-    }
-  }
-  function extractProtocol(url) {
-    const protocolEnd = url.indexOf(":");
-    return protocolEnd < 0 ? "" : url.substr(0, protocolEnd + 1);
-  }
-  function extractHostAndPort(url) {
-    const protocol = extractProtocol(url);
-    const authority = /(\/\/)?([^?#/]+)/.exec(url.substr(protocol.length));
-    if (!authority) {
-      return { host: "", port: null };
-    }
-    const hostAndPort = authority[2].split("@").pop() || "";
-    const bracketedIPv6 = /^(\[[^\]]+\])(:|$)/.exec(hostAndPort);
-    if (bracketedIPv6) {
-      const host = bracketedIPv6[1];
-      return { host, port: parsePort(hostAndPort.substr(host.length + 1)) };
-    } else {
-      const [host, port] = hostAndPort.split(":");
-      return { host, port: parsePort(port) };
-    }
-  }
-  function parsePort(portStr) {
-    if (!portStr) {
-      return null;
-    }
-    const port = Number(portStr);
-    if (isNaN(port)) {
-      return null;
-    }
-    return port;
-  }
-  function emitEmulatorWarning() {
-    function attachBanner() {
-      const el = document.createElement("p");
-      const sty = el.style;
-      el.innerText = "Running in emulator mode. Do not use with production credentials.";
-      sty.position = "fixed";
-      sty.width = "100%";
-      sty.backgroundColor = "#ffffff";
-      sty.border = ".1em solid #000000";
-      sty.color = "#b50000";
-      sty.bottom = "0px";
-      sty.left = "0px";
-      sty.margin = "0px";
-      sty.zIndex = "10000";
-      sty.textAlign = "center";
-      el.classList.add("firebase-emulator-warning");
-      document.body.appendChild(el);
-    }
-    if (typeof console !== "undefined" && typeof console.info === "function") {
-      console.info("WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.");
-    }
-    if (typeof window !== "undefined" && typeof document !== "undefined") {
-      if (document.readyState === "loading") {
-        window.addEventListener("DOMContentLoaded", attachBanner);
-      } else {
-        attachBanner();
-      }
-    }
-  }
-  var AuthCredential = class {
-    /** @internal */
-    constructor(providerId, signInMethod) {
-      this.providerId = providerId;
-      this.signInMethod = signInMethod;
-    }
-    /**
-     * Returns a JSON-serializable representation of this object.
-     *
-     * @returns a JSON-serializable representation of this object.
-     */
-    toJSON() {
-      return debugFail("not implemented");
-    }
-    /** @internal */
-    _getIdTokenResponse(_auth) {
-      return debugFail("not implemented");
-    }
-    /** @internal */
-    _linkToIdToken(_auth, _idToken) {
-      return debugFail("not implemented");
-    }
-    /** @internal */
-    _getReauthenticationResolver(_auth) {
-      return debugFail("not implemented");
-    }
-  };
-  async function linkEmailPassword(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v1/accounts:signUp", request);
-  }
-  async function signInWithPassword(auth2, request) {
-    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPassword", _addTidIfNecessary(auth2, request));
-  }
-  async function signInWithEmailLink$1(auth2, request) {
-    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithEmailLink", _addTidIfNecessary(auth2, request));
-  }
-  async function signInWithEmailLinkForLinking(auth2, request) {
-    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithEmailLink", _addTidIfNecessary(auth2, request));
-  }
-  var EmailAuthCredential = class _EmailAuthCredential extends AuthCredential {
-    /** @internal */
-    constructor(_email, _password, signInMethod, _tenantId = null) {
-      super("password", signInMethod);
-      this._email = _email;
-      this._password = _password;
-      this._tenantId = _tenantId;
-    }
-    /** @internal */
-    static _fromEmailAndPassword(email, password) {
-      return new _EmailAuthCredential(
-        email,
-        password,
-        "password"
-        /* SignInMethod.EMAIL_PASSWORD */
-      );
-    }
-    /** @internal */
-    static _fromEmailAndCode(email, oobCode, tenantId = null) {
-      return new _EmailAuthCredential(email, oobCode, "emailLink", tenantId);
-    }
-    /** {@inheritdoc AuthCredential.toJSON} */
-    toJSON() {
-      return {
-        email: this._email,
-        password: this._password,
-        signInMethod: this.signInMethod,
-        tenantId: this._tenantId
-      };
-    }
-    /**
-     * Static method to deserialize a JSON representation of an object into an {@link  AuthCredential}.
-     *
-     * @param json - Either `object` or the stringified representation of the object. When string is
-     * provided, `JSON.parse` would be called first.
-     *
-     * @returns If the JSON input does not represent an {@link AuthCredential}, null is returned.
-     */
-    static fromJSON(json) {
-      const obj = typeof json === "string" ? JSON.parse(json) : json;
-      if (obj?.email && obj?.password) {
-        if (obj.signInMethod === "password") {
-          return this._fromEmailAndPassword(obj.email, obj.password);
-        } else if (obj.signInMethod === "emailLink") {
-          return this._fromEmailAndCode(obj.email, obj.password, obj.tenantId);
-        }
-      }
-      return null;
-    }
-    /** @internal */
-    async _getIdTokenResponse(auth2) {
-      switch (this.signInMethod) {
-        case "password":
-          const request = {
-            returnSecureToken: true,
-            email: this._email,
-            password: this._password,
-            clientType: "CLIENT_TYPE_WEB"
-            /* RecaptchaClientType.WEB */
-          };
-          return handleRecaptchaFlow(
-            auth2,
-            request,
-            "signInWithPassword",
-            signInWithPassword,
-            "EMAIL_PASSWORD_PROVIDER"
-            /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
-          );
-        case "emailLink":
-          return signInWithEmailLink$1(auth2, {
-            email: this._email,
-            oobCode: this._password
-          });
-        default:
-          _fail(
-            auth2,
-            "internal-error"
-            /* AuthErrorCode.INTERNAL_ERROR */
-          );
-      }
-    }
-    /** @internal */
-    async _linkToIdToken(auth2, idToken) {
-      switch (this.signInMethod) {
-        case "password":
-          const request = {
-            idToken,
-            returnSecureToken: true,
-            email: this._email,
-            password: this._password,
-            clientType: "CLIENT_TYPE_WEB"
-            /* RecaptchaClientType.WEB */
-          };
-          return handleRecaptchaFlow(
-            auth2,
-            request,
-            "signUpPassword",
-            linkEmailPassword,
-            "EMAIL_PASSWORD_PROVIDER"
-            /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
-          );
-        case "emailLink":
-          return signInWithEmailLinkForLinking(auth2, {
-            idToken,
-            email: this._email,
-            oobCode: this._password
-          });
-        default:
-          _fail(
-            auth2,
-            "internal-error"
-            /* AuthErrorCode.INTERNAL_ERROR */
-          );
-      }
-    }
-    /** @internal */
-    _getReauthenticationResolver(auth2) {
-      return this._getIdTokenResponse(auth2);
-    }
-  };
-  async function signInWithIdp(auth2, request) {
-    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithIdp", _addTidIfNecessary(auth2, request));
-  }
-  var IDP_REQUEST_URI$1 = "http://localhost";
-  var OAuthCredential = class _OAuthCredential extends AuthCredential {
-    constructor() {
-      super(...arguments);
-      this.pendingToken = null;
-    }
-    /** @internal */
-    static _fromParams(params) {
-      const cred = new _OAuthCredential(params.providerId, params.signInMethod);
-      if (params.idToken || params.accessToken) {
-        if (params.idToken) {
-          cred.idToken = params.idToken;
-        }
-        if (params.accessToken) {
-          cred.accessToken = params.accessToken;
-        }
-        if (params.nonce && !params.pendingToken) {
-          cred.nonce = params.nonce;
-        }
-        if (params.pendingToken) {
-          cred.pendingToken = params.pendingToken;
-        }
-      } else if (params.oauthToken && params.oauthTokenSecret) {
-        cred.accessToken = params.oauthToken;
-        cred.secret = params.oauthTokenSecret;
-      } else {
-        _fail(
-          "argument-error"
-          /* AuthErrorCode.ARGUMENT_ERROR */
-        );
-      }
-      return cred;
-    }
-    /** {@inheritdoc AuthCredential.toJSON}  */
-    toJSON() {
-      return {
-        idToken: this.idToken,
-        accessToken: this.accessToken,
-        secret: this.secret,
-        nonce: this.nonce,
-        pendingToken: this.pendingToken,
-        providerId: this.providerId,
-        signInMethod: this.signInMethod
-      };
-    }
-    /**
-     * Static method to deserialize a JSON representation of an object into an
-     * {@link  AuthCredential}.
-     *
-     * @param json - Input can be either Object or the stringified representation of the object.
-     * When string is provided, JSON.parse would be called first.
-     *
-     * @returns If the JSON input does not represent an {@link  AuthCredential}, null is returned.
-     */
-    static fromJSON(json) {
-      const obj = typeof json === "string" ? JSON.parse(json) : json;
-      const { providerId, signInMethod, ...rest } = obj;
-      if (!providerId || !signInMethod) {
-        return null;
-      }
-      const cred = new _OAuthCredential(providerId, signInMethod);
-      cred.idToken = rest.idToken || void 0;
-      cred.accessToken = rest.accessToken || void 0;
-      cred.secret = rest.secret;
-      cred.nonce = rest.nonce;
-      cred.pendingToken = rest.pendingToken || null;
-      return cred;
-    }
-    /** @internal */
-    _getIdTokenResponse(auth2) {
-      const request = this.buildRequest();
-      return signInWithIdp(auth2, request);
-    }
-    /** @internal */
-    _linkToIdToken(auth2, idToken) {
-      const request = this.buildRequest();
-      request.idToken = idToken;
-      return signInWithIdp(auth2, request);
-    }
-    /** @internal */
-    _getReauthenticationResolver(auth2) {
-      const request = this.buildRequest();
-      request.autoCreate = false;
-      return signInWithIdp(auth2, request);
-    }
-    buildRequest() {
-      const request = {
-        requestUri: IDP_REQUEST_URI$1,
-        returnSecureToken: true
-      };
-      if (this.pendingToken) {
-        request.pendingToken = this.pendingToken;
-      } else {
-        const postBody = {};
-        if (this.idToken) {
-          postBody["id_token"] = this.idToken;
-        }
-        if (this.accessToken) {
-          postBody["access_token"] = this.accessToken;
-        }
-        if (this.secret) {
-          postBody["oauth_token_secret"] = this.secret;
-        }
-        postBody["providerId"] = this.providerId;
-        if (this.nonce && !this.pendingToken) {
-          postBody["nonce"] = this.nonce;
-        }
-        request.postBody = querystring(postBody);
-      }
-      return request;
-    }
-  };
-  async function sendPhoneVerificationCode(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v1/accounts:sendVerificationCode", _addTidIfNecessary(auth2, request));
-  }
-  async function signInWithPhoneNumber$1(auth2, request) {
-    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPhoneNumber", _addTidIfNecessary(auth2, request));
-  }
-  async function linkWithPhoneNumber$1(auth2, request) {
-    const response = await _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPhoneNumber", _addTidIfNecessary(auth2, request));
-    if (response.temporaryProof) {
-      throw _makeTaggedError(auth2, "account-exists-with-different-credential", response);
-    }
-    return response;
-  }
-  var VERIFY_PHONE_NUMBER_FOR_EXISTING_ERROR_MAP_ = {
-    [
-      "USER_NOT_FOUND"
-      /* ServerError.USER_NOT_FOUND */
-    ]: "user-not-found"
-    /* AuthErrorCode.USER_DELETED */
-  };
-  async function verifyPhoneNumberForExisting(auth2, request) {
-    const apiRequest = {
-      ...request,
-      operation: "REAUTH"
-    };
-    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPhoneNumber", _addTidIfNecessary(auth2, apiRequest), VERIFY_PHONE_NUMBER_FOR_EXISTING_ERROR_MAP_);
-  }
-  var PhoneAuthCredential = class _PhoneAuthCredential extends AuthCredential {
-    constructor(params) {
-      super(
-        "phone",
-        "phone"
-        /* SignInMethod.PHONE */
-      );
-      this.params = params;
-    }
-    /** @internal */
-    static _fromVerification(verificationId, verificationCode) {
-      return new _PhoneAuthCredential({ verificationId, verificationCode });
-    }
-    /** @internal */
-    static _fromTokenResponse(phoneNumber, temporaryProof) {
-      return new _PhoneAuthCredential({ phoneNumber, temporaryProof });
-    }
-    /** @internal */
-    _getIdTokenResponse(auth2) {
-      return signInWithPhoneNumber$1(auth2, this._makeVerificationRequest());
-    }
-    /** @internal */
-    _linkToIdToken(auth2, idToken) {
-      return linkWithPhoneNumber$1(auth2, {
-        idToken,
-        ...this._makeVerificationRequest()
-      });
-    }
-    /** @internal */
-    _getReauthenticationResolver(auth2) {
-      return verifyPhoneNumberForExisting(auth2, this._makeVerificationRequest());
-    }
-    /** @internal */
-    _makeVerificationRequest() {
-      const { temporaryProof, phoneNumber, verificationId, verificationCode } = this.params;
-      if (temporaryProof && phoneNumber) {
-        return { temporaryProof, phoneNumber };
-      }
-      return {
-        sessionInfo: verificationId,
-        code: verificationCode
-      };
-    }
-    /** {@inheritdoc AuthCredential.toJSON} */
-    toJSON() {
-      const obj = {
-        providerId: this.providerId
-      };
-      if (this.params.phoneNumber) {
-        obj.phoneNumber = this.params.phoneNumber;
-      }
-      if (this.params.temporaryProof) {
-        obj.temporaryProof = this.params.temporaryProof;
-      }
-      if (this.params.verificationCode) {
-        obj.verificationCode = this.params.verificationCode;
-      }
-      if (this.params.verificationId) {
-        obj.verificationId = this.params.verificationId;
-      }
-      return obj;
-    }
-    /** Generates a phone credential based on a plain object or a JSON string. */
-    static fromJSON(json) {
-      if (typeof json === "string") {
-        json = JSON.parse(json);
-      }
-      const { verificationId, verificationCode, phoneNumber, temporaryProof } = json;
-      if (!verificationCode && !verificationId && !phoneNumber && !temporaryProof) {
-        return null;
-      }
-      return new _PhoneAuthCredential({
-        verificationId,
-        verificationCode,
-        phoneNumber,
-        temporaryProof
-      });
-    }
-  };
-  function parseMode(mode) {
-    switch (mode) {
-      case "recoverEmail":
-        return "RECOVER_EMAIL";
-      case "resetPassword":
-        return "PASSWORD_RESET";
-      case "signIn":
-        return "EMAIL_SIGNIN";
-      case "verifyEmail":
-        return "VERIFY_EMAIL";
-      case "verifyAndChangeEmail":
-        return "VERIFY_AND_CHANGE_EMAIL";
-      case "revertSecondFactorAddition":
-        return "REVERT_SECOND_FACTOR_ADDITION";
-      default:
-        return null;
-    }
-  }
-  function parseDeepLink(url) {
-    const link = querystringDecode(extractQuerystring(url))["link"];
-    const doubleDeepLink = link ? querystringDecode(extractQuerystring(link))["deep_link_id"] : null;
-    const iOSDeepLink = querystringDecode(extractQuerystring(url))["deep_link_id"];
-    const iOSDoubleDeepLink = iOSDeepLink ? querystringDecode(extractQuerystring(iOSDeepLink))["link"] : null;
-    return iOSDoubleDeepLink || iOSDeepLink || doubleDeepLink || link || url;
-  }
-  var ActionCodeURL = class _ActionCodeURL {
-    /**
-     * @param actionLink - The link from which to extract the URL.
-     * @returns The {@link ActionCodeURL} object, or null if the link is invalid.
-     *
-     * @internal
-     */
-    constructor(actionLink) {
-      const searchParams = querystringDecode(extractQuerystring(actionLink));
-      const apiKey = searchParams[
-        "apiKey"
-        /* QueryField.API_KEY */
-      ] ?? null;
-      const code = searchParams[
-        "oobCode"
-        /* QueryField.CODE */
-      ] ?? null;
-      const operation = parseMode(searchParams[
-        "mode"
-        /* QueryField.MODE */
-      ] ?? null);
-      _assert(
-        apiKey && code && operation,
-        "argument-error"
-        /* AuthErrorCode.ARGUMENT_ERROR */
-      );
-      this.apiKey = apiKey;
-      this.operation = operation;
-      this.code = code;
-      this.continueUrl = searchParams[
-        "continueUrl"
-        /* QueryField.CONTINUE_URL */
-      ] ?? null;
-      this.languageCode = searchParams[
-        "lang"
-        /* QueryField.LANGUAGE_CODE */
-      ] ?? null;
-      this.tenantId = searchParams[
-        "tenantId"
-        /* QueryField.TENANT_ID */
-      ] ?? null;
-    }
-    /**
-     * Parses the email action link string and returns an {@link ActionCodeURL} if the link is valid,
-     * otherwise returns null.
-     *
-     * @param link  - The email action link string.
-     * @returns The {@link ActionCodeURL} object, or null if the link is invalid.
-     *
-     * @public
-     */
-    static parseLink(link) {
-      const actionLink = parseDeepLink(link);
-      try {
-        return new _ActionCodeURL(actionLink);
-      } catch {
-        return null;
-      }
-    }
-  };
-  var EmailAuthProvider = class _EmailAuthProvider {
-    constructor() {
-      this.providerId = _EmailAuthProvider.PROVIDER_ID;
-    }
-    /**
-     * Initialize an {@link AuthCredential} using an email and password.
-     *
-     * @example
-     * ```javascript
-     * const authCredential = EmailAuthProvider.credential(email, password);
-     * const userCredential = await signInWithCredential(auth, authCredential);
-     * ```
-     *
-     * @example
-     * ```javascript
-     * const userCredential = await signInWithEmailAndPassword(auth, email, password);
-     * ```
-     *
-     * @param email - Email address.
-     * @param password - User account password.
-     * @returns The auth provider credential.
-     */
-    static credential(email, password) {
-      return EmailAuthCredential._fromEmailAndPassword(email, password);
-    }
-    /**
-     * Initialize an {@link AuthCredential} using an email and an email link after a sign in with
-     * email link operation.
-     *
-     * @example
-     * ```javascript
-     * const authCredential = EmailAuthProvider.credentialWithLink(auth, email, emailLink);
-     * const userCredential = await signInWithCredential(auth, authCredential);
-     * ```
-     *
-     * @example
-     * ```javascript
-     * await sendSignInLinkToEmail(auth, email);
-     * // Obtain emailLink from user.
-     * const userCredential = await signInWithEmailLink(auth, email, emailLink);
-     * ```
-     *
-     * @param auth - The {@link Auth} instance used to verify the link.
-     * @param email - Email address.
-     * @param emailLink - Sign-in email link.
-     * @returns - The auth provider credential.
-     */
-    static credentialWithLink(email, emailLink) {
-      const actionCodeUrl = ActionCodeURL.parseLink(emailLink);
-      _assert(
-        actionCodeUrl,
-        "argument-error"
-        /* AuthErrorCode.ARGUMENT_ERROR */
-      );
-      return EmailAuthCredential._fromEmailAndCode(email, actionCodeUrl.code, actionCodeUrl.tenantId);
-    }
-  };
-  EmailAuthProvider.PROVIDER_ID = "password";
-  EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD = "password";
-  EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD = "emailLink";
-  var FederatedAuthProvider = class {
-    /**
-     * Constructor for generic OAuth providers.
-     *
-     * @param providerId - Provider for which credentials should be generated.
-     */
-    constructor(providerId) {
-      this.providerId = providerId;
-      this.defaultLanguageCode = null;
-      this.customParameters = {};
-    }
-    /**
-     * Set the language gode.
-     *
-     * @param languageCode - language code
-     */
-    setDefaultLanguage(languageCode) {
-      this.defaultLanguageCode = languageCode;
-    }
-    /**
-     * Sets the OAuth custom parameters to pass in an OAuth request for popup and redirect sign-in
-     * operations.
-     *
-     * @remarks
-     * For a detailed list, check the reserved required OAuth 2.0 parameters such as `client_id`,
-     * `redirect_uri`, `scope`, `response_type`, and `state` are not allowed and will be ignored.
-     *
-     * @param customOAuthParameters - The custom OAuth parameters to pass in the OAuth request.
-     */
-    setCustomParameters(customOAuthParameters) {
-      this.customParameters = customOAuthParameters;
-      return this;
-    }
-    /**
-     * Retrieve the current list of {@link CustomParameters}.
-     */
-    getCustomParameters() {
-      return this.customParameters;
-    }
-  };
-  var BaseOAuthProvider = class extends FederatedAuthProvider {
-    constructor() {
-      super(...arguments);
-      this.scopes = [];
-    }
-    /**
-     * Add an OAuth scope to the credential.
-     *
-     * @param scope - Provider OAuth scope to add.
-     */
-    addScope(scope) {
-      if (!this.scopes.includes(scope)) {
-        this.scopes.push(scope);
-      }
-      return this;
-    }
-    /**
-     * Retrieve the current list of OAuth scopes.
-     */
-    getScopes() {
-      return [...this.scopes];
-    }
-  };
-  var FacebookAuthProvider = class _FacebookAuthProvider extends BaseOAuthProvider {
-    constructor() {
-      super(
-        "facebook.com"
-        /* ProviderId.FACEBOOK */
-      );
-    }
-    /**
-     * Creates a credential for Facebook.
-     *
-     * @example
-     * ```javascript
-     * // `event` from the Facebook auth.authResponseChange callback.
-     * const credential = FacebookAuthProvider.credential(event.authResponse.accessToken);
-     * const result = await signInWithCredential(credential);
-     * ```
-     *
-     * @param accessToken - Facebook access token.
-     */
-    static credential(accessToken) {
-      return OAuthCredential._fromParams({
-        providerId: _FacebookAuthProvider.PROVIDER_ID,
-        signInMethod: _FacebookAuthProvider.FACEBOOK_SIGN_IN_METHOD,
-        accessToken
-      });
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromResult(userCredential) {
-      return _FacebookAuthProvider.credentialFromTaggedObject(userCredential);
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
-     * thrown during a sign-in, link, or reauthenticate operation.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromError(error) {
-      return _FacebookAuthProvider.credentialFromTaggedObject(error.customData || {});
-    }
-    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
-      if (!tokenResponse || !("oauthAccessToken" in tokenResponse)) {
-        return null;
-      }
-      if (!tokenResponse.oauthAccessToken) {
-        return null;
-      }
-      try {
-        return _FacebookAuthProvider.credential(tokenResponse.oauthAccessToken);
-      } catch {
-        return null;
-      }
-    }
-  };
-  FacebookAuthProvider.FACEBOOK_SIGN_IN_METHOD = "facebook.com";
-  FacebookAuthProvider.PROVIDER_ID = "facebook.com";
-  var GoogleAuthProvider = class _GoogleAuthProvider extends BaseOAuthProvider {
-    constructor() {
-      super(
-        "google.com"
-        /* ProviderId.GOOGLE */
-      );
-      this.addScope("profile");
-    }
-    /**
-     * Creates a credential for Google. At least one of ID token and access token is required.
-     *
-     * @example
-     * ```javascript
-     * // \`googleUser\` from the onsuccess Google Sign In callback.
-     * const credential = GoogleAuthProvider.credential(googleUser.getAuthResponse().id_token);
-     * const result = await signInWithCredential(credential);
-     * ```
-     *
-     * @param idToken - Google ID token.
-     * @param accessToken - Google access token.
-     */
-    static credential(idToken, accessToken) {
-      return OAuthCredential._fromParams({
-        providerId: _GoogleAuthProvider.PROVIDER_ID,
-        signInMethod: _GoogleAuthProvider.GOOGLE_SIGN_IN_METHOD,
-        idToken,
-        accessToken
-      });
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromResult(userCredential) {
-      return _GoogleAuthProvider.credentialFromTaggedObject(userCredential);
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
-     * thrown during a sign-in, link, or reauthenticate operation.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromError(error) {
-      return _GoogleAuthProvider.credentialFromTaggedObject(error.customData || {});
-    }
-    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
-      if (!tokenResponse) {
-        return null;
-      }
-      const { oauthIdToken, oauthAccessToken } = tokenResponse;
-      if (!oauthIdToken && !oauthAccessToken) {
-        return null;
-      }
-      try {
-        return _GoogleAuthProvider.credential(oauthIdToken, oauthAccessToken);
-      } catch {
-        return null;
-      }
-    }
-  };
-  GoogleAuthProvider.GOOGLE_SIGN_IN_METHOD = "google.com";
-  GoogleAuthProvider.PROVIDER_ID = "google.com";
-  var GithubAuthProvider = class _GithubAuthProvider extends BaseOAuthProvider {
-    constructor() {
-      super(
-        "github.com"
-        /* ProviderId.GITHUB */
-      );
-    }
-    /**
-     * Creates a credential for GitHub.
-     *
-     * @param accessToken - GitHub access token.
-     */
-    static credential(accessToken) {
-      return OAuthCredential._fromParams({
-        providerId: _GithubAuthProvider.PROVIDER_ID,
-        signInMethod: _GithubAuthProvider.GITHUB_SIGN_IN_METHOD,
-        accessToken
-      });
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromResult(userCredential) {
-      return _GithubAuthProvider.credentialFromTaggedObject(userCredential);
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
-     * thrown during a sign-in, link, or reauthenticate operation.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromError(error) {
-      return _GithubAuthProvider.credentialFromTaggedObject(error.customData || {});
-    }
-    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
-      if (!tokenResponse || !("oauthAccessToken" in tokenResponse)) {
-        return null;
-      }
-      if (!tokenResponse.oauthAccessToken) {
-        return null;
-      }
-      try {
-        return _GithubAuthProvider.credential(tokenResponse.oauthAccessToken);
-      } catch {
-        return null;
-      }
-    }
-  };
-  GithubAuthProvider.GITHUB_SIGN_IN_METHOD = "github.com";
-  GithubAuthProvider.PROVIDER_ID = "github.com";
-  var TwitterAuthProvider = class _TwitterAuthProvider extends BaseOAuthProvider {
-    constructor() {
-      super(
-        "twitter.com"
-        /* ProviderId.TWITTER */
-      );
-    }
-    /**
-     * Creates a credential for Twitter.
-     *
-     * @param token - Twitter access token.
-     * @param secret - Twitter secret.
-     */
-    static credential(token, secret) {
-      return OAuthCredential._fromParams({
-        providerId: _TwitterAuthProvider.PROVIDER_ID,
-        signInMethod: _TwitterAuthProvider.TWITTER_SIGN_IN_METHOD,
-        oauthToken: token,
-        oauthTokenSecret: secret
-      });
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromResult(userCredential) {
-      return _TwitterAuthProvider.credentialFromTaggedObject(userCredential);
-    }
-    /**
-     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
-     * thrown during a sign-in, link, or reauthenticate operation.
-     *
-     * @param userCredential - The user credential.
-     */
-    static credentialFromError(error) {
-      return _TwitterAuthProvider.credentialFromTaggedObject(error.customData || {});
-    }
-    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
-      if (!tokenResponse) {
-        return null;
-      }
-      const { oauthAccessToken, oauthTokenSecret } = tokenResponse;
-      if (!oauthAccessToken || !oauthTokenSecret) {
-        return null;
-      }
-      try {
-        return _TwitterAuthProvider.credential(oauthAccessToken, oauthTokenSecret);
-      } catch {
-        return null;
-      }
-    }
-  };
-  TwitterAuthProvider.TWITTER_SIGN_IN_METHOD = "twitter.com";
-  TwitterAuthProvider.PROVIDER_ID = "twitter.com";
-  var UserCredentialImpl = class _UserCredentialImpl {
-    constructor(params) {
-      this.user = params.user;
-      this.providerId = params.providerId;
-      this._tokenResponse = params._tokenResponse;
-      this.operationType = params.operationType;
-    }
-    static async _fromIdTokenResponse(auth2, operationType, idTokenResponse, isAnonymous = false) {
-      const user = await UserImpl._fromIdTokenResponse(auth2, idTokenResponse, isAnonymous);
-      const providerId = providerIdForResponse(idTokenResponse);
-      const userCred = new _UserCredentialImpl({
-        user,
-        providerId,
-        _tokenResponse: idTokenResponse,
-        operationType
-      });
-      return userCred;
-    }
-    static async _forOperation(user, operationType, response) {
-      await user._updateTokensIfNecessary(
-        response,
-        /* reload */
-        true
-      );
-      const providerId = providerIdForResponse(response);
-      return new _UserCredentialImpl({
-        user,
-        providerId,
-        _tokenResponse: response,
-        operationType
-      });
-    }
-  };
-  function providerIdForResponse(response) {
-    if (response.providerId) {
-      return response.providerId;
-    }
-    if ("phoneNumber" in response) {
-      return "phone";
-    }
-    return null;
-  }
-  var MultiFactorError = class _MultiFactorError extends FirebaseError {
-    constructor(auth2, error, operationType, user) {
-      super(error.code, error.message);
-      this.operationType = operationType;
-      this.user = user;
-      Object.setPrototypeOf(this, _MultiFactorError.prototype);
-      this.customData = {
-        appName: auth2.name,
-        tenantId: auth2.tenantId ?? void 0,
-        _serverResponse: error.customData._serverResponse,
-        operationType
-      };
-    }
-    static _fromErrorAndOperation(auth2, error, operationType, user) {
-      return new _MultiFactorError(auth2, error, operationType, user);
-    }
-  };
-  function _processCredentialSavingMfaContextIfNecessary(auth2, operationType, credential, user) {
-    const idTokenProvider = operationType === "reauthenticate" ? credential._getReauthenticationResolver(auth2) : credential._getIdTokenResponse(auth2);
-    return idTokenProvider.catch((error) => {
-      if (error.code === `auth/${"multi-factor-auth-required"}`) {
-        throw MultiFactorError._fromErrorAndOperation(auth2, error, operationType, user);
-      }
-      throw error;
-    });
-  }
-  async function _link$1(user, credential, bypassAuthState = false) {
-    const response = await _logoutIfInvalidated(user, credential._linkToIdToken(user.auth, await user.getIdToken()), bypassAuthState);
-    return UserCredentialImpl._forOperation(user, "link", response);
-  }
-  async function _reauthenticate(user, credential, bypassAuthState = false) {
-    const { auth: auth2 } = user;
-    if (_isFirebaseServerApp(auth2.app)) {
-      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
-    }
-    const operationType = "reauthenticate";
-    try {
-      const response = await _logoutIfInvalidated(user, _processCredentialSavingMfaContextIfNecessary(auth2, operationType, credential, user), bypassAuthState);
-      _assert(
-        response.idToken,
-        auth2,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const parsed = _parseToken(response.idToken);
-      _assert(
-        parsed,
-        auth2,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const { sub: localId } = parsed;
-      _assert(
-        user.uid === localId,
-        auth2,
-        "user-mismatch"
-        /* AuthErrorCode.USER_MISMATCH */
-      );
-      return UserCredentialImpl._forOperation(user, operationType, response);
-    } catch (e2) {
-      if (e2?.code === `auth/${"user-not-found"}`) {
-        _fail(
-          auth2,
-          "user-mismatch"
-          /* AuthErrorCode.USER_MISMATCH */
-        );
-      }
-      throw e2;
-    }
-  }
-  async function _signInWithCredential(auth2, credential, bypassAuthState = false) {
-    if (_isFirebaseServerApp(auth2.app)) {
-      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
-    }
-    const operationType = "signIn";
-    const response = await _processCredentialSavingMfaContextIfNecessary(auth2, operationType, credential);
-    const userCredential = await UserCredentialImpl._fromIdTokenResponse(auth2, operationType, response);
-    if (!bypassAuthState) {
-      await auth2._updateCurrentUser(userCredential.user);
-    }
-    return userCredential;
-  }
-  async function signInWithCredential(auth2, credential) {
-    return _signInWithCredential(_castAuth(auth2), credential);
-  }
-  async function recachePasswordPolicy(auth2) {
-    const authInternal = _castAuth(auth2);
-    if (authInternal._getPasswordPolicyInternal()) {
-      await authInternal._updatePasswordPolicy();
-    }
-  }
-  function signInWithEmailAndPassword(auth2, email, password) {
-    if (_isFirebaseServerApp(auth2.app)) {
-      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
-    }
-    return signInWithCredential(getModularInstance(auth2), EmailAuthProvider.credential(email, password)).catch(async (error) => {
-      if (error.code === `auth/${"password-does-not-meet-requirements"}`) {
-        void recachePasswordPolicy(auth2);
-      }
-      throw error;
-    });
-  }
-  function setPersistence(auth2, persistence) {
-    return getModularInstance(auth2).setPersistence(persistence);
-  }
-  function onIdTokenChanged(auth2, nextOrObserver, error, completed) {
-    return getModularInstance(auth2).onIdTokenChanged(nextOrObserver, error, completed);
-  }
-  function beforeAuthStateChanged(auth2, callback, onAbort) {
-    return getModularInstance(auth2).beforeAuthStateChanged(callback, onAbort);
-  }
-  function onAuthStateChanged(auth2, nextOrObserver, error, completed) {
-    return getModularInstance(auth2).onAuthStateChanged(nextOrObserver, error, completed);
-  }
-  function signOut(auth2) {
-    return getModularInstance(auth2).signOut();
-  }
-  function startEnrollPhoneMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:start", _addTidIfNecessary(auth2, request));
-  }
-  function finalizeEnrollPhoneMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:finalize", _addTidIfNecessary(auth2, request));
-  }
-  function startEnrollTotpMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:start", _addTidIfNecessary(auth2, request));
-  }
-  function finalizeEnrollTotpMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:finalize", _addTidIfNecessary(auth2, request));
-  }
-  var STORAGE_AVAILABLE_KEY = "__sak";
-  var BrowserPersistenceClass = class {
-    constructor(storageRetriever, type) {
-      this.storageRetriever = storageRetriever;
-      this.type = type;
-    }
-    _isAvailable() {
-      try {
-        if (!this.storage) {
-          return Promise.resolve(false);
-        }
-        this.storage.setItem(STORAGE_AVAILABLE_KEY, "1");
-        this.storage.removeItem(STORAGE_AVAILABLE_KEY);
-        return Promise.resolve(true);
-      } catch {
-        return Promise.resolve(false);
-      }
-    }
-    _set(key, value) {
-      this.storage.setItem(key, JSON.stringify(value));
-      return Promise.resolve();
-    }
-    _get(key) {
-      const json = this.storage.getItem(key);
-      return Promise.resolve(json ? JSON.parse(json) : null);
-    }
-    _remove(key) {
-      this.storage.removeItem(key);
-      return Promise.resolve();
-    }
-    get storage() {
-      return this.storageRetriever();
-    }
-  };
-  var _POLLING_INTERVAL_MS$1 = 1e3;
-  var IE10_LOCAL_STORAGE_SYNC_DELAY = 10;
-  var BrowserLocalPersistence = class extends BrowserPersistenceClass {
-    constructor() {
-      super(
-        () => window.localStorage,
-        "LOCAL"
-        /* PersistenceType.LOCAL */
-      );
-      this.boundEventHandler = (event, poll) => this.onStorageEvent(event, poll);
-      this.listeners = {};
-      this.localCache = {};
-      this.pollTimer = null;
-      this.fallbackToPolling = _isMobileBrowser();
-      this._shouldAllowMigration = true;
-    }
-    forAllChangedKeys(cb) {
-      for (const key of Object.keys(this.listeners)) {
-        const newValue = this.storage.getItem(key);
-        const oldValue = this.localCache[key];
-        if (newValue !== oldValue) {
-          cb(key, oldValue, newValue);
-        }
-      }
-    }
-    onStorageEvent(event, poll = false) {
-      if (!event.key) {
-        this.forAllChangedKeys((key2, _oldValue, newValue) => {
-          this.notifyListeners(key2, newValue);
-        });
-        return;
-      }
-      const key = event.key;
-      if (poll) {
-        this.detachListener();
-      } else {
-        this.stopPolling();
-      }
-      const triggerListeners = () => {
-        const storedValue2 = this.storage.getItem(key);
-        if (!poll && this.localCache[key] === storedValue2) {
-          return;
-        }
-        this.notifyListeners(key, storedValue2);
-      };
-      const storedValue = this.storage.getItem(key);
-      if (_isIE10() && storedValue !== event.newValue && event.newValue !== event.oldValue) {
-        setTimeout(triggerListeners, IE10_LOCAL_STORAGE_SYNC_DELAY);
-      } else {
-        triggerListeners();
-      }
-    }
-    notifyListeners(key, value) {
-      this.localCache[key] = value;
-      const listeners = this.listeners[key];
-      if (listeners) {
-        for (const listener of Array.from(listeners)) {
-          listener(value ? JSON.parse(value) : value);
-        }
-      }
-    }
-    startPolling() {
-      this.stopPolling();
-      this.pollTimer = setInterval(() => {
-        this.forAllChangedKeys((key, oldValue, newValue) => {
-          this.onStorageEvent(
-            new StorageEvent("storage", {
-              key,
-              oldValue,
-              newValue
-            }),
-            /* poll */
-            true
-          );
-        });
-      }, _POLLING_INTERVAL_MS$1);
-    }
-    stopPolling() {
-      if (this.pollTimer) {
-        clearInterval(this.pollTimer);
-        this.pollTimer = null;
-      }
-    }
-    attachListener() {
-      window.addEventListener("storage", this.boundEventHandler);
-    }
-    detachListener() {
-      window.removeEventListener("storage", this.boundEventHandler);
-    }
-    _addListener(key, listener) {
-      if (Object.keys(this.listeners).length === 0) {
-        if (this.fallbackToPolling) {
-          this.startPolling();
-        } else {
-          this.attachListener();
-        }
-      }
-      if (!this.listeners[key]) {
-        this.listeners[key] = /* @__PURE__ */ new Set();
-        this.localCache[key] = this.storage.getItem(key);
-      }
-      this.listeners[key].add(listener);
-    }
-    _removeListener(key, listener) {
-      if (this.listeners[key]) {
-        this.listeners[key].delete(listener);
-        if (this.listeners[key].size === 0) {
-          delete this.listeners[key];
-        }
-      }
-      if (Object.keys(this.listeners).length === 0) {
-        this.detachListener();
-        this.stopPolling();
-      }
-    }
-    // Update local cache on base operations:
-    async _set(key, value) {
-      await super._set(key, value);
-      this.localCache[key] = JSON.stringify(value);
-    }
-    async _get(key) {
-      const value = await super._get(key);
-      this.localCache[key] = JSON.stringify(value);
-      return value;
-    }
-    async _remove(key) {
-      await super._remove(key);
-      delete this.localCache[key];
-    }
-  };
-  BrowserLocalPersistence.type = "LOCAL";
-  var browserLocalPersistence = BrowserLocalPersistence;
-  var POLLING_INTERVAL_MS = 1e3;
-  function getDocumentCookie(name4) {
-    const escapedName = name4.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
-    const matcher = RegExp(`${escapedName}=([^;]+)`);
-    return document.cookie.match(matcher)?.[1] ?? null;
-  }
-  function getCookieName(key) {
-    const isDevMode = window.location.protocol === "http:";
-    return `${isDevMode ? "__dev_" : "__HOST-"}FIREBASE_${key.split(":")[3]}`;
-  }
-  var CookiePersistence = class {
-    constructor() {
-      this.type = "COOKIE";
-      this.listenerUnsubscribes = /* @__PURE__ */ new Map();
-    }
-    // used to get the URL to the backend to proxy to
-    _getFinalTarget(originalUrl) {
-      if (typeof window === void 0) {
-        return originalUrl;
-      }
-      const url = new URL(`${window.location.origin}/__cookies__`);
-      url.searchParams.set("finalTarget", originalUrl);
-      return url;
-    }
-    // To be a usable persistence method in a chain browserCookiePersistence ensures that
-    // prerequisites have been met, namely that we're in a secureContext, navigator and document are
-    // available and cookies are enabled. Not all UAs support these method, so fallback accordingly.
-    async _isAvailable() {
-      if (typeof isSecureContext === "boolean" && !isSecureContext) {
-        return false;
-      }
-      if (typeof navigator === "undefined" || typeof document === "undefined") {
-        return false;
-      }
-      return navigator.cookieEnabled ?? true;
-    }
-    // Set should be a noop as we expect middleware to handle this
-    async _set(_key, _value) {
-      return;
-    }
-    // Attempt to get the cookie from cookieStore, fallback to document.cookie
-    async _get(key) {
-      if (!this._isAvailable()) {
-        return null;
-      }
-      const name4 = getCookieName(key);
-      if (window.cookieStore) {
-        const cookie = await window.cookieStore.get(name4);
-        return cookie?.value;
-      }
-      return getDocumentCookie(name4);
-    }
-    // Log out by overriding the idToken with a sentinel value of ""
-    async _remove(key) {
-      if (!this._isAvailable()) {
-        return;
-      }
-      const existingValue = await this._get(key);
-      if (!existingValue) {
-        return;
-      }
-      const name4 = getCookieName(key);
-      document.cookie = `${name4}=;Max-Age=34560000;Partitioned;Secure;SameSite=Strict;Path=/;Priority=High`;
-      await fetch(`/__cookies__`, { method: "DELETE" }).catch(() => void 0);
-    }
-    // Listen for cookie changes, both cookieStore and fallback to polling document.cookie
-    _addListener(key, listener) {
-      if (!this._isAvailable()) {
-        return;
-      }
-      const name4 = getCookieName(key);
-      if (window.cookieStore) {
-        const cb = ((event) => {
-          const changedCookie = event.changed.find((change) => change.name === name4);
-          if (changedCookie) {
-            listener(changedCookie.value);
-          }
-          const deletedCookie = event.deleted.find((change) => change.name === name4);
-          if (deletedCookie) {
-            listener(null);
-          }
-        });
-        const unsubscribe2 = () => window.cookieStore.removeEventListener("change", cb);
-        this.listenerUnsubscribes.set(listener, unsubscribe2);
-        return window.cookieStore.addEventListener("change", cb);
-      }
-      let lastValue = getDocumentCookie(name4);
-      const interval = setInterval(() => {
-        const currentValue = getDocumentCookie(name4);
-        if (currentValue !== lastValue) {
-          listener(currentValue);
-          lastValue = currentValue;
-        }
-      }, POLLING_INTERVAL_MS);
-      const unsubscribe = () => clearInterval(interval);
-      this.listenerUnsubscribes.set(listener, unsubscribe);
-    }
-    _removeListener(_key, listener) {
-      const unsubscribe = this.listenerUnsubscribes.get(listener);
-      if (!unsubscribe) {
-        return;
-      }
-      unsubscribe();
-      this.listenerUnsubscribes.delete(listener);
-    }
-  };
-  CookiePersistence.type = "COOKIE";
-  var BrowserSessionPersistence = class extends BrowserPersistenceClass {
-    constructor() {
-      super(
-        () => window.sessionStorage,
-        "SESSION"
-        /* PersistenceType.SESSION */
-      );
-    }
-    _addListener(_key, _listener) {
-      return;
-    }
-    _removeListener(_key, _listener) {
-      return;
-    }
-  };
-  BrowserSessionPersistence.type = "SESSION";
-  var browserSessionPersistence = BrowserSessionPersistence;
-  function _allSettled(promises) {
-    return Promise.all(promises.map(async (promise) => {
-      try {
-        const value = await promise;
-        return {
-          fulfilled: true,
-          value
-        };
-      } catch (reason) {
-        return {
-          fulfilled: false,
-          reason
-        };
-      }
-    }));
-  }
-  var Receiver = class _Receiver {
-    constructor(eventTarget) {
-      this.eventTarget = eventTarget;
-      this.handlersMap = {};
-      this.boundEventHandler = this.handleEvent.bind(this);
-    }
-    /**
-     * Obtain an instance of a Receiver for a given event target, if none exists it will be created.
-     *
-     * @param eventTarget - An event target (such as window or self) through which the underlying
-     * messages will be received.
-     */
-    static _getInstance(eventTarget) {
-      const existingInstance = this.receivers.find((receiver) => receiver.isListeningto(eventTarget));
-      if (existingInstance) {
-        return existingInstance;
-      }
-      const newInstance = new _Receiver(eventTarget);
-      this.receivers.push(newInstance);
-      return newInstance;
-    }
-    isListeningto(eventTarget) {
-      return this.eventTarget === eventTarget;
-    }
-    /**
-     * Fans out a MessageEvent to the appropriate listeners.
-     *
-     * @remarks
-     * Sends an {@link Status.ACK} upon receipt and a {@link Status.DONE} once all handlers have
-     * finished processing.
-     *
-     * @param event - The MessageEvent.
-     *
-     */
-    async handleEvent(event) {
-      const messageEvent = event;
-      const { eventId, eventType, data } = messageEvent.data;
-      const handlers = this.handlersMap[eventType];
-      if (!handlers?.size) {
-        return;
-      }
-      messageEvent.ports[0].postMessage({
-        status: "ack",
-        eventId,
-        eventType
-      });
-      const promises = Array.from(handlers).map(async (handler) => handler(messageEvent.origin, data));
-      const response = await _allSettled(promises);
-      messageEvent.ports[0].postMessage({
-        status: "done",
-        eventId,
-        eventType,
-        response
-      });
-    }
-    /**
-     * Subscribe an event handler for a particular event.
-     *
-     * @param eventType - Event name to subscribe to.
-     * @param eventHandler - The event handler which should receive the events.
-     *
-     */
-    _subscribe(eventType, eventHandler) {
-      if (Object.keys(this.handlersMap).length === 0) {
-        this.eventTarget.addEventListener("message", this.boundEventHandler);
-      }
-      if (!this.handlersMap[eventType]) {
-        this.handlersMap[eventType] = /* @__PURE__ */ new Set();
-      }
-      this.handlersMap[eventType].add(eventHandler);
-    }
-    /**
-     * Unsubscribe an event handler from a particular event.
-     *
-     * @param eventType - Event name to unsubscribe from.
-     * @param eventHandler - Optional event handler, if none provided, unsubscribe all handlers on this event.
-     *
-     */
-    _unsubscribe(eventType, eventHandler) {
-      if (this.handlersMap[eventType] && eventHandler) {
-        this.handlersMap[eventType].delete(eventHandler);
-      }
-      if (!eventHandler || this.handlersMap[eventType].size === 0) {
-        delete this.handlersMap[eventType];
-      }
-      if (Object.keys(this.handlersMap).length === 0) {
-        this.eventTarget.removeEventListener("message", this.boundEventHandler);
-      }
-    }
-  };
-  Receiver.receivers = [];
-  function _generateEventId(prefix = "", digits = 10) {
-    let random = "";
-    for (let i2 = 0; i2 < digits; i2++) {
-      random += Math.floor(Math.random() * 10);
-    }
-    return prefix + random;
-  }
-  var Sender = class {
-    constructor(target) {
-      this.target = target;
-      this.handlers = /* @__PURE__ */ new Set();
-    }
-    /**
-     * Unsubscribe the handler and remove it from our tracking Set.
-     *
-     * @param handler - The handler to unsubscribe.
-     */
-    removeMessageHandler(handler) {
-      if (handler.messageChannel) {
-        handler.messageChannel.port1.removeEventListener("message", handler.onMessage);
-        handler.messageChannel.port1.close();
-      }
-      this.handlers.delete(handler);
-    }
-    /**
-     * Send a message to the Receiver located at {@link target}.
-     *
-     * @remarks
-     * We'll first wait a bit for an ACK , if we get one we will wait significantly longer until the
-     * receiver has had a chance to fully process the event.
-     *
-     * @param eventType - Type of event to send.
-     * @param data - The payload of the event.
-     * @param timeout - Timeout for waiting on an ACK from the receiver.
-     *
-     * @returns An array of settled promises from all the handlers that were listening on the receiver.
-     */
-    async _send(eventType, data, timeout = 50) {
-      const messageChannel = typeof MessageChannel !== "undefined" ? new MessageChannel() : null;
-      if (!messageChannel) {
-        throw new Error(
-          "connection_unavailable"
-          /* _MessageError.CONNECTION_UNAVAILABLE */
-        );
-      }
-      let completionTimer;
-      let handler;
-      return new Promise((resolve, reject) => {
-        const eventId = _generateEventId("", 20);
-        messageChannel.port1.start();
-        const ackTimer = setTimeout(() => {
-          reject(new Error(
-            "unsupported_event"
-            /* _MessageError.UNSUPPORTED_EVENT */
-          ));
-        }, timeout);
-        handler = {
-          messageChannel,
-          onMessage(event) {
-            const messageEvent = event;
-            if (messageEvent.data.eventId !== eventId) {
-              return;
-            }
-            switch (messageEvent.data.status) {
-              case "ack":
-                clearTimeout(ackTimer);
-                completionTimer = setTimeout(
-                  () => {
-                    reject(new Error(
-                      "timeout"
-                      /* _MessageError.TIMEOUT */
-                    ));
-                  },
-                  3e3
-                  /* _TimeoutDuration.COMPLETION */
-                );
-                break;
-              case "done":
-                clearTimeout(completionTimer);
-                resolve(messageEvent.data.response);
-                break;
-              default:
-                clearTimeout(ackTimer);
-                clearTimeout(completionTimer);
-                reject(new Error(
-                  "invalid_response"
-                  /* _MessageError.INVALID_RESPONSE */
-                ));
-                break;
-            }
-          }
-        };
-        this.handlers.add(handler);
-        messageChannel.port1.addEventListener("message", handler.onMessage);
-        this.target.postMessage({
-          eventType,
-          eventId,
-          data
-        }, [messageChannel.port2]);
-      }).finally(() => {
-        if (handler) {
-          this.removeMessageHandler(handler);
-        }
-      });
-    }
-  };
-  function _window() {
-    return window;
-  }
-  function _setWindowLocation(url) {
-    _window().location.href = url;
-  }
-  function _isWorker() {
-    return typeof _window()["WorkerGlobalScope"] !== "undefined" && typeof _window()["importScripts"] === "function";
-  }
-  async function _getActiveServiceWorker() {
-    if (!navigator?.serviceWorker) {
-      return null;
-    }
-    try {
-      const registration = await navigator.serviceWorker.ready;
-      return registration.active;
-    } catch {
-      return null;
-    }
-  }
-  function _getServiceWorkerController() {
-    return navigator?.serviceWorker?.controller || null;
-  }
-  function _getWorkerGlobalScope() {
-    return _isWorker() ? self : null;
-  }
-  var DB_NAME2 = "firebaseLocalStorageDb";
-  var DB_VERSION2 = 1;
-  var DB_OBJECTSTORE_NAME = "firebaseLocalStorage";
-  var DB_DATA_KEYPATH = "fbase_key";
-  var DBPromise = class {
-    constructor(request) {
-      this.request = request;
-    }
-    toPromise() {
-      return new Promise((resolve, reject) => {
-        this.request.addEventListener("success", () => {
-          resolve(this.request.result);
-        });
-        this.request.addEventListener("error", () => {
-          reject(this.request.error);
-        });
-      });
-    }
-  };
-  function getObjectStore(db2, isReadWrite) {
-    return db2.transaction([DB_OBJECTSTORE_NAME], isReadWrite ? "readwrite" : "readonly").objectStore(DB_OBJECTSTORE_NAME);
-  }
-  function _deleteDatabase() {
-    const request = indexedDB.deleteDatabase(DB_NAME2);
-    return new DBPromise(request).toPromise();
-  }
-  function _openDatabase() {
-    const request = indexedDB.open(DB_NAME2, DB_VERSION2);
-    return new Promise((resolve, reject) => {
-      request.addEventListener("error", () => {
-        reject(request.error);
-      });
-      request.addEventListener("upgradeneeded", () => {
-        const db2 = request.result;
-        try {
-          db2.createObjectStore(DB_OBJECTSTORE_NAME, { keyPath: DB_DATA_KEYPATH });
-        } catch (e2) {
-          reject(e2);
-        }
-      });
-      request.addEventListener("success", async () => {
-        const db2 = request.result;
-        if (!db2.objectStoreNames.contains(DB_OBJECTSTORE_NAME)) {
-          db2.close();
-          await _deleteDatabase();
-          resolve(await _openDatabase());
-        } else {
-          resolve(db2);
-        }
-      });
-    });
-  }
-  async function _putObject(db2, key, value) {
-    const request = getObjectStore(db2, true).put({
-      [DB_DATA_KEYPATH]: key,
-      value
-    });
-    return new DBPromise(request).toPromise();
-  }
-  async function getObject(db2, key) {
-    const request = getObjectStore(db2, false).get(key);
-    const data = await new DBPromise(request).toPromise();
-    return data === void 0 ? null : data.value;
-  }
-  function _deleteObject(db2, key) {
-    const request = getObjectStore(db2, true).delete(key);
-    return new DBPromise(request).toPromise();
-  }
-  var _POLLING_INTERVAL_MS = 800;
-  var _TRANSACTION_RETRY_COUNT = 3;
-  var IndexedDBLocalPersistence = class {
-    registerLifecycleListeners() {
-      if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
-        window.addEventListener("pagehide", this.onPageHide);
-        window.addEventListener("pageshow", this.onPageShow);
-      }
-    }
-    unregisterLifecycleListeners() {
-      if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
-        window.removeEventListener("pagehide", this.onPageHide);
-        window.removeEventListener("pageshow", this.onPageShow);
-      }
-    }
-    constructor() {
-      this.type = "LOCAL";
-      this.dbPromise = null;
-      this._shouldAllowMigration = true;
-      this.listeners = {};
-      this.localCache = {};
-      this.pollTimer = null;
-      this.isClosing = false;
-      this.pendingWrites = 0;
-      this.receiver = null;
-      this.sender = null;
-      this.serviceWorkerReceiverAvailable = false;
-      this.activeServiceWorker = null;
-      this.onPageHide = () => {
-        this.isClosing = true;
-        this.stopPolling();
-        if (this.dbPromise) {
-          this.dbPromise.then((db2) => db2.close()).catch(() => {
-          });
-          this.dbPromise = null;
-        }
-      };
-      this.onPageShow = () => {
-        if (this.isClosing) {
-          this.isClosing = false;
-          if (Object.keys(this.listeners).length > 0) {
-            this.startPolling();
-          }
-        }
-      };
-      this._workerInitializationPromise = this.initializeServiceWorkerMessaging().then(() => {
-      }, () => {
-      });
-    }
-    async _openDb() {
-      if (this.dbPromise) {
-        return this.dbPromise;
-      }
-      this.dbPromise = _openDatabase();
-      this.dbPromise.catch(() => {
-        this.dbPromise = null;
-      });
-      return this.dbPromise;
-    }
-    async _withRetries(op) {
-      let numAttempts = 0;
-      while (true) {
-        try {
-          const db2 = await this._openDb();
-          return await op(db2);
-        } catch (e2) {
-          if (numAttempts++ > _TRANSACTION_RETRY_COUNT) {
-            throw e2;
-          }
-          if (this.dbPromise) {
-            const dbPromise2 = this.dbPromise;
-            this.dbPromise = null;
-            try {
-              const db2 = await dbPromise2;
-              db2.close();
-            } catch {
-            }
-          }
-        }
-      }
-    }
-    /**
-     * IndexedDB events do not propagate from the main window to the worker context.  We rely on a
-     * postMessage interface to send these events to the worker ourselves.
-     */
-    async initializeServiceWorkerMessaging() {
-      return _isWorker() ? this.initializeReceiver() : this.initializeSender();
-    }
-    /**
-     * As the worker we should listen to events from the main window.
-     */
-    async initializeReceiver() {
-      this.receiver = Receiver._getInstance(_getWorkerGlobalScope());
-      this.receiver._subscribe("keyChanged", async (_origin, data) => {
-        const keys = await this._poll();
-        return {
-          keyProcessed: keys.includes(data.key)
-        };
-      });
-      this.receiver._subscribe("ping", async (_origin, _data) => {
-        return [
-          "keyChanged"
-          /* _EventType.KEY_CHANGED */
-        ];
-      });
-    }
-    /**
-     * As the main window, we should let the worker know when keys change (set and remove).
-     *
-     * @remarks
-     * {@link https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/ready | ServiceWorkerContainer.ready}
-     * may not resolve.
-     */
-    async initializeSender() {
-      this.activeServiceWorker = await _getActiveServiceWorker();
-      if (!this.activeServiceWorker) {
-        return;
-      }
-      this.sender = new Sender(this.activeServiceWorker);
-      const results = await this.sender._send(
-        "ping",
-        {},
-        800
-        /* _TimeoutDuration.LONG_ACK */
-      );
-      if (!results) {
-        return;
-      }
-      if (results[0]?.fulfilled && results[0]?.value.includes(
-        "keyChanged"
-        /* _EventType.KEY_CHANGED */
-      )) {
-        this.serviceWorkerReceiverAvailable = true;
-      }
-    }
-    /**
-     * Let the worker know about a changed key, the exact key doesn't technically matter since the
-     * worker will just trigger a full sync anyway.
-     *
-     * @remarks
-     * For now, we only support one service worker per page.
-     *
-     * @param key - Storage key which changed.
-     */
-    async notifyServiceWorker(key) {
-      if (!this.sender || !this.activeServiceWorker || _getServiceWorkerController() !== this.activeServiceWorker) {
-        return;
-      }
-      try {
-        await this.sender._send(
-          "keyChanged",
-          { key },
-          // Use long timeout if receiver has previously responded to a ping from us.
-          this.serviceWorkerReceiverAvailable ? 800 : 50
-          /* _TimeoutDuration.ACK */
-        );
-      } catch {
-      }
-    }
-    async _isAvailable() {
-      try {
-        if (!indexedDB) {
-          return false;
-        }
-        await this._withRetries(async (db2) => {
-          await _putObject(db2, STORAGE_AVAILABLE_KEY, "1");
-          await _deleteObject(db2, STORAGE_AVAILABLE_KEY);
-        });
-        return true;
-      } catch {
-      }
-      return false;
-    }
-    async _withPendingWrite(write) {
-      this.pendingWrites++;
-      try {
-        await write();
-      } finally {
-        this.pendingWrites--;
-      }
-    }
-    async _set(key, value) {
-      return this._withPendingWrite(async () => {
-        await this._withRetries((db2) => _putObject(db2, key, value));
-        this.localCache[key] = value;
-        return this.notifyServiceWorker(key);
-      });
-    }
-    async _get(key) {
-      const obj = await this._withRetries((db2) => getObject(db2, key));
-      this.localCache[key] = obj;
-      return obj;
-    }
-    async _remove(key) {
-      return this._withPendingWrite(async () => {
-        await this._withRetries((db2) => _deleteObject(db2, key));
-        delete this.localCache[key];
-        return this.notifyServiceWorker(key);
-      });
-    }
-    async _poll() {
-      if (this.isClosing) {
-        return [];
-      }
-      try {
-        const result = await this._withRetries((db2) => {
-          const getAllRequest = getObjectStore(db2, false).getAll();
-          return new DBPromise(getAllRequest).toPromise();
-        });
-        if (this.isClosing) {
-          return [];
-        }
-        if (!result) {
-          return [];
-        }
-        if (this.pendingWrites !== 0) {
-          return [];
-        }
-        const keys = [];
-        const keysInResult = /* @__PURE__ */ new Set();
-        if (result.length !== 0) {
-          for (const { fbase_key: key, value } of result) {
-            keysInResult.add(key);
-            if (JSON.stringify(this.localCache[key]) !== JSON.stringify(value)) {
-              this.notifyListeners(key, value);
-              keys.push(key);
-            }
-          }
-        }
-        for (const localKey of Object.keys(this.localCache)) {
-          if (this.localCache[localKey] && !keysInResult.has(localKey)) {
-            this.notifyListeners(localKey, null);
-            keys.push(localKey);
-          }
-        }
-        return keys;
-      } catch (e2) {
-        if (!this.isClosing) {
-          _logWarn(`Firebase Auth cross-tab polling failed with error: ${e2}`);
-        }
-        return [];
-      }
-    }
-    notifyListeners(key, newValue) {
-      this.localCache[key] = newValue;
-      const listeners = this.listeners[key];
-      if (listeners) {
-        for (const listener of Array.from(listeners)) {
-          listener(newValue);
-        }
-      }
-    }
-    startPolling() {
-      this.stopPolling();
-      this.pollTimer = setInterval(async () => this._poll(), _POLLING_INTERVAL_MS);
-    }
-    stopPolling() {
-      if (this.pollTimer) {
-        clearInterval(this.pollTimer);
-        this.pollTimer = null;
-      }
-    }
-    _addListener(key, listener) {
-      if (Object.keys(this.listeners).length === 0) {
-        this.startPolling();
-        this.registerLifecycleListeners();
-      }
-      if (!this.listeners[key]) {
-        this.listeners[key] = /* @__PURE__ */ new Set();
-        void this._get(key);
-      }
-      this.listeners[key].add(listener);
-    }
-    _removeListener(key, listener) {
-      if (this.listeners[key]) {
-        this.listeners[key].delete(listener);
-        if (this.listeners[key].size === 0) {
-          delete this.listeners[key];
-        }
-      }
-      if (Object.keys(this.listeners).length === 0) {
-        this.stopPolling();
-        this.unregisterLifecycleListeners();
-      }
-    }
-  };
-  IndexedDBLocalPersistence.type = "LOCAL";
-  var indexedDBLocalPersistence = IndexedDBLocalPersistence;
-  function startSignInPhoneMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaSignIn:start", _addTidIfNecessary(auth2, request));
-  }
-  function finalizeSignInPhoneMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaSignIn:finalize", _addTidIfNecessary(auth2, request));
-  }
-  function finalizeSignInTotpMfa(auth2, request) {
-    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaSignIn:finalize", _addTidIfNecessary(auth2, request));
-  }
-  var _JSLOAD_CALLBACK = _generateCallbackName("rcb");
-  var NETWORK_TIMEOUT_DELAY = new Delay(3e4, 6e4);
-  var RECAPTCHA_VERIFIER_TYPE = "recaptcha";
-  async function _verifyPhoneNumber(auth2, options, verifier) {
-    if (!auth2._getRecaptchaConfig()) {
-      try {
-        await _initializeRecaptchaConfig(auth2);
-      } catch (error) {
-        console.log("Failed to initialize reCAPTCHA Enterprise config. Triggering the reCAPTCHA v2 verification.");
-      }
-    }
-    try {
-      let phoneInfoOptions;
-      if (typeof options === "string") {
-        phoneInfoOptions = {
-          phoneNumber: options
-        };
-      } else {
-        phoneInfoOptions = options;
-      }
-      if ("session" in phoneInfoOptions) {
-        const session = phoneInfoOptions.session;
-        if ("phoneNumber" in phoneInfoOptions) {
-          _assert(
-            session.type === "enroll",
-            auth2,
-            "internal-error"
-            /* AuthErrorCode.INTERNAL_ERROR */
-          );
-          const startPhoneMfaEnrollmentRequest = {
-            idToken: session.credential,
-            phoneEnrollmentInfo: {
-              phoneNumber: phoneInfoOptions.phoneNumber,
-              clientType: "CLIENT_TYPE_WEB"
-              /* RecaptchaClientType.WEB */
-            }
-          };
-          const startEnrollPhoneMfaActionCallback = async (authInstance, request) => {
-            if (request.phoneEnrollmentInfo.captchaResponse === FAKE_TOKEN) {
-              _assert(
-                verifier?.type === RECAPTCHA_VERIFIER_TYPE,
-                authInstance,
-                "argument-error"
-                /* AuthErrorCode.ARGUMENT_ERROR */
-              );
-              const requestWithRecaptchaV2 = await injectRecaptchaV2Token(authInstance, request, verifier);
-              return startEnrollPhoneMfa(authInstance, requestWithRecaptchaV2);
-            }
-            return startEnrollPhoneMfa(authInstance, request);
-          };
-          const startPhoneMfaEnrollmentResponse = handleRecaptchaFlow(
-            auth2,
-            startPhoneMfaEnrollmentRequest,
-            "mfaSmsEnrollment",
-            startEnrollPhoneMfaActionCallback,
-            "PHONE_PROVIDER"
-            /* RecaptchaAuthProvider.PHONE_PROVIDER */
-          );
-          const response = await startPhoneMfaEnrollmentResponse.catch((error) => {
-            return Promise.reject(error);
-          });
-          return response.phoneSessionInfo.sessionInfo;
-        } else {
-          _assert(
-            session.type === "signin",
-            auth2,
-            "internal-error"
-            /* AuthErrorCode.INTERNAL_ERROR */
-          );
-          const mfaEnrollmentId = phoneInfoOptions.multiFactorHint?.uid || phoneInfoOptions.multiFactorUid;
-          _assert(
-            mfaEnrollmentId,
-            auth2,
-            "missing-multi-factor-info"
-            /* AuthErrorCode.MISSING_MFA_INFO */
-          );
-          const startPhoneMfaSignInRequest = {
-            mfaPendingCredential: session.credential,
-            mfaEnrollmentId,
-            phoneSignInInfo: {
-              clientType: "CLIENT_TYPE_WEB"
-              /* RecaptchaClientType.WEB */
-            }
-          };
-          const startSignInPhoneMfaActionCallback = async (authInstance, request) => {
-            if (request.phoneSignInInfo.captchaResponse === FAKE_TOKEN) {
-              _assert(
-                verifier?.type === RECAPTCHA_VERIFIER_TYPE,
-                authInstance,
-                "argument-error"
-                /* AuthErrorCode.ARGUMENT_ERROR */
-              );
-              const requestWithRecaptchaV2 = await injectRecaptchaV2Token(authInstance, request, verifier);
-              return startSignInPhoneMfa(authInstance, requestWithRecaptchaV2);
-            }
-            return startSignInPhoneMfa(authInstance, request);
-          };
-          const startPhoneMfaSignInResponse = handleRecaptchaFlow(
-            auth2,
-            startPhoneMfaSignInRequest,
-            "mfaSmsSignIn",
-            startSignInPhoneMfaActionCallback,
-            "PHONE_PROVIDER"
-            /* RecaptchaAuthProvider.PHONE_PROVIDER */
-          );
-          const response = await startPhoneMfaSignInResponse.catch((error) => {
-            return Promise.reject(error);
-          });
-          return response.phoneResponseInfo.sessionInfo;
-        }
-      } else {
-        const sendPhoneVerificationCodeRequest = {
-          phoneNumber: phoneInfoOptions.phoneNumber,
-          clientType: "CLIENT_TYPE_WEB"
-          /* RecaptchaClientType.WEB */
-        };
-        const sendPhoneVerificationCodeActionCallback = async (authInstance, request) => {
-          if (request.captchaResponse === FAKE_TOKEN) {
-            _assert(
-              verifier?.type === RECAPTCHA_VERIFIER_TYPE,
-              authInstance,
-              "argument-error"
-              /* AuthErrorCode.ARGUMENT_ERROR */
-            );
-            const requestWithRecaptchaV2 = await injectRecaptchaV2Token(authInstance, request, verifier);
-            return sendPhoneVerificationCode(authInstance, requestWithRecaptchaV2);
-          }
-          return sendPhoneVerificationCode(authInstance, request);
-        };
-        const sendPhoneVerificationCodeResponse = handleRecaptchaFlow(
-          auth2,
-          sendPhoneVerificationCodeRequest,
-          "sendVerificationCode",
-          sendPhoneVerificationCodeActionCallback,
-          "PHONE_PROVIDER"
-          /* RecaptchaAuthProvider.PHONE_PROVIDER */
-        );
-        const response = await sendPhoneVerificationCodeResponse.catch((error) => {
-          return Promise.reject(error);
-        });
-        return response.sessionInfo;
-      }
-    } finally {
-      verifier?._reset();
-    }
-  }
-  async function injectRecaptchaV2Token(auth2, request, recaptchaV2Verifier) {
-    _assert(
-      recaptchaV2Verifier.type === RECAPTCHA_VERIFIER_TYPE,
-      auth2,
-      "argument-error"
-      /* AuthErrorCode.ARGUMENT_ERROR */
-    );
-    const recaptchaV2Token = await recaptchaV2Verifier.verify();
-    _assert(
-      typeof recaptchaV2Token === "string",
-      auth2,
-      "argument-error"
-      /* AuthErrorCode.ARGUMENT_ERROR */
-    );
-    const newRequest = { ...request };
-    if ("phoneEnrollmentInfo" in newRequest) {
-      const phoneNumber = newRequest.phoneEnrollmentInfo.phoneNumber;
-      const captchaResponse = newRequest.phoneEnrollmentInfo.captchaResponse;
-      const clientType = newRequest.phoneEnrollmentInfo.clientType;
-      const recaptchaVersion = newRequest.phoneEnrollmentInfo.recaptchaVersion;
-      Object.assign(newRequest, {
-        "phoneEnrollmentInfo": {
-          phoneNumber,
-          recaptchaToken: recaptchaV2Token,
-          captchaResponse,
-          clientType,
-          recaptchaVersion
-        }
-      });
-      return newRequest;
-    } else if ("phoneSignInInfo" in newRequest) {
-      const captchaResponse = newRequest.phoneSignInInfo.captchaResponse;
-      const clientType = newRequest.phoneSignInInfo.clientType;
-      const recaptchaVersion = newRequest.phoneSignInInfo.recaptchaVersion;
-      Object.assign(newRequest, {
-        "phoneSignInInfo": {
-          recaptchaToken: recaptchaV2Token,
-          captchaResponse,
-          clientType,
-          recaptchaVersion
-        }
-      });
-      return newRequest;
-    } else {
-      Object.assign(newRequest, { "recaptchaToken": recaptchaV2Token });
-      return newRequest;
-    }
-  }
-  var PhoneAuthProvider = class _PhoneAuthProvider {
-    /**
-     * @param auth - The Firebase {@link Auth} instance in which sign-ins should occur.
-     *
-     */
-    constructor(auth2) {
-      this.providerId = _PhoneAuthProvider.PROVIDER_ID;
-      this.auth = _castAuth(auth2);
-    }
-    /**
-     *
-     * Starts a phone number authentication flow by sending a verification code to the given phone
-     * number.
-     *
-     * @example
-     * ```javascript
-     * const provider = new PhoneAuthProvider(auth);
-     * const verificationId = await provider.verifyPhoneNumber(phoneNumber, applicationVerifier);
-     * // Obtain verificationCode from the user.
-     * const authCredential = PhoneAuthProvider.credential(verificationId, verificationCode);
-     * const userCredential = await signInWithCredential(auth, authCredential);
-     * ```
-     *
-     * @example
-     * An alternative flow is provided using the `signInWithPhoneNumber` method.
-     * ```javascript
-     * const confirmationResult = signInWithPhoneNumber(auth, phoneNumber, applicationVerifier);
-     * // Obtain verificationCode from the user.
-     * const userCredential = confirmationResult.confirm(verificationCode);
-     * ```
-     *
-     * @param phoneInfoOptions - The user's {@link PhoneInfoOptions}. The phone number should be in
-     * E.164 format (e.g. +16505550101).
-     * @param applicationVerifier - An {@link ApplicationVerifier}, which prevents
-     * requests from unauthorized clients. This SDK includes an implementation
-     * based on reCAPTCHA v2, {@link RecaptchaVerifier}. If you've enabled
-     * reCAPTCHA Enterprise bot protection in Enforce mode, this parameter is
-     * optional; in all other configurations, the parameter is required.
-     *
-     * @returns A Promise for a verification ID that can be passed to
-     * {@link PhoneAuthProvider.credential} to identify this flow.
-     */
-    verifyPhoneNumber(phoneOptions, applicationVerifier) {
-      return _verifyPhoneNumber(this.auth, phoneOptions, getModularInstance(applicationVerifier));
-    }
-    /**
-     * Creates a phone auth credential, given the verification ID from
-     * {@link PhoneAuthProvider.verifyPhoneNumber} and the code that was sent to the user's
-     * mobile device.
-     *
-     * @example
-     * ```javascript
-     * const provider = new PhoneAuthProvider(auth);
-     * const verificationId = provider.verifyPhoneNumber(phoneNumber, applicationVerifier);
-     * // Obtain verificationCode from the user.
-     * const authCredential = PhoneAuthProvider.credential(verificationId, verificationCode);
-     * const userCredential = signInWithCredential(auth, authCredential);
-     * ```
-     *
-     * @example
-     * An alternative flow is provided using the `signInWithPhoneNumber` method.
-     * ```javascript
-     * const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, applicationVerifier);
-     * // Obtain verificationCode from the user.
-     * const userCredential = await confirmationResult.confirm(verificationCode);
-     * ```
-     *
-     * @param verificationId - The verification ID returned from {@link PhoneAuthProvider.verifyPhoneNumber}.
-     * @param verificationCode - The verification code sent to the user's mobile device.
-     *
-     * @returns The auth provider credential.
-     */
-    static credential(verificationId, verificationCode) {
-      return PhoneAuthCredential._fromVerification(verificationId, verificationCode);
-    }
-    /**
-     * Generates an {@link AuthCredential} from a {@link UserCredential}.
-     * @param userCredential - The user credential.
-     */
-    static credentialFromResult(userCredential) {
-      const credential = userCredential;
-      return _PhoneAuthProvider.credentialFromTaggedObject(credential);
-    }
-    /**
-     * Returns an {@link AuthCredential} when passed an error.
-     *
-     * @remarks
-     *
-     * This method works for errors like
-     * `auth/account-exists-with-different-credentials`. This is useful for
-     * recovering when attempting to set a user's phone number but the number
-     * in question is already tied to another account. For example, the following
-     * code tries to update the current user's phone number, and if that
-     * fails, links the user with the account associated with that number:
-     *
-     * ```js
-     * const provider = new PhoneAuthProvider(auth);
-     * const verificationId = await provider.verifyPhoneNumber(number, verifier);
-     * try {
-     *   const code = ''; // Prompt the user for the verification code
-     *   await updatePhoneNumber(
-     *       auth.currentUser,
-     *       PhoneAuthProvider.credential(verificationId, code));
-     * } catch (e) {
-     *   if ((e as FirebaseError)?.code === 'auth/account-exists-with-different-credential') {
-     *     const cred = PhoneAuthProvider.credentialFromError(e);
-     *     await linkWithCredential(auth.currentUser, cred);
-     *   }
-     * }
-     *
-     * // At this point, auth.currentUser.phoneNumber === number.
-     * ```
-     *
-     * @param error - The error to generate a credential from.
-     */
-    static credentialFromError(error) {
-      return _PhoneAuthProvider.credentialFromTaggedObject(error.customData || {});
-    }
-    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
-      if (!tokenResponse) {
-        return null;
-      }
-      const { phoneNumber, temporaryProof } = tokenResponse;
-      if (phoneNumber && temporaryProof) {
-        return PhoneAuthCredential._fromTokenResponse(phoneNumber, temporaryProof);
-      }
-      return null;
-    }
-  };
-  PhoneAuthProvider.PROVIDER_ID = "phone";
-  PhoneAuthProvider.PHONE_SIGN_IN_METHOD = "phone";
-  function _withDefaultResolver(auth2, resolverOverride) {
-    if (resolverOverride) {
-      return _getInstance(resolverOverride);
-    }
-    _assert(
-      auth2._popupRedirectResolver,
-      auth2,
-      "argument-error"
-      /* AuthErrorCode.ARGUMENT_ERROR */
-    );
-    return auth2._popupRedirectResolver;
-  }
-  var IdpCredential = class extends AuthCredential {
-    constructor(params) {
-      super(
-        "custom",
-        "custom"
-        /* ProviderId.CUSTOM */
-      );
-      this.params = params;
-    }
-    _getIdTokenResponse(auth2) {
-      return signInWithIdp(auth2, this._buildIdpRequest());
-    }
-    _linkToIdToken(auth2, idToken) {
-      return signInWithIdp(auth2, this._buildIdpRequest(idToken));
-    }
-    _getReauthenticationResolver(auth2) {
-      return signInWithIdp(auth2, this._buildIdpRequest());
-    }
-    _buildIdpRequest(idToken) {
-      const request = {
-        requestUri: this.params.requestUri,
-        sessionId: this.params.sessionId,
-        postBody: this.params.postBody,
-        tenantId: this.params.tenantId,
-        pendingToken: this.params.pendingToken,
-        returnSecureToken: true,
-        returnIdpCredential: true
-      };
-      if (idToken) {
-        request.idToken = idToken;
-      }
-      return request;
-    }
-  };
-  function _signIn(params) {
-    return _signInWithCredential(params.auth, new IdpCredential(params), params.bypassAuthState);
-  }
-  function _reauth(params) {
-    const { auth: auth2, user } = params;
-    _assert(
-      user,
-      auth2,
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    return _reauthenticate(user, new IdpCredential(params), params.bypassAuthState);
-  }
-  async function _link(params) {
-    const { auth: auth2, user } = params;
-    _assert(
-      user,
-      auth2,
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    return _link$1(user, new IdpCredential(params), params.bypassAuthState);
-  }
-  var AbstractPopupRedirectOperation = class {
-    constructor(auth2, filter, resolver, user, bypassAuthState = false) {
-      this.auth = auth2;
-      this.resolver = resolver;
-      this.user = user;
-      this.bypassAuthState = bypassAuthState;
-      this.pendingPromise = null;
-      this.eventManager = null;
-      this.filter = Array.isArray(filter) ? filter : [filter];
-    }
-    execute() {
-      return new Promise(async (resolve, reject) => {
-        this.pendingPromise = { resolve, reject };
-        try {
-          this.eventManager = await this.resolver._initialize(this.auth);
-          await this.onExecution();
-          this.eventManager.registerConsumer(this);
-        } catch (e2) {
-          this.reject(e2);
-        }
-      });
-    }
-    async onAuthEvent(event) {
-      const { urlResponse, sessionId, postBody, tenantId, error, type } = event;
-      if (error) {
-        this.reject(error);
-        return;
-      }
-      const params = {
-        auth: this.auth,
-        requestUri: urlResponse,
-        sessionId,
-        tenantId: tenantId || void 0,
-        postBody: postBody || void 0,
-        user: this.user,
-        bypassAuthState: this.bypassAuthState
-      };
-      try {
-        this.resolve(await this.getIdpTask(type)(params));
-      } catch (e2) {
-        this.reject(e2);
-      }
-    }
-    onError(error) {
-      this.reject(error);
-    }
-    getIdpTask(type) {
-      switch (type) {
-        case "signInViaPopup":
-        case "signInViaRedirect":
-          return _signIn;
-        case "linkViaPopup":
-        case "linkViaRedirect":
-          return _link;
-        case "reauthViaPopup":
-        case "reauthViaRedirect":
-          return _reauth;
-        default:
-          _fail(
-            this.auth,
-            "internal-error"
-            /* AuthErrorCode.INTERNAL_ERROR */
-          );
-      }
-    }
-    resolve(cred) {
-      debugAssert(this.pendingPromise, "Pending promise was never set");
-      this.pendingPromise.resolve(cred);
-      this.unregisterAndCleanUp();
-    }
-    reject(error) {
-      debugAssert(this.pendingPromise, "Pending promise was never set");
-      this.pendingPromise.reject(error);
-      this.unregisterAndCleanUp();
-    }
-    unregisterAndCleanUp() {
-      if (this.eventManager) {
-        this.eventManager.unregisterConsumer(this);
-      }
-      this.pendingPromise = null;
-      this.cleanUp();
-    }
-  };
-  var _POLL_WINDOW_CLOSE_TIMEOUT = new Delay(2e3, 1e4);
-  var PopupOperation = class _PopupOperation extends AbstractPopupRedirectOperation {
-    constructor(auth2, filter, provider, resolver, user) {
-      super(auth2, filter, resolver, user);
-      this.provider = provider;
-      this.authWindow = null;
-      this.pollId = null;
-      if (_PopupOperation.currentPopupAction) {
-        _PopupOperation.currentPopupAction.cancel();
-      }
-      _PopupOperation.currentPopupAction = this;
-    }
-    async executeNotNull() {
-      const result = await this.execute();
-      _assert(
-        result,
-        this.auth,
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      return result;
-    }
-    async onExecution() {
-      debugAssert(this.filter.length === 1, "Popup operations only handle one event");
-      const eventId = _generateEventId();
-      this.authWindow = await this.resolver._openPopup(
-        this.auth,
-        this.provider,
-        this.filter[0],
-        // There's always one, see constructor
-        eventId
-      );
-      this.authWindow.associatedEvent = eventId;
-      this.resolver._originValidation(this.auth).catch((e2) => {
-        this.reject(e2);
-      });
-      this.resolver._isIframeWebStorageSupported(this.auth, (isSupported) => {
-        if (!isSupported) {
-          this.reject(_createError(
-            this.auth,
-            "web-storage-unsupported"
-            /* AuthErrorCode.WEB_STORAGE_UNSUPPORTED */
-          ));
-        }
-      });
-      this.pollUserCancellation();
-    }
-    get eventId() {
-      return this.authWindow?.associatedEvent || null;
-    }
-    cancel() {
-      this.reject(_createError(
-        this.auth,
-        "cancelled-popup-request"
-        /* AuthErrorCode.EXPIRED_POPUP_REQUEST */
-      ));
-    }
-    cleanUp() {
-      if (this.authWindow) {
-        this.authWindow.close();
-      }
-      if (this.pollId) {
-        window.clearTimeout(this.pollId);
-      }
-      this.authWindow = null;
-      this.pollId = null;
-      _PopupOperation.currentPopupAction = null;
-    }
-    pollUserCancellation() {
-      const poll = () => {
-        if (this.authWindow?.window?.closed) {
-          this.pollId = window.setTimeout(
-            () => {
-              this.pollId = null;
-              this.reject(_createError(
-                this.auth,
-                "popup-closed-by-user"
-                /* AuthErrorCode.POPUP_CLOSED_BY_USER */
-              ));
-            },
-            8e3
-            /* _Timeout.AUTH_EVENT */
-          );
-          return;
-        }
-        this.pollId = window.setTimeout(poll, _POLL_WINDOW_CLOSE_TIMEOUT.get());
-      };
-      poll();
-    }
-  };
-  PopupOperation.currentPopupAction = null;
-  var PENDING_REDIRECT_KEY = "pendingRedirect";
-  var redirectOutcomeMap = /* @__PURE__ */ new Map();
-  var RedirectAction = class extends AbstractPopupRedirectOperation {
-    constructor(auth2, resolver, bypassAuthState = false) {
-      super(auth2, [
-        "signInViaRedirect",
-        "linkViaRedirect",
-        "reauthViaRedirect",
-        "unknown"
-        /* AuthEventType.UNKNOWN */
-      ], resolver, void 0, bypassAuthState);
-      this.eventId = null;
-    }
-    /**
-     * Override the execute function; if we already have a redirect result, then
-     * just return it.
-     */
-    async execute() {
-      let readyOutcome = redirectOutcomeMap.get(this.auth._key());
-      if (!readyOutcome) {
-        try {
-          const hasPendingRedirect = await _getAndClearPendingRedirectStatus(this.resolver, this.auth);
-          const result = hasPendingRedirect ? await super.execute() : null;
-          readyOutcome = () => Promise.resolve(result);
-        } catch (e2) {
-          readyOutcome = () => Promise.reject(e2);
-        }
-        redirectOutcomeMap.set(this.auth._key(), readyOutcome);
-      }
-      if (!this.bypassAuthState) {
-        redirectOutcomeMap.set(this.auth._key(), () => Promise.resolve(null));
-      }
-      return readyOutcome();
-    }
-    async onAuthEvent(event) {
-      if (event.type === "signInViaRedirect") {
-        return super.onAuthEvent(event);
-      } else if (event.type === "unknown") {
-        this.resolve(null);
-        return;
-      }
-      if (event.eventId) {
-        const user = await this.auth._redirectUserForId(event.eventId);
-        if (user) {
-          this.user = user;
-          return super.onAuthEvent(event);
-        } else {
-          this.resolve(null);
-        }
-      }
-    }
-    async onExecution() {
-    }
-    cleanUp() {
-    }
-  };
-  async function _getAndClearPendingRedirectStatus(resolver, auth2) {
-    const key = pendingRedirectKey(auth2);
-    const persistence = resolverPersistence(resolver);
-    if (!await persistence._isAvailable()) {
-      return false;
-    }
-    const hasPendingRedirect = await persistence._get(key) === "true";
-    await persistence._remove(key);
-    return hasPendingRedirect;
-  }
-  function _overrideRedirectResult(auth2, result) {
-    redirectOutcomeMap.set(auth2._key(), result);
-  }
-  function resolverPersistence(resolver) {
-    return _getInstance(resolver._redirectPersistence);
-  }
-  function pendingRedirectKey(auth2) {
-    return _persistenceKeyName(PENDING_REDIRECT_KEY, auth2.config.apiKey, auth2.name);
-  }
-  async function _getRedirectResult(auth2, resolverExtern, bypassAuthState = false) {
-    if (_isFirebaseServerApp(auth2.app)) {
-      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
-    }
-    const authInternal = _castAuth(auth2);
-    const resolver = _withDefaultResolver(authInternal, resolverExtern);
-    const action = new RedirectAction(authInternal, resolver, bypassAuthState);
-    const result = await action.execute();
-    if (result && !bypassAuthState) {
-      delete result.user._redirectEventId;
-      await authInternal._persistUserIfCurrent(result.user);
-      await authInternal._setRedirectUser(null, resolverExtern);
-    }
-    return result;
-  }
-  var EVENT_DUPLICATION_CACHE_DURATION_MS = 10 * 60 * 1e3;
-  var AuthEventManager = class {
-    constructor(auth2) {
-      this.auth = auth2;
-      this.cachedEventUids = /* @__PURE__ */ new Set();
-      this.consumers = /* @__PURE__ */ new Set();
-      this.queuedRedirectEvent = null;
-      this.hasHandledPotentialRedirect = false;
-      this.lastProcessedEventTime = Date.now();
-    }
-    registerConsumer(authEventConsumer) {
-      this.consumers.add(authEventConsumer);
-      if (this.queuedRedirectEvent && this.isEventForConsumer(this.queuedRedirectEvent, authEventConsumer)) {
-        this.sendToConsumer(this.queuedRedirectEvent, authEventConsumer);
-        this.saveEventToCache(this.queuedRedirectEvent);
-        this.queuedRedirectEvent = null;
-      }
-    }
-    unregisterConsumer(authEventConsumer) {
-      this.consumers.delete(authEventConsumer);
-    }
-    onEvent(event) {
-      if (this.hasEventBeenHandled(event)) {
-        return false;
-      }
-      let handled = false;
-      this.consumers.forEach((consumer) => {
-        if (this.isEventForConsumer(event, consumer)) {
-          handled = true;
-          this.sendToConsumer(event, consumer);
-          this.saveEventToCache(event);
-        }
-      });
-      if (this.hasHandledPotentialRedirect || !isRedirectEvent(event)) {
-        return handled;
-      }
-      this.hasHandledPotentialRedirect = true;
-      if (!handled) {
-        this.queuedRedirectEvent = event;
-        handled = true;
-      }
-      return handled;
-    }
-    sendToConsumer(event, consumer) {
-      if (event.error && !isNullRedirectEvent(event)) {
-        const code = event.error.code?.split("auth/")[1] || "internal-error";
-        consumer.onError(_createError(this.auth, code));
-      } else {
-        consumer.onAuthEvent(event);
-      }
-    }
-    isEventForConsumer(event, consumer) {
-      const eventIdMatches = consumer.eventId === null || !!event.eventId && event.eventId === consumer.eventId;
-      return consumer.filter.includes(event.type) && eventIdMatches;
-    }
-    hasEventBeenHandled(event) {
-      if (Date.now() - this.lastProcessedEventTime >= EVENT_DUPLICATION_CACHE_DURATION_MS) {
-        this.cachedEventUids.clear();
-      }
-      return this.cachedEventUids.has(eventUid(event));
-    }
-    saveEventToCache(event) {
-      this.cachedEventUids.add(eventUid(event));
-      this.lastProcessedEventTime = Date.now();
-    }
-  };
-  function eventUid(e2) {
-    return [e2.type, e2.eventId, e2.sessionId, e2.tenantId].filter((v2) => v2).join("-");
-  }
-  function isNullRedirectEvent({ type, error }) {
-    return type === "unknown" && error?.code === `auth/${"no-auth-event"}`;
-  }
-  function isRedirectEvent(event) {
-    switch (event.type) {
-      case "signInViaRedirect":
-      case "linkViaRedirect":
-      case "reauthViaRedirect":
-        return true;
-      case "unknown":
-        return isNullRedirectEvent(event);
-      default:
-        return false;
-    }
-  }
-  async function _getProjectConfig(auth2, request = {}) {
-    return _performApiRequest(auth2, "GET", "/v1/projects", request);
-  }
-  var IP_ADDRESS_REGEX = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
-  var HTTP_REGEX = /^https?/;
-  async function _validateOrigin(auth2) {
-    if (auth2.config.emulator) {
-      return;
-    }
-    const { authorizedDomains } = await _getProjectConfig(auth2);
-    for (const domain of authorizedDomains) {
-      try {
-        if (matchDomain(domain)) {
-          return;
-        }
-      } catch {
-      }
-    }
-    _fail(
-      auth2,
-      "unauthorized-domain"
-      /* AuthErrorCode.INVALID_ORIGIN */
-    );
-  }
-  function matchDomain(expected) {
-    const currentUrl = _getCurrentUrl();
-    const { protocol, hostname } = new URL(currentUrl);
-    if (expected.startsWith("chrome-extension://")) {
-      const ceUrl = new URL(expected);
-      if (ceUrl.hostname === "" && hostname === "") {
-        return protocol === "chrome-extension:" && expected.replace("chrome-extension://", "") === currentUrl.replace("chrome-extension://", "");
-      }
-      return protocol === "chrome-extension:" && ceUrl.hostname === hostname;
-    }
-    if (!HTTP_REGEX.test(protocol)) {
-      return false;
-    }
-    if (IP_ADDRESS_REGEX.test(expected)) {
-      return hostname === expected;
-    }
-    const escapedDomainPattern = expected.replace(/\./g, "\\.");
-    const re = new RegExp("^(.+\\." + escapedDomainPattern + "|" + escapedDomainPattern + ")$", "i");
-    return re.test(hostname);
-  }
-  var NETWORK_TIMEOUT = new Delay(3e4, 6e4);
-  function resetUnloadedGapiModules() {
-    const beacon = _window().___jsl;
-    if (beacon?.H) {
-      for (const hint of Object.keys(beacon.H)) {
-        beacon.H[hint].r = beacon.H[hint].r || [];
-        beacon.H[hint].L = beacon.H[hint].L || [];
-        beacon.H[hint].r = [...beacon.H[hint].L];
-        if (beacon.CP) {
-          for (let i2 = 0; i2 < beacon.CP.length; i2++) {
-            beacon.CP[i2] = null;
-          }
-        }
-      }
-    }
-  }
-  function loadGapi(auth2) {
-    return new Promise((resolve, reject) => {
-      function loadGapiIframe() {
-        resetUnloadedGapiModules();
-        gapi.load("gapi.iframes", {
-          callback: () => {
-            resolve(gapi.iframes.getContext());
-          },
-          ontimeout: () => {
-            resetUnloadedGapiModules();
-            reject(_createError(
-              auth2,
-              "network-request-failed"
-              /* AuthErrorCode.NETWORK_REQUEST_FAILED */
-            ));
-          },
-          timeout: NETWORK_TIMEOUT.get()
-        });
-      }
-      if (_window().gapi?.iframes?.Iframe) {
-        resolve(gapi.iframes.getContext());
-      } else if (!!_window().gapi?.load) {
-        loadGapiIframe();
-      } else {
-        const cbName = _generateCallbackName("iframefcb");
-        _window()[cbName] = () => {
-          if (!!gapi.load) {
-            loadGapiIframe();
-          } else {
-            reject(_createError(
-              auth2,
-              "network-request-failed"
-              /* AuthErrorCode.NETWORK_REQUEST_FAILED */
-            ));
-          }
-        };
-        return _loadJS(`${_gapiScriptUrl()}?onload=${cbName}`).catch((e2) => reject(e2));
-      }
-    }).catch((error) => {
-      cachedGApiLoader = null;
-      throw error;
-    });
-  }
-  var cachedGApiLoader = null;
-  function _loadGapi(auth2) {
-    cachedGApiLoader = cachedGApiLoader || loadGapi(auth2);
-    return cachedGApiLoader;
-  }
-  var PING_TIMEOUT = new Delay(5e3, 15e3);
-  var IFRAME_PATH = "__/auth/iframe";
-  var EMULATED_IFRAME_PATH = "emulator/auth/iframe";
-  var IFRAME_ATTRIBUTES = {
-    style: {
-      position: "absolute",
-      top: "-100px",
-      width: "1px",
-      height: "1px"
-    },
-    "aria-hidden": "true",
-    tabindex: "-1"
-  };
-  var EID_FROM_APIHOST = /* @__PURE__ */ new Map([
-    ["identitytoolkit.googleapis.com", "p"],
-    // production
-    ["staging-identitytoolkit.sandbox.googleapis.com", "s"],
-    // staging
-    ["test-identitytoolkit.sandbox.googleapis.com", "t"]
-    // test
-  ]);
-  function getIframeUrl(auth2) {
-    const config = auth2.config;
-    _assert(
-      config.authDomain,
-      auth2,
-      "auth-domain-config-required"
-      /* AuthErrorCode.MISSING_AUTH_DOMAIN */
-    );
-    const url = config.emulator ? _emulatorUrl(config, EMULATED_IFRAME_PATH) : `https://${auth2.config.authDomain}/${IFRAME_PATH}`;
-    const params = {
-      apiKey: config.apiKey,
-      appName: auth2.name,
-      v: SDK_VERSION
-    };
-    const eid = EID_FROM_APIHOST.get(auth2.config.apiHost);
-    if (eid) {
-      params.eid = eid;
-    }
-    const frameworks = auth2._getFrameworks();
-    if (frameworks.length) {
-      params.fw = frameworks.join(",");
-    }
-    return `${url}?${querystring(params).slice(1)}`;
-  }
-  async function _openIframe(auth2) {
-    const context = await _loadGapi(auth2);
-    const gapi2 = _window().gapi;
-    _assert(
-      gapi2,
-      auth2,
-      "internal-error"
-      /* AuthErrorCode.INTERNAL_ERROR */
-    );
-    return context.open({
-      where: document.body,
-      url: getIframeUrl(auth2),
-      messageHandlersFilter: gapi2.iframes.CROSS_ORIGIN_IFRAMES_FILTER,
-      attributes: IFRAME_ATTRIBUTES,
-      dontclear: true
-    }, (iframe) => new Promise(async (resolve, reject) => {
-      await iframe.restyle({
-        // Prevent iframe from closing on mouse out.
-        setHideOnLeave: false
-      });
-      const networkError = _createError(
-        auth2,
-        "network-request-failed"
-        /* AuthErrorCode.NETWORK_REQUEST_FAILED */
-      );
-      const networkErrorTimer = _window().setTimeout(() => {
-        reject(networkError);
-      }, PING_TIMEOUT.get());
-      function clearTimerAndResolve() {
-        _window().clearTimeout(networkErrorTimer);
-        resolve(iframe);
-      }
-      iframe.ping(clearTimerAndResolve).then(clearTimerAndResolve, () => {
-        reject(networkError);
-      });
-    }));
-  }
-  var BASE_POPUP_OPTIONS = {
-    location: "yes",
-    resizable: "yes",
-    statusbar: "yes",
-    toolbar: "no"
-  };
-  var DEFAULT_WIDTH = 500;
-  var DEFAULT_HEIGHT = 600;
-  var TARGET_BLANK = "_blank";
-  var FIREFOX_EMPTY_URL = "http://localhost";
-  var AuthPopup = class {
-    constructor(window2) {
-      this.window = window2;
-      this.associatedEvent = null;
-    }
-    close() {
-      if (this.window) {
-        try {
-          this.window.close();
-        } catch (e2) {
-        }
-      }
-    }
-  };
-  function _open(auth2, url, name4, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT) {
-    const top = Math.max((window.screen.availHeight - height) / 2, 0).toString();
-    const left = Math.max((window.screen.availWidth - width) / 2, 0).toString();
-    let target = "";
-    const options = {
-      ...BASE_POPUP_OPTIONS,
-      width: width.toString(),
-      height: height.toString(),
-      top,
-      left
-    };
-    const ua2 = getUA().toLowerCase();
-    if (name4) {
-      target = _isChromeIOS(ua2) ? TARGET_BLANK : name4;
-    }
-    if (_isFirefox(ua2)) {
-      url = url || FIREFOX_EMPTY_URL;
-      options.scrollbars = "yes";
-    }
-    const optionsString = Object.entries(options).reduce((accum, [key, value]) => `${accum}${key}=${value},`, "");
-    if (_isIOSStandalone(ua2) && target !== "_self") {
-      openAsNewWindowIOS(url || "", target);
-      return new AuthPopup(null);
-    }
-    const newWin = window.open(url || "", target, optionsString);
-    _assert(
-      newWin,
-      auth2,
-      "popup-blocked"
-      /* AuthErrorCode.POPUP_BLOCKED */
-    );
-    try {
-      newWin.focus();
-    } catch (e2) {
-    }
-    return new AuthPopup(newWin);
-  }
-  function openAsNewWindowIOS(url, target) {
-    const el = document.createElement("a");
-    el.href = url;
-    el.target = target;
-    const click = document.createEvent("MouseEvent");
-    click.initMouseEvent("click", true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 1, null);
-    el.dispatchEvent(click);
-  }
-  var WIDGET_PATH = "__/auth/handler";
-  var EMULATOR_WIDGET_PATH = "emulator/auth/handler";
-  var FIREBASE_APP_CHECK_FRAGMENT_ID = encodeURIComponent("fac");
-  async function _getRedirectUrl(auth2, provider, authType, redirectUrl, eventId, additionalParams) {
-    _assert(
-      auth2.config.authDomain,
-      auth2,
-      "auth-domain-config-required"
-      /* AuthErrorCode.MISSING_AUTH_DOMAIN */
-    );
-    _assert(
-      auth2.config.apiKey,
-      auth2,
-      "invalid-api-key"
-      /* AuthErrorCode.INVALID_API_KEY */
-    );
-    const params = {
-      apiKey: auth2.config.apiKey,
-      appName: auth2.name,
-      authType,
-      redirectUrl,
-      v: SDK_VERSION,
-      eventId
-    };
-    if (provider instanceof FederatedAuthProvider) {
-      provider.setDefaultLanguage(auth2.languageCode);
-      params.providerId = provider.providerId || "";
-      if (!isEmpty(provider.getCustomParameters())) {
-        params.customParameters = JSON.stringify(provider.getCustomParameters());
-      }
-      for (const [key, value] of Object.entries(additionalParams || {})) {
-        params[key] = value;
-      }
-    }
-    if (provider instanceof BaseOAuthProvider) {
-      const scopes = provider.getScopes().filter((scope) => scope !== "");
-      if (scopes.length > 0) {
-        params.scopes = scopes.join(",");
-      }
-    }
-    if (auth2.tenantId) {
-      params.tid = auth2.tenantId;
-    }
-    const paramsDict = params;
-    for (const key of Object.keys(paramsDict)) {
-      if (paramsDict[key] === void 0) {
-        delete paramsDict[key];
-      }
-    }
-    const appCheckToken = await auth2._getAppCheckToken();
-    const appCheckTokenFragment = appCheckToken ? `#${FIREBASE_APP_CHECK_FRAGMENT_ID}=${encodeURIComponent(appCheckToken)}` : "";
-    return `${getHandlerBase(auth2)}?${querystring(paramsDict).slice(1)}${appCheckTokenFragment}`;
-  }
-  function getHandlerBase({ config }) {
-    if (!config.emulator) {
-      return `https://${config.authDomain}/${WIDGET_PATH}`;
-    }
-    return _emulatorUrl(config, EMULATOR_WIDGET_PATH);
-  }
-  var WEB_STORAGE_SUPPORT_KEY = "webStorageSupport";
-  var BrowserPopupRedirectResolver = class {
-    constructor() {
-      this.eventManagers = {};
-      this.iframes = {};
-      this.originValidationPromises = {};
-      this._redirectPersistence = browserSessionPersistence;
-      this._completeRedirectFn = _getRedirectResult;
-      this._overrideRedirectResult = _overrideRedirectResult;
-    }
-    // Wrapping in async even though we don't await anywhere in order
-    // to make sure errors are raised as promise rejections
-    async _openPopup(auth2, provider, authType, eventId) {
-      debugAssert(this.eventManagers[auth2._key()]?.manager, "_initialize() not called before _openPopup()");
-      const url = await _getRedirectUrl(auth2, provider, authType, _getCurrentUrl(), eventId);
-      return _open(auth2, url, _generateEventId());
-    }
-    async _openRedirect(auth2, provider, authType, eventId) {
-      await this._originValidation(auth2);
-      const url = await _getRedirectUrl(auth2, provider, authType, _getCurrentUrl(), eventId);
-      _setWindowLocation(url);
-      return new Promise(() => {
-      });
-    }
-    _initialize(auth2) {
-      const key = auth2._key();
-      if (this.eventManagers[key]) {
-        const { manager, promise: promise2 } = this.eventManagers[key];
-        if (manager) {
-          return Promise.resolve(manager);
-        } else {
-          debugAssert(promise2, "If manager is not set, promise should be");
-          return promise2;
-        }
-      }
-      const promise = this.initAndGetManager(auth2);
-      this.eventManagers[key] = { promise };
-      promise.catch(() => {
-        delete this.eventManagers[key];
-      });
-      return promise;
-    }
-    async initAndGetManager(auth2) {
-      const iframe = await _openIframe(auth2);
-      const manager = new AuthEventManager(auth2);
-      iframe.register("authEvent", (iframeEvent) => {
-        _assert(
-          iframeEvent?.authEvent,
-          auth2,
-          "invalid-auth-event"
-          /* AuthErrorCode.INVALID_AUTH_EVENT */
-        );
-        const handled = manager.onEvent(iframeEvent.authEvent);
-        return {
-          status: handled ? "ACK" : "ERROR"
-          /* GapiOutcome.ERROR */
-        };
-      }, gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER);
-      this.eventManagers[auth2._key()] = { manager };
-      this.iframes[auth2._key()] = iframe;
-      return manager;
-    }
-    _isIframeWebStorageSupported(auth2, cb) {
-      const iframe = this.iframes[auth2._key()];
-      iframe.send(WEB_STORAGE_SUPPORT_KEY, { type: WEB_STORAGE_SUPPORT_KEY }, (result) => {
-        const isSupported = result?.[0]?.[WEB_STORAGE_SUPPORT_KEY];
-        if (isSupported !== void 0) {
-          cb(!!isSupported);
-        }
-        _fail(
-          auth2,
-          "internal-error"
-          /* AuthErrorCode.INTERNAL_ERROR */
-        );
-      }, gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER);
-    }
-    _originValidation(auth2) {
-      const key = auth2._key();
-      if (!this.originValidationPromises[key]) {
-        this.originValidationPromises[key] = _validateOrigin(auth2);
-      }
-      return this.originValidationPromises[key];
-    }
-    get _shouldInitProactively() {
-      return _isMobileBrowser() || _isSafari() || _isIOS();
-    }
-  };
-  var browserPopupRedirectResolver = BrowserPopupRedirectResolver;
-  var MultiFactorAssertionImpl = class {
-    constructor(factorId) {
-      this.factorId = factorId;
-    }
-    _process(auth2, session, displayName) {
-      switch (session.type) {
-        case "enroll":
-          return this._finalizeEnroll(auth2, session.credential, displayName);
-        case "signin":
-          return this._finalizeSignIn(auth2, session.credential);
-        default:
-          return debugFail("unexpected MultiFactorSessionType");
-      }
-    }
-  };
-  var PhoneMultiFactorAssertionImpl = class _PhoneMultiFactorAssertionImpl extends MultiFactorAssertionImpl {
-    constructor(credential) {
-      super(
-        "phone"
-        /* FactorId.PHONE */
-      );
-      this.credential = credential;
-    }
-    /** @internal */
-    static _fromCredential(credential) {
-      return new _PhoneMultiFactorAssertionImpl(credential);
-    }
-    /** @internal */
-    _finalizeEnroll(auth2, idToken, displayName) {
-      return finalizeEnrollPhoneMfa(auth2, {
-        idToken,
-        displayName,
-        phoneVerificationInfo: this.credential._makeVerificationRequest()
-      });
-    }
-    /** @internal */
-    _finalizeSignIn(auth2, mfaPendingCredential) {
-      return finalizeSignInPhoneMfa(auth2, {
-        mfaPendingCredential,
-        phoneVerificationInfo: this.credential._makeVerificationRequest()
-      });
-    }
-  };
-  var PhoneMultiFactorGenerator = class {
-    constructor() {
-    }
-    /**
-     * Provides a {@link PhoneMultiFactorAssertion} to confirm ownership of the phone second factor.
-     *
-     * @remarks
-     * This method does not work in a Node.js environment.
-     *
-     * @param phoneAuthCredential - A credential provided by {@link PhoneAuthProvider.credential}.
-     * @returns A {@link PhoneMultiFactorAssertion} which can be used with
-     * {@link MultiFactorResolver.resolveSignIn}
-     */
-    static assertion(credential) {
-      return PhoneMultiFactorAssertionImpl._fromCredential(credential);
-    }
-  };
-  PhoneMultiFactorGenerator.FACTOR_ID = "phone";
-  var TotpMultiFactorGenerator = class {
-    /**
-     * Provides a {@link TotpMultiFactorAssertion} to confirm ownership of
-     * the TOTP (time-based one-time password) second factor.
-     * This assertion is used to complete enrollment in TOTP second factor.
-     *
-     * @param secret A {@link TotpSecret} containing the shared secret key and other TOTP parameters.
-     * @param oneTimePassword One-time password from TOTP App.
-     * @returns A {@link TotpMultiFactorAssertion} which can be used with
-     * {@link MultiFactorUser.enroll}.
-     */
-    static assertionForEnrollment(secret, oneTimePassword) {
-      return TotpMultiFactorAssertionImpl._fromSecret(secret, oneTimePassword);
-    }
-    /**
-     * Provides a {@link TotpMultiFactorAssertion} to confirm ownership of the TOTP second factor.
-     * This assertion is used to complete signIn with TOTP as the second factor.
-     *
-     * @param enrollmentId identifies the enrolled TOTP second factor.
-     * @param oneTimePassword One-time password from TOTP App.
-     * @returns A {@link TotpMultiFactorAssertion} which can be used with
-     * {@link MultiFactorResolver.resolveSignIn}.
-     */
-    static assertionForSignIn(enrollmentId, oneTimePassword) {
-      return TotpMultiFactorAssertionImpl._fromEnrollmentId(enrollmentId, oneTimePassword);
-    }
-    /**
-     * Returns a promise to {@link TotpSecret} which contains the TOTP shared secret key and other parameters.
-     * Creates a TOTP secret as part of enrolling a TOTP second factor.
-     * Used for generating a QR code URL or inputting into a TOTP app.
-     * This method uses the auth instance corresponding to the user in the multiFactorSession.
-     *
-     * @param session The {@link MultiFactorSession} that the user is part of.
-     * @returns A promise to {@link TotpSecret}.
-     */
-    static async generateSecret(session) {
-      const mfaSession = session;
-      _assert(
-        typeof mfaSession.user?.auth !== "undefined",
-        "internal-error"
-        /* AuthErrorCode.INTERNAL_ERROR */
-      );
-      const response = await startEnrollTotpMfa(mfaSession.user.auth, {
-        idToken: mfaSession.credential,
-        totpEnrollmentInfo: {}
-      });
-      return TotpSecret._fromStartTotpMfaEnrollmentResponse(response, mfaSession.user.auth);
-    }
-  };
-  TotpMultiFactorGenerator.FACTOR_ID = "totp";
-  var TotpMultiFactorAssertionImpl = class _TotpMultiFactorAssertionImpl extends MultiFactorAssertionImpl {
-    constructor(otp, enrollmentId, secret) {
-      super(
-        "totp"
-        /* FactorId.TOTP */
-      );
-      this.otp = otp;
-      this.enrollmentId = enrollmentId;
-      this.secret = secret;
-    }
-    /** @internal */
-    static _fromSecret(secret, otp) {
-      return new _TotpMultiFactorAssertionImpl(otp, void 0, secret);
-    }
-    /** @internal */
-    static _fromEnrollmentId(enrollmentId, otp) {
-      return new _TotpMultiFactorAssertionImpl(otp, enrollmentId);
-    }
-    /** @internal */
-    async _finalizeEnroll(auth2, idToken, displayName) {
-      _assert(
-        typeof this.secret !== "undefined",
-        auth2,
-        "argument-error"
-        /* AuthErrorCode.ARGUMENT_ERROR */
-      );
-      return finalizeEnrollTotpMfa(auth2, {
-        idToken,
-        displayName,
-        totpVerificationInfo: this.secret._makeTotpVerificationInfo(this.otp)
-      });
-    }
-    /** @internal */
-    async _finalizeSignIn(auth2, mfaPendingCredential) {
-      _assert(
-        this.enrollmentId !== void 0 && this.otp !== void 0,
-        auth2,
-        "argument-error"
-        /* AuthErrorCode.ARGUMENT_ERROR */
-      );
-      const totpVerificationInfo = { verificationCode: this.otp };
-      return finalizeSignInTotpMfa(auth2, {
-        mfaPendingCredential,
-        mfaEnrollmentId: this.enrollmentId,
-        totpVerificationInfo
-      });
-    }
-  };
-  var TotpSecret = class _TotpSecret {
-    // The public members are declared outside the constructor so the docs can be generated.
-    constructor(secretKey, hashingAlgorithm, codeLength, codeIntervalSeconds, enrollmentCompletionDeadline, sessionInfo, auth2) {
-      this.sessionInfo = sessionInfo;
-      this.auth = auth2;
-      this.secretKey = secretKey;
-      this.hashingAlgorithm = hashingAlgorithm;
-      this.codeLength = codeLength;
-      this.codeIntervalSeconds = codeIntervalSeconds;
-      this.enrollmentCompletionDeadline = enrollmentCompletionDeadline;
-    }
-    /** @internal */
-    static _fromStartTotpMfaEnrollmentResponse(response, auth2) {
-      return new _TotpSecret(response.totpSessionInfo.sharedSecretKey, response.totpSessionInfo.hashingAlgorithm, response.totpSessionInfo.verificationCodeLength, response.totpSessionInfo.periodSec, new Date(response.totpSessionInfo.finalizeEnrollmentTime).toUTCString(), response.totpSessionInfo.sessionInfo, auth2);
-    }
-    /** @internal */
-    _makeTotpVerificationInfo(otp) {
-      return { sessionInfo: this.sessionInfo, verificationCode: otp };
-    }
-    /**
-     * Returns a QR code URL as described in
-     * https://github.com/google/google-authenticator/wiki/Key-Uri-Format
-     * This can be displayed to the user as a QR code to be scanned into a TOTP app like Google Authenticator.
-     * If the optional parameters are unspecified, an accountName of <userEmail> and issuer of <firebaseAppName> are used.
-     *
-     * @param accountName the name of the account/app along with a user identifier.
-     * @param issuer issuer of the TOTP (likely the app name).
-     * @returns A QR code URL string.
-     */
-    generateQrCodeUrl(accountName, issuer) {
-      let useDefaults = false;
-      if (_isEmptyString(accountName) || _isEmptyString(issuer)) {
-        useDefaults = true;
-      }
-      if (useDefaults) {
-        if (_isEmptyString(accountName)) {
-          accountName = this.auth.currentUser?.email || "unknownuser";
-        }
-        if (_isEmptyString(issuer)) {
-          issuer = this.auth.name;
-        }
-      }
-      return `otpauth://totp/${issuer}:${accountName}?secret=${this.secretKey}&issuer=${issuer}&algorithm=${this.hashingAlgorithm}&digits=${this.codeLength}`;
-    }
-  };
-  function _isEmptyString(input) {
-    return typeof input === "undefined" || input?.length === 0;
-  }
-  var name3 = "@firebase/auth";
-  var version3 = "1.13.7";
-  var AuthInterop = class {
-    constructor(auth2) {
-      this.auth = auth2;
-      this.internalListeners = /* @__PURE__ */ new Map();
-    }
-    getUid() {
-      this.assertAuthConfigured();
-      return this.auth.currentUser?.uid || null;
-    }
-    async getToken(forceRefresh) {
-      this.assertAuthConfigured();
-      await this.auth._initializationPromise;
-      if (!this.auth.currentUser) {
-        return null;
-      }
-      const accessToken = await this.auth.currentUser.getIdToken(forceRefresh);
-      return { accessToken };
-    }
-    addAuthTokenListener(listener) {
-      this.assertAuthConfigured();
-      if (this.internalListeners.has(listener)) {
-        return;
-      }
-      const unsubscribe = this.auth.onIdTokenChanged((user) => {
-        listener(user?.stsTokenManager.accessToken || null);
-      });
-      this.internalListeners.set(listener, unsubscribe);
-      this.updateProactiveRefresh();
-    }
-    removeAuthTokenListener(listener) {
-      this.assertAuthConfigured();
-      const unsubscribe = this.internalListeners.get(listener);
-      if (!unsubscribe) {
-        return;
-      }
-      this.internalListeners.delete(listener);
-      unsubscribe();
-      this.updateProactiveRefresh();
-    }
-    assertAuthConfigured() {
-      _assert(
-        this.auth._initializationPromise,
-        "dependent-sdk-initialized-before-auth"
-        /* AuthErrorCode.DEPENDENT_SDK_INIT_BEFORE_AUTH */
-      );
-    }
-    updateProactiveRefresh() {
-      if (this.internalListeners.size > 0) {
-        this.auth._startProactiveRefresh();
-      } else {
-        this.auth._stopProactiveRefresh();
-      }
-    }
-  };
-  function getVersionForPlatform(clientPlatform) {
-    switch (clientPlatform) {
-      case "Node":
-        return "node";
-      case "ReactNative":
-        return "rn";
-      case "Worker":
-        return "webworker";
-      case "Cordova":
-        return "cordova";
-      case "WebExtension":
-        return "web-extension";
-      default:
-        return void 0;
-    }
-  }
-  function registerAuth(clientPlatform) {
-    _registerComponent(new Component(
-      "auth",
-      (container, { options: deps }) => {
-        const app2 = container.getProvider("app").getImmediate();
-        const heartbeatServiceProvider = container.getProvider("heartbeat");
-        const appCheckServiceProvider = container.getProvider("app-check-internal");
-        const { apiKey, authDomain } = app2.options;
-        _assert(apiKey && !apiKey.includes(":"), "invalid-api-key", { appName: app2.name });
-        const config = {
-          apiKey,
-          authDomain,
-          clientPlatform,
-          apiHost: "identitytoolkit.googleapis.com",
-          tokenApiHost: "securetoken.googleapis.com",
-          apiScheme: "https",
-          sdkClientVersion: _getClientVersion(clientPlatform)
-        };
-        const authInstance = new AuthImpl(app2, heartbeatServiceProvider, appCheckServiceProvider, config);
-        _initializeAuthInstance(authInstance, deps);
-        return authInstance;
-      },
-      "PUBLIC"
-      /* ComponentType.PUBLIC */
-    ).setInstantiationMode(
-      "EXPLICIT"
-      /* InstantiationMode.EXPLICIT */
-    ).setInstanceCreatedCallback((container, _instanceIdentifier, _instance) => {
-      const authInternalProvider = container.getProvider(
-        "auth-internal"
-        /* _ComponentName.AUTH_INTERNAL */
-      );
-      authInternalProvider.initialize();
-    }));
-    _registerComponent(new Component(
-      "auth-internal",
-      (container) => {
-        const auth2 = _castAuth(container.getProvider(
-          "auth"
-          /* _ComponentName.AUTH */
-        ).getImmediate());
-        return ((auth3) => new AuthInterop(auth3))(auth2);
-      },
-      "PRIVATE"
-      /* ComponentType.PRIVATE */
-    ).setInstantiationMode(
-      "EXPLICIT"
-      /* InstantiationMode.EXPLICIT */
-    ));
-    registerVersion(name3, version3, getVersionForPlatform(clientPlatform));
-    registerVersion(name3, version3, "esm2020");
-  }
-  var DEFAULT_ID_TOKEN_MAX_AGE = 5 * 60;
-  var authIdTokenMaxAge = getExperimentalSetting("authIdTokenMaxAge") || DEFAULT_ID_TOKEN_MAX_AGE;
-  var lastPostedIdToken = null;
-  var mintCookieFactory = (url) => async (user) => {
-    const idTokenResult = user && await user.getIdTokenResult();
-    const idTokenAge = idTokenResult && ((/* @__PURE__ */ new Date()).getTime() - Date.parse(idTokenResult.issuedAtTime)) / 1e3;
-    if (idTokenAge && idTokenAge > authIdTokenMaxAge) {
-      return;
-    }
-    const idToken = idTokenResult?.token;
-    if (lastPostedIdToken === idToken) {
-      return;
-    }
-    lastPostedIdToken = idToken;
-    await fetch(url, {
-      method: idToken ? "POST" : "DELETE",
-      headers: idToken ? {
-        "Authorization": `Bearer ${idToken}`
-      } : {}
-    });
-  };
-  function getAuth(app2 = getApp()) {
-    const provider = _getProvider(app2, "auth");
-    if (provider.isInitialized()) {
-      return provider.getImmediate();
-    }
-    const auth2 = initializeAuth(app2, {
-      popupRedirectResolver: browserPopupRedirectResolver,
-      persistence: [
-        indexedDBLocalPersistence,
-        browserLocalPersistence,
-        browserSessionPersistence
-      ]
-    });
-    const authTokenSyncPath = getExperimentalSetting("authTokenSyncURL");
-    if (authTokenSyncPath && typeof isSecureContext === "boolean" && isSecureContext) {
-      const authTokenSyncUrl = new URL(authTokenSyncPath, location.origin);
-      if (location.origin === authTokenSyncUrl.origin) {
-        const mintCookie = mintCookieFactory(authTokenSyncUrl.toString());
-        beforeAuthStateChanged(auth2, mintCookie, () => mintCookie(auth2.currentUser));
-        onIdTokenChanged(auth2, (user) => mintCookie(user));
-      }
-    }
-    const authEmulatorHost = getDefaultEmulatorHost("auth");
-    if (authEmulatorHost) {
-      connectAuthEmulator(auth2, `http://${authEmulatorHost}`);
-    }
-    return auth2;
-  }
-  function getScriptParentElement() {
-    return document.getElementsByTagName("head")?.[0] ?? document;
-  }
-  _setExternalJSProvider({
-    loadJS(url) {
-      return new Promise((resolve, reject) => {
-        const el = document.createElement("script");
-        el.setAttribute("src", url);
-        el.onload = resolve;
-        el.onerror = (e2) => {
-          const error = _createError(
-            "internal-error"
-            /* AuthErrorCode.INTERNAL_ERROR */
-          );
-          error.customData = e2;
-          reject(error);
-        };
-        el.type = "text/javascript";
-        el.charset = "UTF-8";
-        getScriptParentElement().appendChild(el);
-      });
-    },
-    gapiScript: "https://apis.google.com/js/api.js",
-    recaptchaV2Script: "https://www.google.com/recaptcha/api.js",
-    recaptchaEnterpriseScript: "https://www.google.com/recaptcha/enterprise.js?render="
-  });
-  registerAuth(
-    "Browser"
-    /* ClientPlatform.BROWSER */
-  );
-
   // node_modules/@firebase/webchannel-wrapper/dist/bloom-blob/esm/bloom_blob_es2018.js
   var commonjsGlobal = typeof globalThis !== "undefined" ? globalThis : typeof window !== "undefined" ? window : typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : {};
   var bloom_blob_es2018 = {};
@@ -10268,7 +3524,7 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       return d;
     };
     function p2(d, a) {
-      var c2 = q;
+      var c2 = q2;
       return Object.prototype.hasOwnProperty.call(c2, d) ? c2[d] : c2[d] = a(d);
     }
     function t2(d, a) {
@@ -10281,7 +3537,7 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       }
       this.g = c2;
     }
-    var q = {};
+    var q2 = {};
     function u2(d) {
       return -128 <= d && d < 128 ? p2(d, function(a) {
         return new t2([a | 0], a < 0 ? -1 : 0);
@@ -10386,10 +3642,10 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       const a = this.g.length + d.g.length, c2 = [];
       for (var f = 0; f < 2 * a; f++) c2[f] = 0;
       for (f = 0; f < this.g.length; f++) for (let e2 = 0; e2 < d.g.length; e2++) {
-        const g = this.i(f) >>> 16, b2 = this.i(f) & 65535, r2 = d.i(e2) >>> 16, E = d.i(e2) & 65535;
-        c2[2 * f + 2 * e2] += b2 * E;
+        const g = this.i(f) >>> 16, b2 = this.i(f) & 65535, r2 = d.i(e2) >>> 16, E2 = d.i(e2) & 65535;
+        c2[2 * f + 2 * e2] += b2 * E2;
         G2(c2, 2 * f + 2 * e2);
-        c2[2 * f + 2 * e2 + 1] += g * E;
+        c2[2 * f + 2 * e2 + 1] += g * E2;
         G2(c2, 2 * f + 2 * e2 + 1);
         c2[2 * f + 2 * e2 + 1] += b2 * r2;
         G2(c2, 2 * f + 2 * e2 + 1);
@@ -10942,9 +4198,9 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       for (let f = 0; f < b2.length; ++f) {
         const g = b2[f];
         if (g && !g.da && g.capture == c2) {
-          const k2 = g.listener, q = g.ha || g.src;
+          const k2 = g.listener, q2 = g.ha || g.src;
           g.fa && Ga(a.i, g);
-          e2 = k2.call(q, d) !== false && e2;
+          e2 = k2.call(q2, d) !== false && e2;
         }
       }
       return e2 && !d.defaultPrevented;
@@ -10981,12 +4237,12 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
         this.g && (l2.clearTimeout(this.g), this.g = null, this.i = false, this.h = null);
       }
     }
-    function E(a) {
+    function E2(a) {
       w2.call(this);
       this.h = a;
       this.g = {};
     }
-    t2(E, w2);
+    t2(E2, w2);
     var Za = [];
     function $a(a) {
       ya(a.g, function(b2, c2) {
@@ -10994,11 +4250,11 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       }, a);
       a.g = {};
     }
-    E.prototype.N = function() {
-      E.Z.N.call(this);
+    E2.prototype.N = function() {
+      E2.Z.N.call(this);
       $a(this);
     };
-    E.prototype.handleEvent = function() {
+    E2.prototype.handleEvent = function() {
       throw Error("EventHandler.handleEvent not implemented");
     };
     var ab = l2.JSON.stringify;
@@ -11071,12 +4327,12 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
           var g = "";
           var k2 = f.split("&");
           for (let m2 = 0; m2 < k2.length; m2++) {
-            var q = k2[m2].split("=");
-            if (q.length > 1) {
-              const r2 = q[0];
-              q = q[1];
+            var q2 = k2[m2].split("=");
+            if (q2.length > 1) {
+              const r2 = q2[0];
+              q2 = q2[1];
               const A2 = r2.split("_");
-              g = A2.length >= 2 && A2[1] == "type" ? g + (r2 + "=" + q + "&") : g + (r2 + "=redacted&");
+              g = A2.length >= 2 && A2[1] == "type" ? g + (r2 + "=" + q2 + "&") : g + (r2 + "=redacted&");
             }
           }
         } else g = null;
@@ -11149,7 +4405,7 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       this.i = b2;
       this.l = c2;
       this.S = d || 1;
-      this.V = new E(this);
+      this.V = new E2(this);
       this.H = 45e3;
       this.J = null;
       this.o = false;
@@ -11218,9 +4474,9 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
     N.prototype.Y = function(a) {
       try {
         if (a == this.g) a: {
-          const k2 = P(this.g), q = this.g.ya(), m2 = this.g.ca();
+          const k2 = P(this.g), q2 = this.g.ya(), m2 = this.g.ca();
           if (!(k2 < 3) && (k2 != 3 || this.g && (this.h.h || this.g.la() || Ib(this.g)))) {
-            this.K || k2 != 4 || q == 7 || (q == 8 || m2 <= 0 ? lb(3) : lb(2));
+            this.K || k2 != 4 || q2 == 7 || (q2 == 8 || m2 <= 0 ? lb(3) : lb(2));
             Jb(this);
             var b2 = this.g.ca();
             this.X = b2;
@@ -11404,8 +4660,8 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
               d.na = Zb(d, d.L ? d.ba : null, d.W);
               if (g.L) {
                 $b(d.h, g);
-                var k2 = g, q = d.O;
-                q && (k2.H = q);
+                var k2 = g, q2 = d.O;
+                q2 && (k2.H = q2);
                 k2.D && (Jb(k2), Fb(k2));
                 d.g = g;
               } else ac(d);
@@ -12215,8 +5471,8 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
         var e2 = a.i;
         let k2 = -1;
         for (; ; ) {
-          const q = ["count=" + c2];
-          k2 == -1 ? c2 > 0 ? (k2 = e2[0].g, q.push("ofs=" + k2)) : k2 = 0 : q.push("ofs=" + k2);
+          const q2 = ["count=" + c2];
+          k2 == -1 ? c2 > 0 ? (k2 = e2[0].g, q2.push("ofs=" + k2)) : k2 = 0 : q2.push("ofs=" + k2);
           let m2 = true;
           for (let r2 = 0; r2 < c2; r2++) {
             var f = e2[r2].g;
@@ -12230,17 +5486,17 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
                 for (const [M2, F] of g) {
                   let G2 = F;
                   n2(F) && (G2 = ab(F));
-                  q.push(f + M2 + "=" + encodeURIComponent(G2));
+                  q2.push(f + M2 + "=" + encodeURIComponent(G2));
                 }
               } catch (M2) {
-                throw q.push(f + "type=" + encodeURIComponent("_badmap")), M2;
+                throw q2.push(f + "type=" + encodeURIComponent("_badmap")), M2;
               }
             } catch (M2) {
               d && d(A2);
             }
           }
           if (m2) {
-            g = q.join("&");
+            g = q2.join("&");
             break a;
           }
         }
@@ -14517,18 +7773,18 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       }
       runq.clear();
     }
-    add(q, pc, pos, capArray, capOffset, cond) {
+    add(q2, pc, pos, capArray, capOffset, cond) {
       while (true) {
         if (pc === 0) return;
-        if (q.contains(pc)) return;
-        const d = q.add(pc);
+        if (q2.contains(pc)) return;
+        const d = q2.add(pc);
         const inst = this.prog.inst[pc];
         switch (inst.op) {
           case Inst.FAIL:
             return;
           case Inst.ALT:
           case Inst.ALT_MATCH:
-            this.add(q, inst.out, pos, capArray, capOffset, cond);
+            this.add(q2, inst.out, pos, capArray, capOffset, cond);
             pc = inst.arg;
             continue;
           case Inst.EMPTY_WIDTH:
@@ -14544,7 +7800,7 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
             if (inst.arg < this.ncap) {
               const opos = capArray[capOffset + inst.arg];
               capArray[capOffset + inst.arg] = pos;
-              this.add(q, inst.out, pos, capArray, capOffset, cond);
+              this.add(q2, inst.out, pos, capArray, capOffset, cond);
               capArray[capOffset + inst.arg] = opos;
               return;
             } else {
@@ -14573,7 +7829,7 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
           case Inst.RUNE_ANY_NOT_NL:
             if (this.ncap > 0) {
               const destOffset = d * this.ncap;
-              for (let c2 = 0; c2 < this.ncap; c2++) q.denseCaps[destOffset + c2] = capArray[capOffset + c2];
+              for (let c2 = 0; c2 < this.ncap; c2++) q2.denseCaps[destOffset + c2] = capArray[capOffset + c2];
             }
             return;
           default:
@@ -20105,8 +13361,8 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
      * @param useFetchStreams - Whether to use the Fetch API instead of
      * XMLHTTPRequest
      */
-    constructor(e2, t2, n2, r2, i2, s2, _, o2, a, u2, c2, l2, E) {
-      this.databaseId = e2, this.appId = t2, this.persistenceKey = n2, this.host = r2, this.ssl = i2, this.forceLongPolling = s2, this.autoDetectLongPolling = _, this.longPollingOptions = o2, this.useFetchStreams = a, this.isUsingEmulator = u2, this.apiKey = c2, this._customHeaders = l2, this.grpcFlowControlWindow = E;
+    constructor(e2, t2, n2, r2, i2, s2, _, o2, a, u2, c2, l2, E2) {
+      this.databaseId = e2, this.appId = t2, this.persistenceKey = n2, this.host = r2, this.ssl = i2, this.forceLongPolling = s2, this.autoDetectLongPolling = _, this.longPollingOptions = o2, this.useFetchStreams = a, this.isUsingEmulator = u2, this.apiKey = c2, this._customHeaders = l2, this.grpcFlowControlWindow = E2;
     }
   };
   var Ke = "(default)";
@@ -24344,21 +17600,21 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
       __PRIVATE_logDebug(Gt, `Creating RPC '${t2}' stream ${i2}: ${u2}`, o2);
       const c2 = _.createWebChannel(u2, o2);
       this.Qn(c2);
-      let l2 = false, E = false;
+      let l2 = false, E2 = false;
       const h = new __PRIVATE_StreamBridge({
         dn: (e2) => {
-          E ? __PRIVATE_logDebug(Gt, `Not sending because RPC '${t2}' stream ${i2} is closed:`, e2) : (l2 || (__PRIVATE_logDebug(Gt, `Opening RPC '${t2}' stream ${i2} transport.`), c2.open(), l2 = true), __PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} sending:`, e2), c2.send(e2));
+          E2 ? __PRIVATE_logDebug(Gt, `Not sending because RPC '${t2}' stream ${i2} is closed:`, e2) : (l2 || (__PRIVATE_logDebug(Gt, `Opening RPC '${t2}' stream ${i2} transport.`), c2.open(), l2 = true), __PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} sending:`, e2), c2.send(e2));
         },
         mn: () => c2.close()
       });
       return __PRIVATE_unguardedEventListen(c2, WebChannel.EventType.OPEN, (() => {
-        E || (__PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} transport opened.`), h.vn());
+        E2 || (__PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} transport opened.`), h.vn());
       })), __PRIVATE_unguardedEventListen(c2, WebChannel.EventType.CLOSE, (() => {
-        E || (E = true, __PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} transport closed`), h.Cn(), this.qn(c2));
+        E2 || (E2 = true, __PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} transport closed`), h.Cn(), this.qn(c2));
       })), __PRIVATE_unguardedEventListen(c2, WebChannel.EventType.ERROR, ((n3) => {
-        E || (E = true, __PRIVATE_logWarn(Gt, `RPC '${t2}' stream ${i2} transport errored. Name:`, n3.name, "Message:", n3.message), h.Cn(new e(ta.UNAVAILABLE, "The operation could not be completed")));
+        E2 || (E2 = true, __PRIVATE_logWarn(Gt, `RPC '${t2}' stream ${i2} transport errored. Name:`, n3.name, "Message:", n3.message), h.Cn(new e(ta.UNAVAILABLE, "The operation could not be completed")));
       })), __PRIVATE_unguardedEventListen(c2, WebChannel.EventType.MESSAGE, ((n3) => {
-        if (!E) {
+        if (!E2) {
           const r3 = n3.data[0];
           __PRIVATE_hardAssert(!!r3, 16349);
           const s3 = r3, _2 = s3?.error || s3[0]?.error;
@@ -24378,7 +17634,7 @@ Vec\u0101ks sa\u0146ems pieteikumu un var\u0113s to apstiprin\u0101t.`);
               })(n4)
             ), s4 = _2.message;
             "NOT_FOUND" === n4 && s4.includes("database") && s4.includes("does not exist") && s4.includes(this.databaseId.database) && __PRIVATE_logWarn(`Database '${this.databaseId.database}' not found. Please check your project configuration.`), void 0 === r4 && (r4 = ta.INTERNAL, s4 = "Unknown error status: " + n4 + " with message " + _2.message), // Mark closed so no further events are propagated
-            E = true, h.Cn(new e(r4, s4)), c2.close();
+            E2 = true, h.Cn(new e(r4, s4)), c2.close();
           } else __PRIVATE_logDebug(Gt, `RPC '${t2}' stream ${i2} received:`, r3), h.Fn(r3);
         }
       })), // Ensure that event listeners are configured for STAT_EVENTs.
@@ -25625,8 +18881,8 @@ Total Duration: ${a - u2}ms`);
         null != e3 && (c2.push(t3), l2.set(t3, e3));
       }
     }
-    const E = new FieldMask(c2);
-    return new ParsedUpdateData(l2, E, o2.fieldTransforms);
+    const E2 = new FieldMask(c2);
+    return new ParsedUpdateData(l2, E2, o2.fieldTransforms);
   }
   function __PRIVATE_parseQueryValue(e2, t2, n2, r2 = false) {
     return __PRIVATE_parseData(n2, e2.createContext(r2 ? 4 : 3, t2));
@@ -29828,7 +23084,7 @@ Total Duration: ${a - u2}ms`);
       if (!__PRIVATE_isTimestampInBounds(u2.seconds, u2.nanoseconds)) return __PRIVATE_EvaluateResult.Ci();
       const c2 = __PRIVATE_timestampToMicros(u2), l2 = this.ji(c2, a);
       if (!__PRIVATE_isMicrosInBounds(l2)) return __PRIVATE_EvaluateResult.Ci();
-      const E = Number(l2 / Pn), h = l2 % Pn, T = Number((h < 0 ? h + Pn : h) * BigInt(1e3)), P = h < 0 ? E - 1 : E;
+      const E2 = Number(l2 / Pn), h = l2 % Pn, T = Number((h < 0 ? h + Pn : h) * BigInt(1e3)), P = h < 0 ? E2 - 1 : E2;
       return __PRIVATE_isTimestampInBounds(P, T) ? __PRIVATE_EvaluateResult.newValue({
         timestampValue: {
           seconds: P,
@@ -32832,12 +26088,12 @@ This typically indicates that your device does not have a healthy Internet conne
       let i2 = t2 ? t2.mutatedKeys : this.mutatedKeys, s2 = r2, _ = false;
       const [o2, a] = this.Vl(this.query, r2);
       e2.inorderTraversal(((e3, t3) => {
-        const u3 = r2.get(e3), c2 = __PRIVATE_queryOrPipelineMatches(this.query, t3) ? t3 : null, l2 = !!u3 && this.mutatedKeys.has(u3.key), E = !!c2 && (c2.hasLocalMutations || // We only consider committed mutations for documents that were
+        const u3 = r2.get(e3), c2 = __PRIVATE_queryOrPipelineMatches(this.query, t3) ? t3 : null, l2 = !!u3 && this.mutatedKeys.has(u3.key), E2 = !!c2 && (c2.hasLocalMutations || // We only consider committed mutations for documents that were
         // mutated during the lifetime of the view.
         this.mutatedKeys.has(c2.key) && c2.hasCommittedMutations);
         let h = false;
         if (u3 && c2) {
-          u3.data.isEqual(c2.data) ? l2 !== E && (n2.track({
+          u3.data.isEqual(c2.data) ? l2 !== E2 && (n2.track({
             type: 3,
             doc: c2
           }), h = true) : this.fl(u3, c2) || (n2.track({
@@ -32857,7 +26113,7 @@ This typically indicates that your device does not have a healthy Internet conne
         // requery from the local cache to see if we know about some other
         // doc that should be in the results.
         (_ = true));
-        h && (c2 ? (s2 = s2.add(c2), i2 = E ? i2.add(e3) : i2.delete(e3)) : (s2 = s2.delete(e3), i2 = i2.delete(e3)));
+        h && (c2 ? (s2 = s2.add(c2), i2 = E2 ? i2.add(e3) : i2.delete(e3)) : (s2 = s2.delete(e3), i2 = i2.delete(e3)));
       }));
       const u2 = this.dl(this.query);
       if (u2) if (__PRIVATE_isPipeline(this.query)) {
@@ -34568,6 +27824,6121 @@ This typically indicates that your device does not have a healthy Internet conne
     registerVersion(Me2, Le2, "esm2020");
   })();
 
+  // node_modules/firebase/app/dist/esm/index.esm.js
+  var name2 = "firebase";
+  var version2 = "13.0.0";
+  registerVersion(name2, version2, "app");
+
+  // node_modules/@firebase/auth/dist/esm/index-LY22yodV.js
+  function _prodErrorMap() {
+    return {
+      [
+        "dependent-sdk-initialized-before-auth"
+        /* AuthErrorCode.DEPENDENT_SDK_INIT_BEFORE_AUTH */
+      ]: "Another Firebase SDK was initialized and is trying to use Auth before Auth is initialized. Please be sure to call `initializeAuth` or `getAuth` before starting any other Firebase SDK."
+    };
+  }
+  var prodErrorMap = _prodErrorMap;
+  var _DEFAULT_AUTH_ERROR_FACTORY = new ErrorFactory("auth", "Firebase", _prodErrorMap());
+  var logClient = new Logger("@firebase/auth");
+  function _logWarn(msg, ...args) {
+    if (logClient.logLevel <= LogLevel.WARN) {
+      logClient.warn(`Auth (${SDK_VERSION}): ${msg}`, ...args);
+    }
+  }
+  function _logError(msg, ...args) {
+    if (logClient.logLevel <= LogLevel.ERROR) {
+      logClient.error(`Auth (${SDK_VERSION}): ${msg}`, ...args);
+    }
+  }
+  function _fail(authOrCode, ...rest) {
+    throw createErrorInternal(authOrCode, ...rest);
+  }
+  function _createError(authOrCode, ...rest) {
+    return createErrorInternal(authOrCode, ...rest);
+  }
+  function _errorWithCustomMessage(auth2, code, message2) {
+    const errorMap = {
+      ...prodErrorMap(),
+      [code]: message2
+    };
+    const factory = new ErrorFactory("auth", "Firebase", errorMap);
+    return factory.create(code, {
+      appName: auth2.name
+    });
+  }
+  function _serverAppCurrentUserOperationNotSupportedError(auth2) {
+    return _errorWithCustomMessage(auth2, "operation-not-supported-in-this-environment", "Operations that alter the current user are not supported in conjunction with FirebaseServerApp");
+  }
+  function createErrorInternal(authOrCode, ...rest) {
+    if (typeof authOrCode !== "string") {
+      const code = rest[0];
+      const fullParams = [...rest.slice(1)];
+      if (fullParams[0]) {
+        fullParams[0].appName = authOrCode.name;
+      }
+      return authOrCode._errorFactory.create(code, ...fullParams);
+    }
+    return _DEFAULT_AUTH_ERROR_FACTORY.create(authOrCode, ...rest);
+  }
+  function _assert(assertion, authOrCode, ...rest) {
+    if (!assertion) {
+      throw createErrorInternal(authOrCode, ...rest);
+    }
+  }
+  function debugFail(failure) {
+    const message2 = `INTERNAL ASSERTION FAILED: ` + failure;
+    _logError(message2);
+    throw new Error(message2);
+  }
+  function debugAssert(assertion, message2) {
+    if (!assertion) {
+      debugFail(message2);
+    }
+  }
+  function _getCurrentUrl() {
+    return typeof self !== "undefined" && self.location?.href || "";
+  }
+  function _isHttpOrHttps() {
+    return _getCurrentScheme() === "http:" || _getCurrentScheme() === "https:";
+  }
+  function _getCurrentScheme() {
+    return typeof self !== "undefined" && self.location?.protocol || null;
+  }
+  function _isOnline() {
+    if (typeof navigator !== "undefined" && navigator && "onLine" in navigator && typeof navigator.onLine === "boolean" && // Apply only for traditional web apps and Chrome extensions.
+    // This is especially true for Cordova apps which have unreliable
+    // navigator.onLine behavior unless cordova-plugin-network-information is
+    // installed which overwrites the native navigator.onLine value and
+    // defines navigator.connection.
+    (_isHttpOrHttps() || isBrowserExtension() || "connection" in navigator)) {
+      return navigator.onLine;
+    }
+    return true;
+  }
+  function _getUserLanguage() {
+    if (typeof navigator === "undefined") {
+      return null;
+    }
+    const navigatorLanguage = navigator;
+    return (
+      // Most reliable, but only supported in Chrome/Firefox.
+      navigatorLanguage.languages && navigatorLanguage.languages[0] || // Supported in most browsers, but returns the language of the browser
+      // UI, not the language set in browser settings.
+      navigatorLanguage.language || // Couldn't determine language.
+      null
+    );
+  }
+  var Delay = class {
+    constructor(shortDelay, longDelay) {
+      this.shortDelay = shortDelay;
+      this.longDelay = longDelay;
+      debugAssert(longDelay > shortDelay, "Short delay should be less than long delay!");
+      this.isMobile = isMobileCordova() || isReactNative();
+    }
+    get() {
+      if (!_isOnline()) {
+        return Math.min(5e3, this.shortDelay);
+      }
+      return this.isMobile ? this.longDelay : this.shortDelay;
+    }
+  };
+  function _emulatorUrl(config, path) {
+    debugAssert(config.emulator, "Emulator should always be set here");
+    const { url } = config.emulator;
+    if (!path) {
+      return url;
+    }
+    return `${url}${path.startsWith("/") ? path.slice(1) : path}`;
+  }
+  var FetchProvider = class {
+    static initialize(fetchImpl, headersImpl, responseImpl) {
+      this.fetchImpl = fetchImpl;
+      if (headersImpl) {
+        this.headersImpl = headersImpl;
+      }
+      if (responseImpl) {
+        this.responseImpl = responseImpl;
+      }
+    }
+    static fetch() {
+      if (this.fetchImpl) {
+        return this.fetchImpl;
+      }
+      if (typeof self !== "undefined" && "fetch" in self) {
+        return self.fetch;
+      }
+      if (typeof globalThis !== "undefined" && globalThis.fetch) {
+        return globalThis.fetch;
+      }
+      if (typeof fetch !== "undefined") {
+        return fetch;
+      }
+      debugFail("Could not find fetch implementation, make sure you call FetchProvider.initialize() with an appropriate polyfill");
+    }
+    static headers() {
+      if (this.headersImpl) {
+        return this.headersImpl;
+      }
+      if (typeof self !== "undefined" && "Headers" in self) {
+        return self.Headers;
+      }
+      if (typeof globalThis !== "undefined" && globalThis.Headers) {
+        return globalThis.Headers;
+      }
+      if (typeof Headers !== "undefined") {
+        return Headers;
+      }
+      debugFail("Could not find Headers implementation, make sure you call FetchProvider.initialize() with an appropriate polyfill");
+    }
+    static response() {
+      if (this.responseImpl) {
+        return this.responseImpl;
+      }
+      if (typeof self !== "undefined" && "Response" in self) {
+        return self.Response;
+      }
+      if (typeof globalThis !== "undefined" && globalThis.Response) {
+        return globalThis.Response;
+      }
+      if (typeof Response !== "undefined") {
+        return Response;
+      }
+      debugFail("Could not find Response implementation, make sure you call FetchProvider.initialize() with an appropriate polyfill");
+    }
+  };
+  var SERVER_ERROR_MAP = {
+    // Custom token errors.
+    [
+      "CREDENTIAL_MISMATCH"
+      /* ServerError.CREDENTIAL_MISMATCH */
+    ]: "custom-token-mismatch",
+    // This can only happen if the SDK sends a bad request.
+    [
+      "MISSING_CUSTOM_TOKEN"
+      /* ServerError.MISSING_CUSTOM_TOKEN */
+    ]: "internal-error",
+    // Create Auth URI errors.
+    [
+      "INVALID_IDENTIFIER"
+      /* ServerError.INVALID_IDENTIFIER */
+    ]: "invalid-email",
+    // This can only happen if the SDK sends a bad request.
+    [
+      "MISSING_CONTINUE_URI"
+      /* ServerError.MISSING_CONTINUE_URI */
+    ]: "internal-error",
+    // Sign in with email and password errors (some apply to sign up too).
+    [
+      "INVALID_PASSWORD"
+      /* ServerError.INVALID_PASSWORD */
+    ]: "wrong-password",
+    // This can only happen if the SDK sends a bad request.
+    [
+      "MISSING_PASSWORD"
+      /* ServerError.MISSING_PASSWORD */
+    ]: "missing-password",
+    // Thrown if Email Enumeration Protection is enabled in the project and the email or password is
+    // invalid.
+    [
+      "INVALID_LOGIN_CREDENTIALS"
+      /* ServerError.INVALID_LOGIN_CREDENTIALS */
+    ]: "invalid-credential",
+    // Sign up with email and password errors.
+    [
+      "EMAIL_EXISTS"
+      /* ServerError.EMAIL_EXISTS */
+    ]: "email-already-in-use",
+    [
+      "PASSWORD_LOGIN_DISABLED"
+      /* ServerError.PASSWORD_LOGIN_DISABLED */
+    ]: "operation-not-allowed",
+    // Verify assertion for sign in with credential errors:
+    [
+      "INVALID_IDP_RESPONSE"
+      /* ServerError.INVALID_IDP_RESPONSE */
+    ]: "invalid-credential",
+    [
+      "INVALID_PENDING_TOKEN"
+      /* ServerError.INVALID_PENDING_TOKEN */
+    ]: "invalid-credential",
+    [
+      "FEDERATED_USER_ID_ALREADY_LINKED"
+      /* ServerError.FEDERATED_USER_ID_ALREADY_LINKED */
+    ]: "credential-already-in-use",
+    // This can only happen if the SDK sends a bad request.
+    [
+      "MISSING_REQ_TYPE"
+      /* ServerError.MISSING_REQ_TYPE */
+    ]: "internal-error",
+    // Send Password reset email errors:
+    [
+      "EMAIL_NOT_FOUND"
+      /* ServerError.EMAIL_NOT_FOUND */
+    ]: "user-not-found",
+    [
+      "RESET_PASSWORD_EXCEED_LIMIT"
+      /* ServerError.RESET_PASSWORD_EXCEED_LIMIT */
+    ]: "too-many-requests",
+    [
+      "EXPIRED_OOB_CODE"
+      /* ServerError.EXPIRED_OOB_CODE */
+    ]: "expired-action-code",
+    [
+      "INVALID_OOB_CODE"
+      /* ServerError.INVALID_OOB_CODE */
+    ]: "invalid-action-code",
+    // This can only happen if the SDK sends a bad request.
+    [
+      "MISSING_OOB_CODE"
+      /* ServerError.MISSING_OOB_CODE */
+    ]: "internal-error",
+    // Operations that require ID token in request:
+    [
+      "CREDENTIAL_TOO_OLD_LOGIN_AGAIN"
+      /* ServerError.CREDENTIAL_TOO_OLD_LOGIN_AGAIN */
+    ]: "requires-recent-login",
+    [
+      "INVALID_ID_TOKEN"
+      /* ServerError.INVALID_ID_TOKEN */
+    ]: "invalid-user-token",
+    [
+      "TOKEN_EXPIRED"
+      /* ServerError.TOKEN_EXPIRED */
+    ]: "user-token-expired",
+    [
+      "USER_NOT_FOUND"
+      /* ServerError.USER_NOT_FOUND */
+    ]: "user-token-expired",
+    // Other errors.
+    [
+      "TOO_MANY_ATTEMPTS_TRY_LATER"
+      /* ServerError.TOO_MANY_ATTEMPTS_TRY_LATER */
+    ]: "too-many-requests",
+    [
+      "PASSWORD_DOES_NOT_MEET_REQUIREMENTS"
+      /* ServerError.PASSWORD_DOES_NOT_MEET_REQUIREMENTS */
+    ]: "password-does-not-meet-requirements",
+    // Phone Auth related errors.
+    [
+      "INVALID_CODE"
+      /* ServerError.INVALID_CODE */
+    ]: "invalid-verification-code",
+    [
+      "INVALID_SESSION_INFO"
+      /* ServerError.INVALID_SESSION_INFO */
+    ]: "invalid-verification-id",
+    [
+      "INVALID_TEMPORARY_PROOF"
+      /* ServerError.INVALID_TEMPORARY_PROOF */
+    ]: "invalid-credential",
+    [
+      "MISSING_SESSION_INFO"
+      /* ServerError.MISSING_SESSION_INFO */
+    ]: "missing-verification-id",
+    [
+      "SESSION_EXPIRED"
+      /* ServerError.SESSION_EXPIRED */
+    ]: "code-expired",
+    // Other action code errors when additional settings passed.
+    // MISSING_CONTINUE_URI is getting mapped to INTERNAL_ERROR above.
+    // This is OK as this error will be caught by client side validation.
+    [
+      "MISSING_ANDROID_PACKAGE_NAME"
+      /* ServerError.MISSING_ANDROID_PACKAGE_NAME */
+    ]: "missing-android-pkg-name",
+    [
+      "UNAUTHORIZED_DOMAIN"
+      /* ServerError.UNAUTHORIZED_DOMAIN */
+    ]: "unauthorized-continue-uri",
+    // getProjectConfig errors when clientId is passed.
+    [
+      "INVALID_OAUTH_CLIENT_ID"
+      /* ServerError.INVALID_OAUTH_CLIENT_ID */
+    ]: "invalid-oauth-client-id",
+    // User actions (sign-up or deletion) disabled errors.
+    [
+      "ADMIN_ONLY_OPERATION"
+      /* ServerError.ADMIN_ONLY_OPERATION */
+    ]: "admin-restricted-operation",
+    // Multi factor related errors.
+    [
+      "INVALID_MFA_PENDING_CREDENTIAL"
+      /* ServerError.INVALID_MFA_PENDING_CREDENTIAL */
+    ]: "invalid-multi-factor-session",
+    [
+      "MFA_ENROLLMENT_NOT_FOUND"
+      /* ServerError.MFA_ENROLLMENT_NOT_FOUND */
+    ]: "multi-factor-info-not-found",
+    [
+      "MISSING_MFA_ENROLLMENT_ID"
+      /* ServerError.MISSING_MFA_ENROLLMENT_ID */
+    ]: "missing-multi-factor-info",
+    [
+      "MISSING_MFA_PENDING_CREDENTIAL"
+      /* ServerError.MISSING_MFA_PENDING_CREDENTIAL */
+    ]: "missing-multi-factor-session",
+    [
+      "SECOND_FACTOR_EXISTS"
+      /* ServerError.SECOND_FACTOR_EXISTS */
+    ]: "second-factor-already-in-use",
+    [
+      "SECOND_FACTOR_LIMIT_EXCEEDED"
+      /* ServerError.SECOND_FACTOR_LIMIT_EXCEEDED */
+    ]: "maximum-second-factor-count-exceeded",
+    // Blocking functions related errors.
+    [
+      "BLOCKING_FUNCTION_ERROR_RESPONSE"
+      /* ServerError.BLOCKING_FUNCTION_ERROR_RESPONSE */
+    ]: "internal-error",
+    // Recaptcha related errors.
+    [
+      "RECAPTCHA_NOT_ENABLED"
+      /* ServerError.RECAPTCHA_NOT_ENABLED */
+    ]: "recaptcha-not-enabled",
+    [
+      "MISSING_RECAPTCHA_TOKEN"
+      /* ServerError.MISSING_RECAPTCHA_TOKEN */
+    ]: "missing-recaptcha-token",
+    [
+      "INVALID_RECAPTCHA_TOKEN"
+      /* ServerError.INVALID_RECAPTCHA_TOKEN */
+    ]: "invalid-recaptcha-token",
+    [
+      "INVALID_RECAPTCHA_ACTION"
+      /* ServerError.INVALID_RECAPTCHA_ACTION */
+    ]: "invalid-recaptcha-action",
+    [
+      "MISSING_CLIENT_TYPE"
+      /* ServerError.MISSING_CLIENT_TYPE */
+    ]: "missing-client-type",
+    [
+      "MISSING_RECAPTCHA_VERSION"
+      /* ServerError.MISSING_RECAPTCHA_VERSION */
+    ]: "missing-recaptcha-version",
+    [
+      "INVALID_RECAPTCHA_VERSION"
+      /* ServerError.INVALID_RECAPTCHA_VERSION */
+    ]: "invalid-recaptcha-version",
+    [
+      "INVALID_REQ_TYPE"
+      /* ServerError.INVALID_REQ_TYPE */
+    ]: "invalid-req-type"
+    /* AuthErrorCode.INVALID_REQ_TYPE */
+  };
+  var CookieAuthProxiedEndpoints = [
+    "/v1/accounts:signInWithCustomToken",
+    "/v1/accounts:signInWithEmailLink",
+    "/v1/accounts:signInWithIdp",
+    "/v1/accounts:signInWithPassword",
+    "/v1/accounts:signInWithPhoneNumber",
+    "/v1/token"
+    /* Endpoint.TOKEN */
+  ];
+  var DEFAULT_API_TIMEOUT_MS = new Delay(3e4, 6e4);
+  function _addTidIfNecessary(auth2, request) {
+    if (auth2.tenantId && !request.tenantId) {
+      return {
+        ...request,
+        tenantId: auth2.tenantId
+      };
+    }
+    return request;
+  }
+  async function _performApiRequest(auth2, method, path, request, customErrorMap = {}) {
+    return _performFetchWithErrorHandling(auth2, customErrorMap, async () => {
+      let body = {};
+      let params = {};
+      if (request) {
+        if (method === "GET") {
+          params = request;
+        } else {
+          body = {
+            body: JSON.stringify(request)
+          };
+        }
+      }
+      const query2 = querystring({
+        ...params,
+        key: auth2.config.apiKey
+      }).slice(1);
+      const headers = await auth2._getAdditionalHeaders();
+      headers[
+        "Content-Type"
+        /* HttpHeader.CONTENT_TYPE */
+      ] = "application/json";
+      if (auth2.languageCode) {
+        headers[
+          "X-Firebase-Locale"
+          /* HttpHeader.X_FIREBASE_LOCALE */
+        ] = auth2.languageCode;
+      }
+      const fetchArgs = {
+        method,
+        headers,
+        ...body
+      };
+      if (!isCloudflareWorker()) {
+        fetchArgs.referrerPolicy = "strict-origin-when-cross-origin";
+      }
+      if (auth2.emulatorConfig && isCloudWorkstation(auth2.emulatorConfig.host)) {
+        fetchArgs.credentials = "include";
+      }
+      return FetchProvider.fetch()(await _getFinalTarget(auth2, auth2.config.apiHost, path, query2), fetchArgs);
+    });
+  }
+  async function _performFetchWithErrorHandling(auth2, customErrorMap, fetchFn) {
+    auth2._canInitEmulator = false;
+    const errorMap = { ...SERVER_ERROR_MAP, ...customErrorMap };
+    try {
+      const networkTimeout = new NetworkTimeout(auth2);
+      const response = await Promise.race([
+        fetchFn(),
+        networkTimeout.promise
+      ]);
+      networkTimeout.clearNetworkTimeout();
+      const json = await response.json();
+      if ("needConfirmation" in json) {
+        throw _makeTaggedError(auth2, "account-exists-with-different-credential", json);
+      }
+      if (response.ok && !("errorMessage" in json)) {
+        return json;
+      } else {
+        const errorMessage = response.ok ? json.errorMessage : json.error.message;
+        const [serverErrorCode, serverErrorMessage] = errorMessage.split(" : ");
+        if (serverErrorCode === "FEDERATED_USER_ID_ALREADY_LINKED") {
+          throw _makeTaggedError(auth2, "credential-already-in-use", json);
+        } else if (serverErrorCode === "EMAIL_EXISTS") {
+          throw _makeTaggedError(auth2, "email-already-in-use", json);
+        } else if (serverErrorCode === "USER_DISABLED") {
+          throw _makeTaggedError(auth2, "user-disabled", json);
+        }
+        const authError = errorMap[serverErrorCode] || serverErrorCode.toLowerCase().replace(/[_\s]+/g, "-");
+        if (serverErrorMessage) {
+          throw _errorWithCustomMessage(auth2, authError, serverErrorMessage);
+        } else {
+          _fail(auth2, authError);
+        }
+      }
+    } catch (e2) {
+      if (e2 instanceof FirebaseError) {
+        throw e2;
+      }
+      _fail(auth2, "network-request-failed", { "message": String(e2) });
+    }
+  }
+  async function _performSignInRequest(auth2, method, path, request, customErrorMap = {}) {
+    const serverResponse = await _performApiRequest(auth2, method, path, request, customErrorMap);
+    if ("mfaPendingCredential" in serverResponse) {
+      _fail(auth2, "multi-factor-auth-required", {
+        _serverResponse: serverResponse
+      });
+    }
+    return serverResponse;
+  }
+  async function _getFinalTarget(auth2, host, path, query2) {
+    const base = `${host}${path}?${query2}`;
+    const authInternal = auth2;
+    const finalTarget = authInternal.config.emulator ? _emulatorUrl(auth2.config, base) : `${auth2.config.apiScheme}://${base}`;
+    if (CookieAuthProxiedEndpoints.includes(path)) {
+      await authInternal._persistenceManagerAvailable;
+      if (authInternal._getPersistenceType() === "COOKIE") {
+        const cookiePersistence = authInternal._getPersistence();
+        return cookiePersistence._getFinalTarget(finalTarget).toString();
+      }
+    }
+    return finalTarget;
+  }
+  function _parseEnforcementState(enforcementStateStr) {
+    switch (enforcementStateStr) {
+      case "ENFORCE":
+        return "ENFORCE";
+      case "AUDIT":
+        return "AUDIT";
+      case "OFF":
+        return "OFF";
+      default:
+        return "ENFORCEMENT_STATE_UNSPECIFIED";
+    }
+  }
+  var NetworkTimeout = class {
+    clearNetworkTimeout() {
+      clearTimeout(this.timer);
+    }
+    constructor(auth2) {
+      this.auth = auth2;
+      this.timer = null;
+      this.promise = new Promise((_, reject) => {
+        this.timer = setTimeout(() => {
+          return reject(_createError(
+            this.auth,
+            "network-request-failed"
+            /* AuthErrorCode.NETWORK_REQUEST_FAILED */
+          ));
+        }, DEFAULT_API_TIMEOUT_MS.get());
+      });
+    }
+  };
+  function _makeTaggedError(auth2, code, response) {
+    const errorParams = {
+      appName: auth2.name
+    };
+    if (response.email) {
+      errorParams.email = response.email;
+    }
+    if (response.phoneNumber) {
+      errorParams.phoneNumber = response.phoneNumber;
+    }
+    const error = _createError(auth2, code, errorParams);
+    error.customData._tokenResponse = response;
+    return error;
+  }
+  function isEnterprise(grecaptcha) {
+    return grecaptcha !== void 0 && grecaptcha.enterprise !== void 0;
+  }
+  var RecaptchaConfig = class {
+    constructor(response) {
+      this.siteKey = "";
+      this.recaptchaEnforcementState = [];
+      if (response.recaptchaKey === void 0) {
+        throw new Error("recaptchaKey undefined");
+      }
+      this.siteKey = response.recaptchaKey.split("/")[3];
+      this.recaptchaEnforcementState = response.recaptchaEnforcementState;
+    }
+    /**
+     * Returns the reCAPTCHA Enterprise enforcement state for the given provider.
+     *
+     * @param providerStr - The provider whose enforcement state is to be returned.
+     * @returns The reCAPTCHA Enterprise enforcement state for the given provider.
+     */
+    getProviderEnforcementState(providerStr) {
+      if (!this.recaptchaEnforcementState || this.recaptchaEnforcementState.length === 0) {
+        return null;
+      }
+      for (const recaptchaEnforcementState of this.recaptchaEnforcementState) {
+        if (recaptchaEnforcementState.provider && recaptchaEnforcementState.provider === providerStr) {
+          return _parseEnforcementState(recaptchaEnforcementState.enforcementState);
+        }
+      }
+      return null;
+    }
+    /**
+     * Returns true if the reCAPTCHA Enterprise enforcement state for the provider is set to ENFORCE or AUDIT.
+     *
+     * @param providerStr - The provider whose enablement state is to be returned.
+     * @returns Whether or not reCAPTCHA Enterprise protection is enabled for the given provider.
+     */
+    isProviderEnabled(providerStr) {
+      return this.getProviderEnforcementState(providerStr) === "ENFORCE" || this.getProviderEnforcementState(providerStr) === "AUDIT";
+    }
+    /**
+     * Returns true if reCAPTCHA Enterprise protection is enabled in at least one provider, otherwise
+     * returns false.
+     *
+     * @returns Whether or not reCAPTCHA Enterprise protection is enabled for at least one provider.
+     */
+    isAnyProviderEnabled() {
+      return this.isProviderEnabled(
+        "EMAIL_PASSWORD_PROVIDER"
+        /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
+      ) || this.isProviderEnabled(
+        "PHONE_PROVIDER"
+        /* RecaptchaAuthProvider.PHONE_PROVIDER */
+      );
+    }
+  };
+  async function getRecaptchaConfig(auth2, request) {
+    return _performApiRequest(auth2, "GET", "/v2/recaptchaConfig", _addTidIfNecessary(auth2, request));
+  }
+  async function deleteAccount(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v1/accounts:delete", request);
+  }
+  async function getAccountInfo(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v1/accounts:lookup", request);
+  }
+  function utcTimestampToDateString(utcTimestamp) {
+    if (!utcTimestamp) {
+      return void 0;
+    }
+    try {
+      const date = new Date(Number(utcTimestamp));
+      if (!isNaN(date.getTime())) {
+        return date.toUTCString();
+      }
+    } catch (e2) {
+    }
+    return void 0;
+  }
+  async function getIdTokenResult(user, forceRefresh = false) {
+    const userInternal = getModularInstance(user);
+    const token = await userInternal.getIdToken(forceRefresh);
+    const claims2 = _parseToken(token);
+    _assert(
+      claims2 && claims2.exp && claims2.auth_time && claims2.iat,
+      userInternal.auth,
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    const firebase = typeof claims2.firebase === "object" ? claims2.firebase : void 0;
+    const signInProvider = firebase?.["sign_in_provider"];
+    return {
+      claims: claims2,
+      token,
+      authTime: utcTimestampToDateString(secondsStringToMilliseconds(claims2.auth_time)),
+      issuedAtTime: utcTimestampToDateString(secondsStringToMilliseconds(claims2.iat)),
+      expirationTime: utcTimestampToDateString(secondsStringToMilliseconds(claims2.exp)),
+      signInProvider: signInProvider || null,
+      signInSecondFactor: firebase?.["sign_in_second_factor"] || null
+    };
+  }
+  function secondsStringToMilliseconds(seconds) {
+    return Number(seconds) * 1e3;
+  }
+  function _parseToken(token) {
+    const [algorithm, payload, signature] = token.split(".");
+    if (algorithm === void 0 || payload === void 0 || signature === void 0) {
+      _logError("JWT malformed, contained fewer than 3 sections");
+      return null;
+    }
+    try {
+      const decoded = base64Decode(payload);
+      if (!decoded) {
+        _logError("Failed to decode base64 JWT payload");
+        return null;
+      }
+      return JSON.parse(decoded);
+    } catch (e2) {
+      _logError("Caught error parsing JWT payload as JSON", e2?.toString());
+      return null;
+    }
+  }
+  function _tokenExpiresIn(token) {
+    const parsedToken = _parseToken(token);
+    _assert(
+      parsedToken,
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    _assert(
+      typeof parsedToken.exp !== "undefined",
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    _assert(
+      typeof parsedToken.iat !== "undefined",
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    return Number(parsedToken.exp) - Number(parsedToken.iat);
+  }
+  async function _logoutIfInvalidated(user, promise, bypassAuthState = false) {
+    if (bypassAuthState) {
+      return promise;
+    }
+    try {
+      return await promise;
+    } catch (e2) {
+      if (e2 instanceof FirebaseError && isUserInvalidated(e2)) {
+        if (user.auth.currentUser === user) {
+          await user.auth.signOut();
+        }
+      }
+      throw e2;
+    }
+  }
+  function isUserInvalidated({ code }) {
+    return code === `auth/${"user-disabled"}` || code === `auth/${"user-token-expired"}`;
+  }
+  var ProactiveRefresh = class {
+    constructor(user) {
+      this.user = user;
+      this.isRunning = false;
+      this.timerId = null;
+      this.errorBackoff = 3e4;
+    }
+    _start() {
+      if (this.isRunning) {
+        return;
+      }
+      this.isRunning = true;
+      this.schedule();
+    }
+    _stop() {
+      if (!this.isRunning) {
+        return;
+      }
+      this.isRunning = false;
+      if (this.timerId !== null) {
+        clearTimeout(this.timerId);
+      }
+    }
+    getInterval(wasError) {
+      if (wasError) {
+        const interval = this.errorBackoff;
+        this.errorBackoff = Math.min(
+          this.errorBackoff * 2,
+          96e4
+          /* Duration.RETRY_BACKOFF_MAX */
+        );
+        return interval;
+      } else {
+        this.errorBackoff = 3e4;
+        const expTime = this.user.stsTokenManager.expirationTime ?? 0;
+        const interval = expTime - Date.now() - 3e5;
+        return Math.max(0, interval);
+      }
+    }
+    schedule(wasError = false) {
+      if (!this.isRunning) {
+        return;
+      }
+      const interval = this.getInterval(wasError);
+      this.timerId = setTimeout(async () => {
+        await this.iteration();
+      }, interval);
+    }
+    async iteration() {
+      try {
+        await this.user.getIdToken(true);
+      } catch (e2) {
+        if (e2?.code === `auth/${"network-request-failed"}`) {
+          this.schedule(
+            /* wasError */
+            true
+          );
+        }
+        return;
+      }
+      this.schedule();
+    }
+  };
+  var UserMetadata = class {
+    constructor(createdAt, lastLoginAt) {
+      this.createdAt = createdAt;
+      this.lastLoginAt = lastLoginAt;
+      this._initializeTime();
+    }
+    _initializeTime() {
+      this.lastSignInTime = utcTimestampToDateString(this.lastLoginAt);
+      this.creationTime = utcTimestampToDateString(this.createdAt);
+    }
+    _copy(metadata) {
+      this.createdAt = metadata.createdAt;
+      this.lastLoginAt = metadata.lastLoginAt;
+      this._initializeTime();
+    }
+    toJSON() {
+      return {
+        createdAt: this.createdAt,
+        lastLoginAt: this.lastLoginAt
+      };
+    }
+  };
+  async function _reloadWithoutSaving(user) {
+    const auth2 = user.auth;
+    const idToken = await user.getIdToken();
+    const response = await _logoutIfInvalidated(user, getAccountInfo(auth2, { idToken }));
+    _assert(
+      response?.users.length,
+      auth2,
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    const coreAccount = response.users[0];
+    user._notifyReloadListener(coreAccount);
+    const newProviderData = coreAccount.providerUserInfo?.length ? extractProviderData(coreAccount.providerUserInfo) : [];
+    const providerData = mergeProviderData(user.providerData, newProviderData);
+    const oldIsAnonymous = user.isAnonymous;
+    const newIsAnonymous = !(user.email && coreAccount.passwordHash) && !providerData?.length;
+    const isAnonymous = !oldIsAnonymous ? false : newIsAnonymous;
+    const updates = {
+      uid: coreAccount.localId,
+      displayName: coreAccount.displayName || null,
+      photoURL: coreAccount.photoUrl || null,
+      email: coreAccount.email || null,
+      emailVerified: coreAccount.emailVerified || false,
+      phoneNumber: coreAccount.phoneNumber || null,
+      tenantId: coreAccount.tenantId || null,
+      providerData,
+      metadata: new UserMetadata(coreAccount.createdAt, coreAccount.lastLoginAt),
+      isAnonymous
+    };
+    Object.assign(user, updates);
+  }
+  async function reload(user) {
+    const userInternal = getModularInstance(user);
+    await _reloadWithoutSaving(userInternal);
+    await userInternal.auth._persistUserIfCurrent(userInternal);
+    userInternal.auth._notifyListenersIfCurrent(userInternal);
+  }
+  function mergeProviderData(original, newData) {
+    const deduped = original.filter((o2) => !newData.some((n2) => n2.providerId === o2.providerId));
+    return [...deduped, ...newData];
+  }
+  function extractProviderData(providers) {
+    return providers.map(({ providerId, ...provider }) => {
+      return {
+        providerId,
+        uid: provider.rawId || "",
+        displayName: provider.displayName || null,
+        email: provider.email || null,
+        phoneNumber: provider.phoneNumber || null,
+        photoURL: provider.photoUrl || null
+      };
+    });
+  }
+  async function requestStsToken(auth2, refreshToken) {
+    const response = await _performFetchWithErrorHandling(auth2, {}, async () => {
+      const body = querystring({
+        "grant_type": "refresh_token",
+        "refresh_token": refreshToken
+      }).slice(1);
+      const { tokenApiHost, apiKey } = auth2.config;
+      const url = await _getFinalTarget(auth2, tokenApiHost, "/v1/token", `key=${apiKey}`);
+      const headers = await auth2._getAdditionalHeaders();
+      headers[
+        "Content-Type"
+        /* HttpHeader.CONTENT_TYPE */
+      ] = "application/x-www-form-urlencoded";
+      const options = {
+        method: "POST",
+        headers,
+        body
+      };
+      if (auth2.emulatorConfig && isCloudWorkstation(auth2.emulatorConfig.host)) {
+        options.credentials = "include";
+      }
+      return FetchProvider.fetch()(url, options);
+    });
+    return {
+      accessToken: response.access_token,
+      expiresIn: response.expires_in,
+      refreshToken: response.refresh_token
+    };
+  }
+  async function revokeToken(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts:revokeToken", _addTidIfNecessary(auth2, request));
+  }
+  var StsTokenManager = class _StsTokenManager {
+    constructor() {
+      this.refreshToken = null;
+      this.accessToken = null;
+      this.expirationTime = null;
+    }
+    get isExpired() {
+      return !this.expirationTime || Date.now() > this.expirationTime - 3e4;
+    }
+    updateFromServerResponse(response) {
+      _assert(
+        response.idToken,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      _assert(
+        typeof response.idToken !== "undefined",
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      _assert(
+        typeof response.refreshToken !== "undefined",
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const expiresIn = "expiresIn" in response && typeof response.expiresIn !== "undefined" ? Number(response.expiresIn) : _tokenExpiresIn(response.idToken);
+      this.updateTokensAndExpiration(response.idToken, response.refreshToken, expiresIn);
+    }
+    updateFromIdToken(idToken) {
+      _assert(
+        idToken.length !== 0,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const expiresIn = _tokenExpiresIn(idToken);
+      this.updateTokensAndExpiration(idToken, null, expiresIn);
+    }
+    async getToken(auth2, forceRefresh = false) {
+      if (!forceRefresh && this.accessToken && !this.isExpired) {
+        return this.accessToken;
+      }
+      _assert(
+        this.refreshToken,
+        auth2,
+        "user-token-expired"
+        /* AuthErrorCode.TOKEN_EXPIRED */
+      );
+      if (this.refreshToken) {
+        await this.refresh(auth2, this.refreshToken);
+        return this.accessToken;
+      }
+      return null;
+    }
+    clearRefreshToken() {
+      this.refreshToken = null;
+    }
+    async refresh(auth2, oldToken) {
+      const { accessToken, refreshToken, expiresIn } = await requestStsToken(auth2, oldToken);
+      this.updateTokensAndExpiration(accessToken, refreshToken, Number(expiresIn));
+    }
+    updateTokensAndExpiration(accessToken, refreshToken, expiresInSec) {
+      this.refreshToken = refreshToken || null;
+      this.accessToken = accessToken || null;
+      this.expirationTime = Date.now() + expiresInSec * 1e3;
+    }
+    static fromJSON(appName, object) {
+      const { refreshToken, accessToken, expirationTime } = object;
+      const manager = new _StsTokenManager();
+      if (refreshToken) {
+        _assert(typeof refreshToken === "string", "internal-error", {
+          appName
+        });
+        manager.refreshToken = refreshToken;
+      }
+      if (accessToken) {
+        _assert(typeof accessToken === "string", "internal-error", {
+          appName
+        });
+        manager.accessToken = accessToken;
+      }
+      if (expirationTime) {
+        _assert(typeof expirationTime === "number", "internal-error", {
+          appName
+        });
+        manager.expirationTime = expirationTime;
+      }
+      return manager;
+    }
+    toJSON() {
+      return {
+        refreshToken: this.refreshToken,
+        accessToken: this.accessToken,
+        expirationTime: this.expirationTime
+      };
+    }
+    _assign(stsTokenManager) {
+      this.accessToken = stsTokenManager.accessToken;
+      this.refreshToken = stsTokenManager.refreshToken;
+      this.expirationTime = stsTokenManager.expirationTime;
+    }
+    _clone() {
+      return Object.assign(new _StsTokenManager(), this.toJSON());
+    }
+    _performRefresh() {
+      return debugFail("not implemented");
+    }
+  };
+  function assertStringOrUndefined(assertion, appName) {
+    _assert(typeof assertion === "string" || typeof assertion === "undefined", "internal-error", { appName });
+  }
+  var UserImpl = class _UserImpl {
+    constructor({ uid, auth: auth2, stsTokenManager, ...opt }) {
+      this.providerId = "firebase";
+      this.proactiveRefresh = new ProactiveRefresh(this);
+      this.reloadUserInfo = null;
+      this.reloadListener = null;
+      this.uid = uid;
+      this.auth = auth2;
+      this.stsTokenManager = stsTokenManager;
+      this.accessToken = stsTokenManager.accessToken;
+      this.displayName = opt.displayName || null;
+      this.email = opt.email || null;
+      this.emailVerified = opt.emailVerified || false;
+      this.phoneNumber = opt.phoneNumber || null;
+      this.photoURL = opt.photoURL || null;
+      this.isAnonymous = opt.isAnonymous || false;
+      this.tenantId = opt.tenantId || null;
+      this.providerData = opt.providerData ? [...opt.providerData] : [];
+      this.metadata = new UserMetadata(opt.createdAt || void 0, opt.lastLoginAt || void 0);
+    }
+    async getIdToken(forceRefresh) {
+      const accessToken = await _logoutIfInvalidated(this, this.stsTokenManager.getToken(this.auth, forceRefresh));
+      _assert(
+        accessToken,
+        this.auth,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      if (this.accessToken !== accessToken) {
+        this.accessToken = accessToken;
+        await this.auth._persistUserIfCurrent(this);
+        this.auth._notifyListenersIfCurrent(this);
+      }
+      return accessToken;
+    }
+    getIdTokenResult(forceRefresh) {
+      return getIdTokenResult(this, forceRefresh);
+    }
+    reload() {
+      return reload(this);
+    }
+    _assign(user) {
+      if (this === user) {
+        return;
+      }
+      _assert(
+        this.uid === user.uid,
+        this.auth,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      this.displayName = user.displayName;
+      this.photoURL = user.photoURL;
+      this.email = user.email;
+      this.emailVerified = user.emailVerified;
+      this.phoneNumber = user.phoneNumber;
+      this.isAnonymous = user.isAnonymous;
+      this.tenantId = user.tenantId;
+      this.providerData = user.providerData.map((userInfo) => ({ ...userInfo }));
+      this.metadata._copy(user.metadata);
+      this.stsTokenManager._assign(user.stsTokenManager);
+    }
+    _clone(auth2) {
+      const newUser = new _UserImpl({
+        ...this,
+        auth: auth2,
+        stsTokenManager: this.stsTokenManager._clone()
+      });
+      newUser.metadata._copy(this.metadata);
+      return newUser;
+    }
+    _onReload(callback) {
+      _assert(
+        !this.reloadListener,
+        this.auth,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      this.reloadListener = callback;
+      if (this.reloadUserInfo) {
+        this._notifyReloadListener(this.reloadUserInfo);
+        this.reloadUserInfo = null;
+      }
+    }
+    _notifyReloadListener(userInfo) {
+      if (this.reloadListener) {
+        this.reloadListener(userInfo);
+      } else {
+        this.reloadUserInfo = userInfo;
+      }
+    }
+    _startProactiveRefresh() {
+      this.proactiveRefresh._start();
+    }
+    _stopProactiveRefresh() {
+      this.proactiveRefresh._stop();
+    }
+    async _updateTokensIfNecessary(response, reload2 = false) {
+      let tokensRefreshed = false;
+      if (response.idToken && response.idToken !== this.stsTokenManager.accessToken) {
+        this.stsTokenManager.updateFromServerResponse(response);
+        tokensRefreshed = true;
+      }
+      if (reload2) {
+        await _reloadWithoutSaving(this);
+      }
+      await this.auth._persistUserIfCurrent(this);
+      if (tokensRefreshed) {
+        this.auth._notifyListenersIfCurrent(this);
+      }
+    }
+    async delete() {
+      if (_isFirebaseServerApp(this.auth.app)) {
+        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this.auth));
+      }
+      const idToken = await this.getIdToken();
+      await _logoutIfInvalidated(this, deleteAccount(this.auth, { idToken }));
+      this.stsTokenManager.clearRefreshToken();
+      return this.auth.signOut();
+    }
+    toJSON() {
+      return {
+        uid: this.uid,
+        email: this.email || void 0,
+        emailVerified: this.emailVerified,
+        displayName: this.displayName || void 0,
+        isAnonymous: this.isAnonymous,
+        photoURL: this.photoURL || void 0,
+        phoneNumber: this.phoneNumber || void 0,
+        tenantId: this.tenantId || void 0,
+        providerData: this.providerData.map((userInfo) => ({ ...userInfo })),
+        stsTokenManager: this.stsTokenManager.toJSON(),
+        // Redirect event ID must be maintained in case there is a pending
+        // redirect event.
+        _redirectEventId: this._redirectEventId,
+        ...this.metadata.toJSON(),
+        // Required for compatibility with the legacy SDK (go/firebase-auth-sdk-persistence-parsing):
+        apiKey: this.auth.config.apiKey,
+        appName: this.auth.name
+        // Missing authDomain will be tolerated by the legacy SDK.
+        // stsTokenManager.apiKey isn't actually required (despite the legacy SDK persisting it).
+      };
+    }
+    get refreshToken() {
+      return this.stsTokenManager.refreshToken || "";
+    }
+    static _fromJSON(auth2, object) {
+      const displayName = object.displayName ?? void 0;
+      const email = object.email ?? void 0;
+      const phoneNumber = object.phoneNumber ?? void 0;
+      const photoURL = object.photoURL ?? void 0;
+      const tenantId = object.tenantId ?? void 0;
+      const _redirectEventId = object._redirectEventId ?? void 0;
+      const createdAt = object.createdAt ?? void 0;
+      const lastLoginAt = object.lastLoginAt ?? void 0;
+      const { uid, emailVerified, isAnonymous, providerData, stsTokenManager: plainObjectTokenManager } = object;
+      _assert(
+        uid && plainObjectTokenManager,
+        auth2,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const stsTokenManager = StsTokenManager.fromJSON(this.name, plainObjectTokenManager);
+      _assert(
+        typeof uid === "string",
+        auth2,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      assertStringOrUndefined(displayName, auth2.name);
+      assertStringOrUndefined(email, auth2.name);
+      _assert(
+        typeof emailVerified === "boolean",
+        auth2,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      _assert(
+        typeof isAnonymous === "boolean",
+        auth2,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      assertStringOrUndefined(phoneNumber, auth2.name);
+      assertStringOrUndefined(photoURL, auth2.name);
+      assertStringOrUndefined(tenantId, auth2.name);
+      assertStringOrUndefined(_redirectEventId, auth2.name);
+      assertStringOrUndefined(createdAt, auth2.name);
+      assertStringOrUndefined(lastLoginAt, auth2.name);
+      const user = new _UserImpl({
+        uid,
+        auth: auth2,
+        email,
+        emailVerified,
+        displayName,
+        isAnonymous,
+        photoURL,
+        phoneNumber,
+        tenantId,
+        stsTokenManager,
+        createdAt,
+        lastLoginAt
+      });
+      if (providerData && Array.isArray(providerData)) {
+        user.providerData = providerData.map((userInfo) => ({ ...userInfo }));
+      }
+      if (_redirectEventId) {
+        user._redirectEventId = _redirectEventId;
+      }
+      return user;
+    }
+    /**
+     * Initialize a User from an idToken server response
+     * @param auth
+     * @param idTokenResponse
+     */
+    static async _fromIdTokenResponse(auth2, idTokenResponse, isAnonymous = false) {
+      const stsTokenManager = new StsTokenManager();
+      stsTokenManager.updateFromServerResponse(idTokenResponse);
+      const user = new _UserImpl({
+        uid: idTokenResponse.localId,
+        auth: auth2,
+        stsTokenManager,
+        isAnonymous
+      });
+      await _reloadWithoutSaving(user);
+      return user;
+    }
+    /**
+     * Initialize a User from an idToken server response
+     * @param auth
+     * @param idTokenResponse
+     */
+    static async _fromGetAccountInfoResponse(auth2, response, idToken) {
+      const coreAccount = response.users[0];
+      _assert(
+        coreAccount.localId !== void 0,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const providerData = coreAccount.providerUserInfo !== void 0 ? extractProviderData(coreAccount.providerUserInfo) : [];
+      const isAnonymous = !(coreAccount.email && coreAccount.passwordHash) && !providerData?.length;
+      const stsTokenManager = new StsTokenManager();
+      stsTokenManager.updateFromIdToken(idToken);
+      const user = new _UserImpl({
+        uid: coreAccount.localId,
+        auth: auth2,
+        stsTokenManager,
+        isAnonymous
+      });
+      const updates = {
+        uid: coreAccount.localId,
+        displayName: coreAccount.displayName || null,
+        photoURL: coreAccount.photoUrl || null,
+        email: coreAccount.email || null,
+        emailVerified: coreAccount.emailVerified || false,
+        phoneNumber: coreAccount.phoneNumber || null,
+        tenantId: coreAccount.tenantId || null,
+        providerData,
+        metadata: new UserMetadata(coreAccount.createdAt, coreAccount.lastLoginAt),
+        isAnonymous: !(coreAccount.email && coreAccount.passwordHash) && !providerData?.length
+      };
+      Object.assign(user, updates);
+      return user;
+    }
+  };
+  var instanceCache = /* @__PURE__ */ new Map();
+  function _getInstance(cls) {
+    debugAssert(cls instanceof Function, "Expected a class definition");
+    let instance = instanceCache.get(cls);
+    if (instance) {
+      debugAssert(instance instanceof cls, "Instance stored in cache mismatched with class");
+      return instance;
+    }
+    instance = new cls();
+    instanceCache.set(cls, instance);
+    return instance;
+  }
+  var InMemoryPersistence = class {
+    constructor() {
+      this.type = "NONE";
+      this.storage = {};
+    }
+    async _isAvailable() {
+      return true;
+    }
+    async _set(key, value) {
+      this.storage[key] = value;
+    }
+    async _get(key) {
+      const value = this.storage[key];
+      return value === void 0 ? null : value;
+    }
+    async _remove(key) {
+      delete this.storage[key];
+    }
+    _addListener(_key, _listener) {
+      return;
+    }
+    _removeListener(_key, _listener) {
+      return;
+    }
+  };
+  InMemoryPersistence.type = "NONE";
+  var inMemoryPersistence = InMemoryPersistence;
+  function _persistenceKeyName(key, apiKey, appName) {
+    return `${"firebase"}:${key}:${apiKey}:${appName}`;
+  }
+  var PersistenceUserManager = class _PersistenceUserManager {
+    constructor(persistence, auth2, userKey) {
+      this.persistence = persistence;
+      this.auth = auth2;
+      this.userKey = userKey;
+      const { config, name: name4 } = this.auth;
+      this.fullUserKey = _persistenceKeyName(this.userKey, config.apiKey, name4);
+      this.fullPersistenceKey = _persistenceKeyName("persistence", config.apiKey, name4);
+      this.boundEventHandler = auth2._onStorageEvent.bind(auth2);
+      try {
+        this.persistence._addListener(this.fullUserKey, this.boundEventHandler);
+      } catch {
+      }
+    }
+    setCurrentUser(user) {
+      return this.persistence._set(this.fullUserKey, user.toJSON());
+    }
+    async getCurrentUser() {
+      const blob = await this.persistence._get(this.fullUserKey);
+      if (!blob) {
+        return null;
+      }
+      if (typeof blob === "string") {
+        const response = await getAccountInfo(this.auth, { idToken: blob }).catch(() => void 0);
+        if (!response) {
+          return null;
+        }
+        return UserImpl._fromGetAccountInfoResponse(this.auth, response, blob);
+      }
+      return UserImpl._fromJSON(this.auth, blob);
+    }
+    removeCurrentUser() {
+      return this.persistence._remove(this.fullUserKey);
+    }
+    savePersistenceForRedirect() {
+      return this.persistence._set(this.fullPersistenceKey, this.persistence.type);
+    }
+    async setPersistence(newPersistence) {
+      if (this.persistence === newPersistence) {
+        return;
+      }
+      const currentUser = await this.getCurrentUser();
+      await this.removeCurrentUser();
+      this.persistence = newPersistence;
+      if (currentUser) {
+        return this.setCurrentUser(currentUser);
+      }
+    }
+    delete() {
+      try {
+        this.persistence._removeListener(this.fullUserKey, this.boundEventHandler);
+      } catch {
+      }
+    }
+    static async create(auth2, persistenceHierarchy, userKey = "authUser") {
+      if (!persistenceHierarchy.length) {
+        return new _PersistenceUserManager(_getInstance(inMemoryPersistence), auth2, userKey);
+      }
+      const availablePersistences = (await Promise.all(persistenceHierarchy.map(async (persistence) => {
+        try {
+          if (await persistence._isAvailable()) {
+            return persistence;
+          }
+        } catch {
+          return void 0;
+        }
+        return void 0;
+      }))).filter((persistence) => persistence);
+      let selectedPersistence = availablePersistences[0] || _getInstance(inMemoryPersistence);
+      const key = _persistenceKeyName(userKey, auth2.config.apiKey, auth2.name);
+      let userToMigrate = null;
+      for (const persistence of persistenceHierarchy) {
+        try {
+          const blob = await persistence._get(key);
+          if (blob) {
+            let user;
+            if (typeof blob === "string") {
+              const response = await getAccountInfo(auth2, {
+                idToken: blob
+              }).catch(() => void 0);
+              if (!response) {
+                break;
+              }
+              user = await UserImpl._fromGetAccountInfoResponse(auth2, response, blob);
+            } else {
+              user = UserImpl._fromJSON(auth2, blob);
+            }
+            if (persistence !== selectedPersistence) {
+              userToMigrate = user;
+            }
+            selectedPersistence = persistence;
+            break;
+          }
+        } catch {
+        }
+      }
+      const migrationHierarchy = availablePersistences.filter((p2) => p2._shouldAllowMigration);
+      if (!selectedPersistence._shouldAllowMigration || !migrationHierarchy.length) {
+        return new _PersistenceUserManager(selectedPersistence, auth2, userKey);
+      }
+      selectedPersistence = migrationHierarchy[0];
+      if (userToMigrate) {
+        await selectedPersistence._set(key, userToMigrate.toJSON());
+      }
+      await Promise.all(persistenceHierarchy.map(async (persistence) => {
+        if (persistence !== selectedPersistence) {
+          try {
+            await persistence._remove(key);
+          } catch {
+          }
+        }
+      }));
+      return new _PersistenceUserManager(selectedPersistence, auth2, userKey);
+    }
+  };
+  function _getBrowserName(userAgent) {
+    const ua2 = userAgent.toLowerCase();
+    if (ua2.includes("opera/") || ua2.includes("opr/") || ua2.includes("opios/")) {
+      return "Opera";
+    } else if (_isIEMobile(ua2)) {
+      return "IEMobile";
+    } else if (ua2.includes("msie") || ua2.includes("trident/")) {
+      return "IE";
+    } else if (ua2.includes("edge/")) {
+      return "Edge";
+    } else if (_isFirefox(ua2)) {
+      return "Firefox";
+    } else if (ua2.includes("silk/")) {
+      return "Silk";
+    } else if (_isBlackBerry(ua2)) {
+      return "Blackberry";
+    } else if (_isWebOS(ua2)) {
+      return "Webos";
+    } else if (_isSafari(ua2)) {
+      return "Safari";
+    } else if ((ua2.includes("chrome/") || _isChromeIOS(ua2)) && !ua2.includes("edge/")) {
+      return "Chrome";
+    } else if (_isAndroid(ua2)) {
+      return "Android";
+    } else {
+      const re = /([a-zA-Z\d\.]+)\/[a-zA-Z\d\.]*$/;
+      const matches = userAgent.match(re);
+      if (matches?.length === 2) {
+        return matches[1];
+      }
+    }
+    return "Other";
+  }
+  function _isFirefox(ua2 = getUA()) {
+    return /firefox\//i.test(ua2);
+  }
+  function _isSafari(userAgent = getUA()) {
+    const ua2 = userAgent.toLowerCase();
+    return ua2.includes("safari/") && !ua2.includes("chrome/") && !ua2.includes("crios/") && !ua2.includes("android");
+  }
+  function _isChromeIOS(ua2 = getUA()) {
+    return /crios\//i.test(ua2);
+  }
+  function _isIEMobile(ua2 = getUA()) {
+    return /iemobile/i.test(ua2);
+  }
+  function _isAndroid(ua2 = getUA()) {
+    return /android/i.test(ua2);
+  }
+  function _isBlackBerry(ua2 = getUA()) {
+    return /blackberry/i.test(ua2);
+  }
+  function _isWebOS(ua2 = getUA()) {
+    return /webos/i.test(ua2);
+  }
+  function _isIOS(ua2 = getUA()) {
+    return /iphone|ipad|ipod/i.test(ua2) || /macintosh/i.test(ua2) && /mobile/i.test(ua2);
+  }
+  function _isIOSStandalone(ua2 = getUA()) {
+    return _isIOS(ua2) && !!window.navigator?.standalone;
+  }
+  function _isIE10() {
+    return isIE() && document.documentMode === 10;
+  }
+  function _isMobileBrowser(ua2 = getUA()) {
+    return _isIOS(ua2) || _isAndroid(ua2) || _isWebOS(ua2) || _isBlackBerry(ua2) || /windows phone/i.test(ua2) || _isIEMobile(ua2);
+  }
+  function _getClientVersion(clientPlatform, frameworks = []) {
+    let reportedPlatform;
+    switch (clientPlatform) {
+      case "Browser":
+        reportedPlatform = _getBrowserName(getUA());
+        break;
+      case "Worker":
+        reportedPlatform = `${_getBrowserName(getUA())}-${clientPlatform}`;
+        break;
+      default:
+        reportedPlatform = clientPlatform;
+    }
+    const reportedFrameworks = frameworks.length ? frameworks.join(",") : "FirebaseCore-web";
+    return `${reportedPlatform}/${"JsCore"}/${SDK_VERSION}/${reportedFrameworks}`;
+  }
+  var AuthMiddlewareQueue = class {
+    constructor(auth2) {
+      this.auth = auth2;
+      this.queue = [];
+    }
+    pushCallback(callback, onAbort) {
+      const wrappedCallback = (user) => new Promise((resolve, reject) => {
+        try {
+          const result = callback(user);
+          resolve(result);
+        } catch (e2) {
+          reject(e2);
+        }
+      });
+      wrappedCallback.onAbort = onAbort;
+      this.queue.push(wrappedCallback);
+      const index = this.queue.length - 1;
+      return () => {
+        this.queue[index] = () => Promise.resolve();
+      };
+    }
+    async runMiddleware(nextUser) {
+      if (this.auth.currentUser === nextUser) {
+        return;
+      }
+      const onAbortStack = [];
+      try {
+        for (const beforeStateCallback of this.queue) {
+          await beforeStateCallback(nextUser);
+          if (beforeStateCallback.onAbort) {
+            onAbortStack.push(beforeStateCallback.onAbort);
+          }
+        }
+      } catch (e2) {
+        onAbortStack.reverse();
+        for (const onAbort of onAbortStack) {
+          try {
+            onAbort();
+          } catch (_) {
+          }
+        }
+        throw this.auth._errorFactory.create("login-blocked", {
+          originalMessage: e2?.message
+        });
+      }
+    }
+  };
+  async function _getPasswordPolicy(auth2, request = {}) {
+    return _performApiRequest(auth2, "GET", "/v2/passwordPolicy", _addTidIfNecessary(auth2, request));
+  }
+  var MINIMUM_MIN_PASSWORD_LENGTH = 6;
+  var PasswordPolicyImpl = class {
+    constructor(response) {
+      const responseOptions = response.customStrengthOptions;
+      this.customStrengthOptions = {};
+      this.customStrengthOptions.minPasswordLength = responseOptions.minPasswordLength ?? MINIMUM_MIN_PASSWORD_LENGTH;
+      if (responseOptions.maxPasswordLength) {
+        this.customStrengthOptions.maxPasswordLength = responseOptions.maxPasswordLength;
+      }
+      if (responseOptions.containsLowercaseCharacter !== void 0) {
+        this.customStrengthOptions.containsLowercaseLetter = responseOptions.containsLowercaseCharacter;
+      }
+      if (responseOptions.containsUppercaseCharacter !== void 0) {
+        this.customStrengthOptions.containsUppercaseLetter = responseOptions.containsUppercaseCharacter;
+      }
+      if (responseOptions.containsNumericCharacter !== void 0) {
+        this.customStrengthOptions.containsNumericCharacter = responseOptions.containsNumericCharacter;
+      }
+      if (responseOptions.containsNonAlphanumericCharacter !== void 0) {
+        this.customStrengthOptions.containsNonAlphanumericCharacter = responseOptions.containsNonAlphanumericCharacter;
+      }
+      this.enforcementState = response.enforcementState;
+      if (this.enforcementState === "ENFORCEMENT_STATE_UNSPECIFIED") {
+        this.enforcementState = "OFF";
+      }
+      this.allowedNonAlphanumericCharacters = response.allowedNonAlphanumericCharacters?.join("") ?? "";
+      this.forceUpgradeOnSignin = response.forceUpgradeOnSignin ?? false;
+      this.schemaVersion = response.schemaVersion;
+    }
+    validatePassword(password) {
+      const status = {
+        isValid: true,
+        passwordPolicy: this
+      };
+      this.validatePasswordLengthOptions(password, status);
+      this.validatePasswordCharacterOptions(password, status);
+      status.isValid && (status.isValid = status.meetsMinPasswordLength ?? true);
+      status.isValid && (status.isValid = status.meetsMaxPasswordLength ?? true);
+      status.isValid && (status.isValid = status.containsLowercaseLetter ?? true);
+      status.isValid && (status.isValid = status.containsUppercaseLetter ?? true);
+      status.isValid && (status.isValid = status.containsNumericCharacter ?? true);
+      status.isValid && (status.isValid = status.containsNonAlphanumericCharacter ?? true);
+      return status;
+    }
+    /**
+     * Validates that the password meets the length options for the policy.
+     *
+     * @param password Password to validate.
+     * @param status Validation status.
+     */
+    validatePasswordLengthOptions(password, status) {
+      const minPasswordLength = this.customStrengthOptions.minPasswordLength;
+      const maxPasswordLength = this.customStrengthOptions.maxPasswordLength;
+      if (minPasswordLength) {
+        status.meetsMinPasswordLength = password.length >= minPasswordLength;
+      }
+      if (maxPasswordLength) {
+        status.meetsMaxPasswordLength = password.length <= maxPasswordLength;
+      }
+    }
+    /**
+     * Validates that the password meets the character options for the policy.
+     *
+     * @param password Password to validate.
+     * @param status Validation status.
+     */
+    validatePasswordCharacterOptions(password, status) {
+      this.updatePasswordCharacterOptionsStatuses(
+        status,
+        /* containsLowercaseCharacter= */
+        false,
+        /* containsUppercaseCharacter= */
+        false,
+        /* containsNumericCharacter= */
+        false,
+        /* containsNonAlphanumericCharacter= */
+        false
+      );
+      let passwordChar;
+      for (let i2 = 0; i2 < password.length; i2++) {
+        passwordChar = password.charAt(i2);
+        this.updatePasswordCharacterOptionsStatuses(
+          status,
+          /* containsLowercaseCharacter= */
+          passwordChar >= "a" && passwordChar <= "z",
+          /* containsUppercaseCharacter= */
+          passwordChar >= "A" && passwordChar <= "Z",
+          /* containsNumericCharacter= */
+          passwordChar >= "0" && passwordChar <= "9",
+          /* containsNonAlphanumericCharacter= */
+          this.allowedNonAlphanumericCharacters.includes(passwordChar)
+        );
+      }
+    }
+    /**
+     * Updates the running validation status with the statuses for the character options.
+     * Expected to be called each time a character is processed to update each option status
+     * based on the current character.
+     *
+     * @param status Validation status.
+     * @param containsLowercaseCharacter Whether the character is a lowercase letter.
+     * @param containsUppercaseCharacter Whether the character is an uppercase letter.
+     * @param containsNumericCharacter Whether the character is a numeric character.
+     * @param containsNonAlphanumericCharacter Whether the character is a non-alphanumeric character.
+     */
+    updatePasswordCharacterOptionsStatuses(status, containsLowercaseCharacter, containsUppercaseCharacter, containsNumericCharacter, containsNonAlphanumericCharacter) {
+      if (this.customStrengthOptions.containsLowercaseLetter) {
+        status.containsLowercaseLetter || (status.containsLowercaseLetter = containsLowercaseCharacter);
+      }
+      if (this.customStrengthOptions.containsUppercaseLetter) {
+        status.containsUppercaseLetter || (status.containsUppercaseLetter = containsUppercaseCharacter);
+      }
+      if (this.customStrengthOptions.containsNumericCharacter) {
+        status.containsNumericCharacter || (status.containsNumericCharacter = containsNumericCharacter);
+      }
+      if (this.customStrengthOptions.containsNonAlphanumericCharacter) {
+        status.containsNonAlphanumericCharacter || (status.containsNonAlphanumericCharacter = containsNonAlphanumericCharacter);
+      }
+    }
+  };
+  var AuthImpl = class {
+    constructor(app2, heartbeatServiceProvider, appCheckServiceProvider, config) {
+      this.app = app2;
+      this.heartbeatServiceProvider = heartbeatServiceProvider;
+      this.appCheckServiceProvider = appCheckServiceProvider;
+      this.config = config;
+      this.currentUser = null;
+      this.emulatorConfig = null;
+      this.operations = Promise.resolve();
+      this.authStateSubscription = new Subscription(this);
+      this.idTokenSubscription = new Subscription(this);
+      this.beforeStateQueue = new AuthMiddlewareQueue(this);
+      this.redirectUser = null;
+      this.isProactiveRefreshEnabled = false;
+      this.EXPECTED_PASSWORD_POLICY_SCHEMA_VERSION = 1;
+      this._canInitEmulator = true;
+      this._isInitialized = false;
+      this._deleted = false;
+      this._initializationPromise = null;
+      this._popupRedirectResolver = null;
+      this._errorFactory = _DEFAULT_AUTH_ERROR_FACTORY;
+      this._agentRecaptchaConfig = null;
+      this._tenantRecaptchaConfigs = {};
+      this._projectPasswordPolicy = null;
+      this._tenantPasswordPolicies = {};
+      this._resolvePersistenceManagerAvailable = void 0;
+      this.lastNotifiedUid = void 0;
+      this.languageCode = null;
+      this.tenantId = null;
+      this.settings = { appVerificationDisabledForTesting: false };
+      this.frameworks = [];
+      this.name = app2.name;
+      this.clientVersion = config.sdkClientVersion;
+      this._persistenceManagerAvailable = new Promise((resolve) => this._resolvePersistenceManagerAvailable = resolve);
+    }
+    _initializeWithPersistence(persistenceHierarchy, popupRedirectResolver) {
+      if (popupRedirectResolver) {
+        this._popupRedirectResolver = _getInstance(popupRedirectResolver);
+      }
+      this._initializationPromise = this.queue(async () => {
+        if (this._deleted) {
+          return;
+        }
+        try {
+          this.persistenceManager = await PersistenceUserManager.create(this, persistenceHierarchy);
+        } catch (e2) {
+          _logWarn(`Failed to initialize persistence: ${e2}`);
+          this.persistenceManager = await PersistenceUserManager.create(this, []);
+        } finally {
+          this._resolvePersistenceManagerAvailable?.();
+        }
+        if (this._deleted) {
+          return;
+        }
+        if (this._popupRedirectResolver?._shouldInitProactively) {
+          try {
+            await this._popupRedirectResolver._initialize(this);
+          } catch (e2) {
+          }
+        }
+        try {
+          await this.initializeCurrentUser(popupRedirectResolver);
+        } catch (e2) {
+          _logWarn(`Failed to initialize current user: ${e2}`);
+          await this.directlySetCurrentUser(null).catch(() => {
+          });
+        }
+        this.lastNotifiedUid = this.currentUser?.uid || null;
+        if (this._deleted) {
+          return;
+        }
+        this._isInitialized = true;
+      });
+      return this._initializationPromise;
+    }
+    /**
+     * If the persistence is changed in another window, the user manager will let us know
+     */
+    async _onStorageEvent() {
+      if (this._deleted) {
+        return;
+      }
+      const user = await this.assertedPersistence.getCurrentUser();
+      if (!this.currentUser && !user) {
+        return;
+      }
+      if (this.currentUser && user && this.currentUser.uid === user.uid) {
+        this._currentUser._assign(user);
+        await this.currentUser.getIdToken();
+        return;
+      }
+      await this._updateCurrentUser(
+        user,
+        /* skipBeforeStateCallbacks */
+        true
+      );
+    }
+    async initializeCurrentUserFromIdToken(idToken) {
+      try {
+        const response = await getAccountInfo(this, { idToken });
+        const user = await UserImpl._fromGetAccountInfoResponse(this, response, idToken);
+        await this.directlySetCurrentUser(user);
+      } catch (err) {
+        console.warn("FirebaseServerApp could not login user with provided authIdToken: ", err);
+        await this.directlySetCurrentUser(null);
+      }
+    }
+    async initializeCurrentUser(popupRedirectResolver) {
+      if (_isFirebaseServerApp(this.app)) {
+        const idToken = this.app.settings.authIdToken;
+        if (idToken) {
+          return new Promise((resolve) => {
+            setTimeout(() => this.initializeCurrentUserFromIdToken(idToken).then(resolve, resolve));
+          });
+        } else {
+          return this.directlySetCurrentUser(null);
+        }
+      }
+      const previouslyStoredUser = await this.assertedPersistence.getCurrentUser();
+      let futureCurrentUser = previouslyStoredUser;
+      let needsTocheckMiddleware = false;
+      if (popupRedirectResolver && this.config.authDomain) {
+        await this.getOrInitRedirectPersistenceManager();
+        const redirectUserEventId = this.redirectUser?._redirectEventId;
+        const storedUserEventId = futureCurrentUser?._redirectEventId;
+        const result = await this.tryRedirectSignIn(popupRedirectResolver);
+        if ((!redirectUserEventId || redirectUserEventId === storedUserEventId) && result?.user) {
+          futureCurrentUser = result.user;
+          needsTocheckMiddleware = true;
+        }
+      }
+      if (!futureCurrentUser) {
+        return this.directlySetCurrentUser(null);
+      }
+      if (!futureCurrentUser._redirectEventId) {
+        if (needsTocheckMiddleware) {
+          try {
+            await this.beforeStateQueue.runMiddleware(futureCurrentUser);
+          } catch (e2) {
+            futureCurrentUser = previouslyStoredUser;
+            this._popupRedirectResolver._overrideRedirectResult(this, () => Promise.reject(e2));
+          }
+        }
+        if (futureCurrentUser) {
+          return this.reloadAndSetCurrentUserOrClear(futureCurrentUser);
+        } else {
+          return this.directlySetCurrentUser(null);
+        }
+      }
+      _assert(
+        this._popupRedirectResolver,
+        this,
+        "argument-error"
+        /* AuthErrorCode.ARGUMENT_ERROR */
+      );
+      await this.getOrInitRedirectPersistenceManager();
+      if (this.redirectUser && this.redirectUser._redirectEventId === futureCurrentUser._redirectEventId) {
+        return this.directlySetCurrentUser(futureCurrentUser);
+      }
+      return this.reloadAndSetCurrentUserOrClear(futureCurrentUser);
+    }
+    async tryRedirectSignIn(redirectResolver) {
+      let result = null;
+      try {
+        result = await this._popupRedirectResolver._completeRedirectFn(this, redirectResolver, true);
+      } catch (e2) {
+        await this._setRedirectUser(null);
+      }
+      return result;
+    }
+    async reloadAndSetCurrentUserOrClear(user) {
+      try {
+        await _reloadWithoutSaving(user);
+      } catch (e2) {
+        const code = e2?.code;
+        if (code !== `auth/${"network-request-failed"}` && code !== `auth/${"too-many-requests"}` && !code?.startsWith(`auth/${"quota-exceeded"}`)) {
+          return this.directlySetCurrentUser(null);
+        }
+      }
+      return this.directlySetCurrentUser(user);
+    }
+    useDeviceLanguage() {
+      this.languageCode = _getUserLanguage();
+    }
+    async _delete() {
+      this._deleted = true;
+    }
+    async updateCurrentUser(userExtern) {
+      if (_isFirebaseServerApp(this.app)) {
+        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this));
+      }
+      const user = userExtern ? getModularInstance(userExtern) : null;
+      if (user) {
+        _assert(
+          user.auth.config.apiKey === this.config.apiKey,
+          this,
+          "invalid-user-token"
+          /* AuthErrorCode.INVALID_AUTH */
+        );
+      }
+      return this._updateCurrentUser(user && user._clone(this));
+    }
+    async _updateCurrentUser(user, skipBeforeStateCallbacks = false) {
+      if (this._deleted) {
+        return;
+      }
+      if (user) {
+        _assert(
+          this.tenantId === user.tenantId,
+          this,
+          "tenant-id-mismatch"
+          /* AuthErrorCode.TENANT_ID_MISMATCH */
+        );
+      }
+      if (!skipBeforeStateCallbacks) {
+        await this.beforeStateQueue.runMiddleware(user);
+      }
+      return this.queue(async () => {
+        await this.directlySetCurrentUser(user);
+        this.notifyAuthListeners();
+      });
+    }
+    async signOut() {
+      if (_isFirebaseServerApp(this.app)) {
+        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this));
+      }
+      await this.beforeStateQueue.runMiddleware(null);
+      if (this.redirectPersistenceManager || this._popupRedirectResolver) {
+        await this._setRedirectUser(null);
+      }
+      return this._updateCurrentUser(
+        null,
+        /* skipBeforeStateCallbacks */
+        true
+      );
+    }
+    setPersistence(persistence) {
+      if (_isFirebaseServerApp(this.app)) {
+        return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(this));
+      }
+      return this.queue(async () => {
+        await this.assertedPersistence.setPersistence(_getInstance(persistence));
+      });
+    }
+    _getRecaptchaConfig() {
+      if (this.tenantId == null) {
+        return this._agentRecaptchaConfig;
+      } else {
+        return this._tenantRecaptchaConfigs[this.tenantId];
+      }
+    }
+    async validatePassword(password) {
+      if (!this._getPasswordPolicyInternal()) {
+        await this._updatePasswordPolicy();
+      }
+      const passwordPolicy = this._getPasswordPolicyInternal();
+      if (passwordPolicy.schemaVersion !== this.EXPECTED_PASSWORD_POLICY_SCHEMA_VERSION) {
+        return Promise.reject(this._errorFactory.create("unsupported-password-policy-schema-version", {}));
+      }
+      return passwordPolicy.validatePassword(password);
+    }
+    _getPasswordPolicyInternal() {
+      if (this.tenantId === null) {
+        return this._projectPasswordPolicy;
+      } else {
+        return this._tenantPasswordPolicies[this.tenantId];
+      }
+    }
+    async _updatePasswordPolicy() {
+      const response = await _getPasswordPolicy(this);
+      const passwordPolicy = new PasswordPolicyImpl(response);
+      if (this.tenantId === null) {
+        this._projectPasswordPolicy = passwordPolicy;
+      } else {
+        this._tenantPasswordPolicies[this.tenantId] = passwordPolicy;
+      }
+    }
+    _getPersistenceType() {
+      return this.assertedPersistence.persistence.type;
+    }
+    _getPersistence() {
+      return this.assertedPersistence.persistence;
+    }
+    _updateErrorMap(errorMap) {
+      this._errorFactory = new ErrorFactory("auth", "Firebase", errorMap());
+    }
+    onAuthStateChanged(nextOrObserver, error, completed) {
+      return this.registerStateListener(this.authStateSubscription, nextOrObserver, error, completed);
+    }
+    beforeAuthStateChanged(callback, onAbort) {
+      return this.beforeStateQueue.pushCallback(callback, onAbort);
+    }
+    onIdTokenChanged(nextOrObserver, error, completed) {
+      return this.registerStateListener(this.idTokenSubscription, nextOrObserver, error, completed);
+    }
+    authStateReady() {
+      return new Promise((resolve, reject) => {
+        if (this.currentUser) {
+          resolve();
+        } else {
+          const unsubscribe = this.onAuthStateChanged(() => {
+            unsubscribe();
+            resolve();
+          }, reject);
+        }
+      });
+    }
+    /**
+     * Revokes the given access token. Currently only supports Apple OAuth access tokens.
+     */
+    async revokeAccessToken(token) {
+      if (this.currentUser) {
+        const idToken = await this.currentUser.getIdToken();
+        const request = {
+          providerId: "apple.com",
+          tokenType: "ACCESS_TOKEN",
+          token,
+          idToken
+        };
+        if (this.tenantId != null) {
+          request.tenantId = this.tenantId;
+        }
+        await revokeToken(this, request);
+      }
+    }
+    toJSON() {
+      return {
+        apiKey: this.config.apiKey,
+        authDomain: this.config.authDomain,
+        appName: this.name,
+        currentUser: this._currentUser?.toJSON()
+      };
+    }
+    async _setRedirectUser(user, popupRedirectResolver) {
+      const redirectManager = await this.getOrInitRedirectPersistenceManager(popupRedirectResolver);
+      return user === null ? redirectManager.removeCurrentUser() : redirectManager.setCurrentUser(user);
+    }
+    async getOrInitRedirectPersistenceManager(popupRedirectResolver) {
+      if (!this.redirectPersistenceManager) {
+        const resolver = popupRedirectResolver && _getInstance(popupRedirectResolver) || this._popupRedirectResolver;
+        _assert(
+          resolver,
+          this,
+          "argument-error"
+          /* AuthErrorCode.ARGUMENT_ERROR */
+        );
+        this.redirectPersistenceManager = await PersistenceUserManager.create(
+          this,
+          [_getInstance(resolver._redirectPersistence)],
+          "redirectUser"
+          /* KeyName.REDIRECT_USER */
+        );
+        this.redirectUser = await this.redirectPersistenceManager.getCurrentUser();
+      }
+      return this.redirectPersistenceManager;
+    }
+    async _redirectUserForId(id) {
+      if (this._isInitialized) {
+        await this.queue(async () => {
+        });
+      }
+      if (this._currentUser?._redirectEventId === id) {
+        return this._currentUser;
+      }
+      if (this.redirectUser?._redirectEventId === id) {
+        return this.redirectUser;
+      }
+      return null;
+    }
+    async _persistUserIfCurrent(user) {
+      if (user === this.currentUser) {
+        return this.queue(async () => this.directlySetCurrentUser(user));
+      }
+    }
+    /** Notifies listeners only if the user is current */
+    _notifyListenersIfCurrent(user) {
+      if (user === this.currentUser) {
+        this.notifyAuthListeners();
+      }
+    }
+    _key() {
+      return `${this.config.authDomain}:${this.config.apiKey}:${this.name}`;
+    }
+    _startProactiveRefresh() {
+      this.isProactiveRefreshEnabled = true;
+      if (this.currentUser) {
+        this._currentUser._startProactiveRefresh();
+      }
+    }
+    _stopProactiveRefresh() {
+      this.isProactiveRefreshEnabled = false;
+      if (this.currentUser) {
+        this._currentUser._stopProactiveRefresh();
+      }
+    }
+    /** Returns the current user cast as the internal type */
+    get _currentUser() {
+      return this.currentUser;
+    }
+    notifyAuthListeners() {
+      if (!this._isInitialized) {
+        return;
+      }
+      this.idTokenSubscription.next(this.currentUser);
+      const currentUid = this.currentUser?.uid ?? null;
+      if (this.lastNotifiedUid !== currentUid) {
+        this.lastNotifiedUid = currentUid;
+        this.authStateSubscription.next(this.currentUser);
+      }
+    }
+    registerStateListener(subscription, nextOrObserver, error, completed) {
+      if (this._deleted) {
+        return () => {
+        };
+      }
+      const cb = typeof nextOrObserver === "function" ? nextOrObserver : nextOrObserver.next.bind(nextOrObserver);
+      let isUnsubscribed = false;
+      const promise = this._isInitialized ? Promise.resolve() : this._initializationPromise;
+      _assert(
+        promise,
+        this,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      promise.then(() => {
+        if (isUnsubscribed) {
+          return;
+        }
+        cb(this.currentUser);
+      }).catch((err) => {
+        if (isUnsubscribed) {
+          return;
+        }
+        if (typeof nextOrObserver !== "function" && nextOrObserver.error) {
+          nextOrObserver.error(err);
+        } else if (error) {
+          error(err);
+        } else {
+          throw err;
+        }
+      });
+      if (typeof nextOrObserver === "function") {
+        const unsubscribe = subscription.addObserver(nextOrObserver, error, completed);
+        return () => {
+          isUnsubscribed = true;
+          unsubscribe();
+        };
+      } else {
+        const unsubscribe = subscription.addObserver(nextOrObserver);
+        return () => {
+          isUnsubscribed = true;
+          unsubscribe();
+        };
+      }
+    }
+    /**
+     * Unprotected (from race conditions) method to set the current user. This
+     * should only be called from within a queued callback. This is necessary
+     * because the queue shouldn't rely on another queued callback.
+     */
+    async directlySetCurrentUser(user) {
+      if (this.currentUser && this.currentUser !== user) {
+        this._currentUser._stopProactiveRefresh();
+      }
+      if (user && this.isProactiveRefreshEnabled) {
+        user._startProactiveRefresh();
+      }
+      this.currentUser = user;
+      if (this.persistenceManager) {
+        try {
+          if (user) {
+            await this.persistenceManager.setCurrentUser(user);
+          } else {
+            await this.persistenceManager.removeCurrentUser();
+          }
+        } catch (e2) {
+          const originalMessage = e2?.message || String(e2);
+          const error = _errorWithCustomMessage(this, "internal-error", `An internal AuthError has occurred: ${originalMessage}`);
+          error.customData = { originalError: e2 };
+          throw error;
+        }
+      }
+    }
+    queue(action) {
+      this.operations = this.operations.then(action, action);
+      return this.operations;
+    }
+    get assertedPersistence() {
+      _assert(
+        this.persistenceManager,
+        this,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      return this.persistenceManager;
+    }
+    _logFramework(framework) {
+      if (!framework || this.frameworks.includes(framework)) {
+        return;
+      }
+      this.frameworks.push(framework);
+      this.frameworks.sort();
+      this.clientVersion = _getClientVersion(this.config.clientPlatform, this._getFrameworks());
+    }
+    _getFrameworks() {
+      return this.frameworks;
+    }
+    async _getAdditionalHeaders() {
+      const headers = {
+        [
+          "X-Client-Version"
+          /* HttpHeader.X_CLIENT_VERSION */
+        ]: this.clientVersion
+      };
+      if (this.app.options.appId) {
+        headers[
+          "X-Firebase-gmpid"
+          /* HttpHeader.X_FIREBASE_GMPID */
+        ] = this.app.options.appId;
+      }
+      const heartbeatsHeader = await this.heartbeatServiceProvider.getImmediate({
+        optional: true
+      })?.getHeartbeatsHeader();
+      if (heartbeatsHeader) {
+        headers[
+          "X-Firebase-Client"
+          /* HttpHeader.X_FIREBASE_CLIENT */
+        ] = heartbeatsHeader;
+      }
+      const appCheckToken = await this._getAppCheckToken();
+      if (appCheckToken) {
+        headers[
+          "X-Firebase-AppCheck"
+          /* HttpHeader.X_FIREBASE_APP_CHECK */
+        ] = appCheckToken;
+      }
+      return headers;
+    }
+    async _getAppCheckToken() {
+      if (_isFirebaseServerApp(this.app) && this.app.settings.appCheckToken) {
+        return this.app.settings.appCheckToken;
+      }
+      const appCheckTokenResult = await this.appCheckServiceProvider.getImmediate({ optional: true })?.getToken();
+      if (appCheckTokenResult?.error) {
+        _logWarn(`Error while retrieving App Check token: ${appCheckTokenResult.error}`);
+      }
+      return appCheckTokenResult?.token;
+    }
+  };
+  function _castAuth(auth2) {
+    return getModularInstance(auth2);
+  }
+  var Subscription = class {
+    constructor(auth2) {
+      this.auth = auth2;
+      this.observer = null;
+      this.addObserver = createSubscribe((observer) => this.observer = observer);
+    }
+    get next() {
+      _assert(
+        this.observer,
+        this.auth,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      return this.observer.next.bind(this.observer);
+    }
+  };
+  var externalJSProvider = {
+    async loadJS() {
+      throw new Error("Unable to load external scripts");
+    },
+    recaptchaV2Script: "",
+    recaptchaEnterpriseScript: "",
+    gapiScript: ""
+  };
+  function _setExternalJSProvider(p2) {
+    externalJSProvider = p2;
+  }
+  function _loadJS(url) {
+    return externalJSProvider.loadJS(url);
+  }
+  function _recaptchaEnterpriseScriptUrl() {
+    return externalJSProvider.recaptchaEnterpriseScript;
+  }
+  function _gapiScriptUrl() {
+    return externalJSProvider.gapiScript;
+  }
+  function _generateCallbackName(prefix) {
+    return `__${prefix}${Math.floor(Math.random() * 1e6)}`;
+  }
+  var MockGreCAPTCHATopLevel = class {
+    constructor() {
+      this.enterprise = new MockGreCAPTCHA();
+    }
+    ready(callback) {
+      callback();
+    }
+    execute(_siteKey, _options) {
+      return Promise.resolve("token");
+    }
+    render(_container, _parameters) {
+      return "";
+    }
+  };
+  var MockGreCAPTCHA = class {
+    ready(callback) {
+      callback();
+    }
+    execute(_siteKey, _options) {
+      return Promise.resolve("token");
+    }
+    render(_container, _parameters) {
+      return "";
+    }
+  };
+  var RECAPTCHA_ENTERPRISE_VERIFIER_TYPE = "recaptcha-enterprise";
+  var FAKE_TOKEN = "NO_RECAPTCHA";
+  var RECAPTCHA_ENTERPRISE_ONLOAD_CALLBACK_NAME = "onFirebaseAuthREInstanceReady";
+  var RecaptchaEnterpriseVerifier = class _RecaptchaEnterpriseVerifier {
+    /**
+     *
+     * @param authExtern - The corresponding Firebase {@link Auth} instance.
+     *
+     */
+    constructor(authExtern) {
+      this.type = RECAPTCHA_ENTERPRISE_VERIFIER_TYPE;
+      this.auth = _castAuth(authExtern);
+    }
+    /**
+     * Executes the verification process.
+     *
+     * @returns A Promise for a token that can be used to assert the validity of a request.
+     */
+    async verify(action = "verify", forceRefresh = false) {
+      async function retrieveSiteKey(auth2) {
+        if (!forceRefresh) {
+          if (auth2.tenantId == null && auth2._agentRecaptchaConfig != null) {
+            return auth2._agentRecaptchaConfig.siteKey;
+          }
+          if (auth2.tenantId != null && auth2._tenantRecaptchaConfigs[auth2.tenantId] !== void 0) {
+            return auth2._tenantRecaptchaConfigs[auth2.tenantId].siteKey;
+          }
+        }
+        return new Promise(async (resolve, reject) => {
+          getRecaptchaConfig(auth2, {
+            clientType: "CLIENT_TYPE_WEB",
+            version: "RECAPTCHA_ENTERPRISE"
+            /* RecaptchaVersion.ENTERPRISE */
+          }).then((response) => {
+            if (response.recaptchaKey === void 0) {
+              reject(new Error("recaptcha Enterprise site key undefined"));
+            } else {
+              const config = new RecaptchaConfig(response);
+              if (auth2.tenantId == null) {
+                auth2._agentRecaptchaConfig = config;
+              } else {
+                auth2._tenantRecaptchaConfigs[auth2.tenantId] = config;
+              }
+              return resolve(config.siteKey);
+            }
+          }).catch((error) => {
+            reject(error);
+          });
+        });
+      }
+      function retrieveRecaptchaToken(siteKey, resolve, reject) {
+        const grecaptcha = window.grecaptcha;
+        if (isEnterprise(grecaptcha)) {
+          grecaptcha.enterprise.ready(() => {
+            grecaptcha.enterprise.execute(siteKey, { action }).then((token) => {
+              resolve(token);
+            }).catch(() => {
+              resolve(FAKE_TOKEN);
+            });
+          });
+        } else {
+          reject(Error("No reCAPTCHA enterprise script loaded."));
+        }
+      }
+      if (this.auth.settings.appVerificationDisabledForTesting) {
+        const mockRecaptcha = new MockGreCAPTCHATopLevel();
+        return mockRecaptcha.execute("siteKey", { action: "verify" });
+      }
+      return new Promise((resolve, reject) => {
+        retrieveSiteKey(this.auth).then(async (siteKey) => {
+          if (!forceRefresh && isEnterprise(window.grecaptcha) && // If download has already been initiated, do not trigger another
+          // download, await the promise here.
+          _RecaptchaEnterpriseVerifier.scriptInjectionDeferred) {
+            await _RecaptchaEnterpriseVerifier.scriptInjectionDeferred.promise;
+            retrieveRecaptchaToken(siteKey, resolve, reject);
+          } else {
+            if (typeof window === "undefined") {
+              reject(new Error("RecaptchaVerifier is only supported in browser"));
+              return;
+            }
+            let url = _recaptchaEnterpriseScriptUrl();
+            if (url.length !== 0) {
+              url += siteKey + `&onload=${RECAPTCHA_ENTERPRISE_ONLOAD_CALLBACK_NAME}`;
+            }
+            _RecaptchaEnterpriseVerifier.scriptInjectionDeferred = new Deferred();
+            window[RECAPTCHA_ENTERPRISE_ONLOAD_CALLBACK_NAME] = () => {
+              _RecaptchaEnterpriseVerifier.scriptInjectionDeferred?.resolve();
+            };
+            _loadJS(url).then(() => _RecaptchaEnterpriseVerifier.scriptInjectionDeferred?.promise).then(() => {
+              retrieveRecaptchaToken(siteKey, resolve, reject);
+            }).catch((error) => {
+              reject(error);
+            });
+          }
+        }).catch((error) => {
+          reject(error);
+        });
+      });
+    }
+  };
+  RecaptchaEnterpriseVerifier.scriptInjectionDeferred = null;
+  async function injectRecaptchaFields(auth2, request, action, isCaptchaResp = false, isFakeToken = false) {
+    const verifier = new RecaptchaEnterpriseVerifier(auth2);
+    let captchaResponse;
+    if (isFakeToken) {
+      captchaResponse = FAKE_TOKEN;
+    } else {
+      try {
+        captchaResponse = await verifier.verify(action);
+      } catch (error) {
+        captchaResponse = await verifier.verify(action, true);
+      }
+    }
+    const newRequest = { ...request };
+    if (action === "mfaSmsEnrollment" || action === "mfaSmsSignIn") {
+      if ("phoneEnrollmentInfo" in newRequest) {
+        const phoneNumber = newRequest.phoneEnrollmentInfo.phoneNumber;
+        const recaptchaToken = newRequest.phoneEnrollmentInfo.recaptchaToken;
+        Object.assign(newRequest, {
+          "phoneEnrollmentInfo": {
+            phoneNumber,
+            recaptchaToken,
+            captchaResponse,
+            "clientType": "CLIENT_TYPE_WEB",
+            "recaptchaVersion": "RECAPTCHA_ENTERPRISE"
+            /* RecaptchaVersion.ENTERPRISE */
+          }
+        });
+      } else if ("phoneSignInInfo" in newRequest) {
+        const recaptchaToken = newRequest.phoneSignInInfo.recaptchaToken;
+        Object.assign(newRequest, {
+          "phoneSignInInfo": {
+            recaptchaToken,
+            captchaResponse,
+            "clientType": "CLIENT_TYPE_WEB",
+            "recaptchaVersion": "RECAPTCHA_ENTERPRISE"
+            /* RecaptchaVersion.ENTERPRISE */
+          }
+        });
+      }
+      return newRequest;
+    }
+    if (!isCaptchaResp) {
+      Object.assign(newRequest, { captchaResponse });
+    } else {
+      Object.assign(newRequest, { "captchaResp": captchaResponse });
+    }
+    Object.assign(newRequest, {
+      "clientType": "CLIENT_TYPE_WEB"
+      /* RecaptchaClientType.WEB */
+    });
+    Object.assign(newRequest, {
+      "recaptchaVersion": "RECAPTCHA_ENTERPRISE"
+      /* RecaptchaVersion.ENTERPRISE */
+    });
+    return newRequest;
+  }
+  async function handleRecaptchaFlow(authInstance, request, actionName, actionMethod, recaptchaAuthProvider) {
+    if (recaptchaAuthProvider === "EMAIL_PASSWORD_PROVIDER") {
+      if (authInstance._getRecaptchaConfig()?.isProviderEnabled(
+        "EMAIL_PASSWORD_PROVIDER"
+        /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
+      )) {
+        const requestWithRecaptcha = await injectRecaptchaFields(
+          authInstance,
+          request,
+          actionName,
+          actionName === "getOobCode"
+          /* RecaptchaActionName.GET_OOB_CODE */
+        );
+        return actionMethod(authInstance, requestWithRecaptcha);
+      } else {
+        return actionMethod(authInstance, request).catch(async (error) => {
+          if (error.code === `auth/${"missing-recaptcha-token"}`) {
+            console.log(`${actionName} is protected by reCAPTCHA Enterprise for this project. Automatically triggering the reCAPTCHA flow and restarting the flow.`);
+            const requestWithRecaptcha = await injectRecaptchaFields(
+              authInstance,
+              request,
+              actionName,
+              actionName === "getOobCode"
+              /* RecaptchaActionName.GET_OOB_CODE */
+            );
+            return actionMethod(authInstance, requestWithRecaptcha);
+          } else {
+            return Promise.reject(error);
+          }
+        });
+      }
+    } else if (recaptchaAuthProvider === "PHONE_PROVIDER") {
+      if (authInstance._getRecaptchaConfig()?.isProviderEnabled(
+        "PHONE_PROVIDER"
+        /* RecaptchaAuthProvider.PHONE_PROVIDER */
+      )) {
+        const requestWithRecaptcha = await injectRecaptchaFields(authInstance, request, actionName);
+        return actionMethod(authInstance, requestWithRecaptcha).catch(async (error) => {
+          if (authInstance._getRecaptchaConfig()?.getProviderEnforcementState(
+            "PHONE_PROVIDER"
+            /* RecaptchaAuthProvider.PHONE_PROVIDER */
+          ) === "AUDIT") {
+            if (error.code === `auth/${"missing-recaptcha-token"}` || error.code === `auth/${"invalid-app-credential"}`) {
+              console.log(`Failed to verify with reCAPTCHA Enterprise. Automatically triggering the reCAPTCHA v2 flow to complete the ${actionName} flow.`);
+              const requestWithRecaptchaFields = await injectRecaptchaFields(
+                authInstance,
+                request,
+                actionName,
+                false,
+                // isCaptchaResp
+                true
+                // isFakeToken
+              );
+              return actionMethod(authInstance, requestWithRecaptchaFields);
+            }
+          }
+          return Promise.reject(error);
+        });
+      } else {
+        const requestWithRecaptchaFields = await injectRecaptchaFields(
+          authInstance,
+          request,
+          actionName,
+          false,
+          // isCaptchaResp
+          true
+          // isFakeToken
+        );
+        return actionMethod(authInstance, requestWithRecaptchaFields);
+      }
+    } else {
+      return Promise.reject(recaptchaAuthProvider + " provider is not supported.");
+    }
+  }
+  async function _initializeRecaptchaConfig(auth2) {
+    const authInternal = _castAuth(auth2);
+    const response = await getRecaptchaConfig(authInternal, {
+      clientType: "CLIENT_TYPE_WEB",
+      version: "RECAPTCHA_ENTERPRISE"
+      /* RecaptchaVersion.ENTERPRISE */
+    });
+    const config = new RecaptchaConfig(response);
+    if (authInternal.tenantId == null) {
+      authInternal._agentRecaptchaConfig = config;
+    } else {
+      authInternal._tenantRecaptchaConfigs[authInternal.tenantId] = config;
+    }
+    if (config.isAnyProviderEnabled()) {
+      const verifier = new RecaptchaEnterpriseVerifier(authInternal);
+      void verifier.verify();
+    }
+  }
+  function initializeAuth(app2, deps) {
+    const provider = _getProvider(app2, "auth");
+    if (provider.isInitialized()) {
+      const auth3 = provider.getImmediate();
+      const initialOptions = provider.getOptions();
+      if (deepEqual(initialOptions, deps ?? {})) {
+        return auth3;
+      } else {
+        _fail(
+          auth3,
+          "already-initialized"
+          /* AuthErrorCode.ALREADY_INITIALIZED */
+        );
+      }
+    }
+    const auth2 = provider.initialize({ options: deps });
+    return auth2;
+  }
+  function _initializeAuthInstance(auth2, deps) {
+    const persistence = deps?.persistence || [];
+    const hierarchy = (Array.isArray(persistence) ? persistence : [persistence]).map(_getInstance);
+    if (deps?.errorMap) {
+      auth2._updateErrorMap(deps.errorMap);
+    }
+    auth2._initializeWithPersistence(hierarchy, deps?.popupRedirectResolver);
+  }
+  function connectAuthEmulator(auth2, url, options) {
+    const authInternal = _castAuth(auth2);
+    _assert(
+      /^https?:\/\//.test(url),
+      authInternal,
+      "invalid-emulator-scheme"
+      /* AuthErrorCode.INVALID_EMULATOR_SCHEME */
+    );
+    const disableWarnings = !!options?.disableWarnings;
+    const protocol = extractProtocol(url);
+    const { host, port } = extractHostAndPort(url);
+    const portStr = port === null ? "" : `:${port}`;
+    const emulator = { url: `${protocol}//${host}${portStr}/` };
+    const emulatorConfig = Object.freeze({
+      host,
+      port,
+      protocol: protocol.replace(":", ""),
+      options: Object.freeze({ disableWarnings })
+    });
+    if (!authInternal._canInitEmulator) {
+      _assert(
+        authInternal.config.emulator && authInternal.emulatorConfig,
+        authInternal,
+        "emulator-config-failed"
+        /* AuthErrorCode.EMULATOR_CONFIG_FAILED */
+      );
+      _assert(
+        deepEqual(emulator, authInternal.config.emulator) && deepEqual(emulatorConfig, authInternal.emulatorConfig),
+        authInternal,
+        "emulator-config-failed"
+        /* AuthErrorCode.EMULATOR_CONFIG_FAILED */
+      );
+      return;
+    }
+    authInternal.config.emulator = emulator;
+    authInternal.emulatorConfig = emulatorConfig;
+    authInternal.settings.appVerificationDisabledForTesting = true;
+    if (isCloudWorkstation(host)) {
+      void pingServer(`${protocol}//${host}${portStr}`);
+    } else if (!disableWarnings) {
+      emitEmulatorWarning();
+    }
+  }
+  function extractProtocol(url) {
+    const protocolEnd = url.indexOf(":");
+    return protocolEnd < 0 ? "" : url.substr(0, protocolEnd + 1);
+  }
+  function extractHostAndPort(url) {
+    const protocol = extractProtocol(url);
+    const authority = /(\/\/)?([^?#/]+)/.exec(url.substr(protocol.length));
+    if (!authority) {
+      return { host: "", port: null };
+    }
+    const hostAndPort = authority[2].split("@").pop() || "";
+    const bracketedIPv6 = /^(\[[^\]]+\])(:|$)/.exec(hostAndPort);
+    if (bracketedIPv6) {
+      const host = bracketedIPv6[1];
+      return { host, port: parsePort(hostAndPort.substr(host.length + 1)) };
+    } else {
+      const [host, port] = hostAndPort.split(":");
+      return { host, port: parsePort(port) };
+    }
+  }
+  function parsePort(portStr) {
+    if (!portStr) {
+      return null;
+    }
+    const port = Number(portStr);
+    if (isNaN(port)) {
+      return null;
+    }
+    return port;
+  }
+  function emitEmulatorWarning() {
+    function attachBanner() {
+      const el = document.createElement("p");
+      const sty = el.style;
+      el.innerText = "Running in emulator mode. Do not use with production credentials.";
+      sty.position = "fixed";
+      sty.width = "100%";
+      sty.backgroundColor = "#ffffff";
+      sty.border = ".1em solid #000000";
+      sty.color = "#b50000";
+      sty.bottom = "0px";
+      sty.left = "0px";
+      sty.margin = "0px";
+      sty.zIndex = "10000";
+      sty.textAlign = "center";
+      el.classList.add("firebase-emulator-warning");
+      document.body.appendChild(el);
+    }
+    if (typeof console !== "undefined" && typeof console.info === "function") {
+      console.info("WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.");
+    }
+    if (typeof window !== "undefined" && typeof document !== "undefined") {
+      if (document.readyState === "loading") {
+        window.addEventListener("DOMContentLoaded", attachBanner);
+      } else {
+        attachBanner();
+      }
+    }
+  }
+  var AuthCredential = class {
+    /** @internal */
+    constructor(providerId, signInMethod) {
+      this.providerId = providerId;
+      this.signInMethod = signInMethod;
+    }
+    /**
+     * Returns a JSON-serializable representation of this object.
+     *
+     * @returns a JSON-serializable representation of this object.
+     */
+    toJSON() {
+      return debugFail("not implemented");
+    }
+    /** @internal */
+    _getIdTokenResponse(_auth) {
+      return debugFail("not implemented");
+    }
+    /** @internal */
+    _linkToIdToken(_auth, _idToken) {
+      return debugFail("not implemented");
+    }
+    /** @internal */
+    _getReauthenticationResolver(_auth) {
+      return debugFail("not implemented");
+    }
+  };
+  async function linkEmailPassword(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v1/accounts:signUp", request);
+  }
+  async function signInWithPassword(auth2, request) {
+    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPassword", _addTidIfNecessary(auth2, request));
+  }
+  async function signInWithEmailLink$1(auth2, request) {
+    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithEmailLink", _addTidIfNecessary(auth2, request));
+  }
+  async function signInWithEmailLinkForLinking(auth2, request) {
+    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithEmailLink", _addTidIfNecessary(auth2, request));
+  }
+  var EmailAuthCredential = class _EmailAuthCredential extends AuthCredential {
+    /** @internal */
+    constructor(_email, _password, signInMethod, _tenantId = null) {
+      super("password", signInMethod);
+      this._email = _email;
+      this._password = _password;
+      this._tenantId = _tenantId;
+    }
+    /** @internal */
+    static _fromEmailAndPassword(email, password) {
+      return new _EmailAuthCredential(
+        email,
+        password,
+        "password"
+        /* SignInMethod.EMAIL_PASSWORD */
+      );
+    }
+    /** @internal */
+    static _fromEmailAndCode(email, oobCode, tenantId = null) {
+      return new _EmailAuthCredential(email, oobCode, "emailLink", tenantId);
+    }
+    /** {@inheritdoc AuthCredential.toJSON} */
+    toJSON() {
+      return {
+        email: this._email,
+        password: this._password,
+        signInMethod: this.signInMethod,
+        tenantId: this._tenantId
+      };
+    }
+    /**
+     * Static method to deserialize a JSON representation of an object into an {@link  AuthCredential}.
+     *
+     * @param json - Either `object` or the stringified representation of the object. When string is
+     * provided, `JSON.parse` would be called first.
+     *
+     * @returns If the JSON input does not represent an {@link AuthCredential}, null is returned.
+     */
+    static fromJSON(json) {
+      const obj = typeof json === "string" ? JSON.parse(json) : json;
+      if (obj?.email && obj?.password) {
+        if (obj.signInMethod === "password") {
+          return this._fromEmailAndPassword(obj.email, obj.password);
+        } else if (obj.signInMethod === "emailLink") {
+          return this._fromEmailAndCode(obj.email, obj.password, obj.tenantId);
+        }
+      }
+      return null;
+    }
+    /** @internal */
+    async _getIdTokenResponse(auth2) {
+      switch (this.signInMethod) {
+        case "password":
+          const request = {
+            returnSecureToken: true,
+            email: this._email,
+            password: this._password,
+            clientType: "CLIENT_TYPE_WEB"
+            /* RecaptchaClientType.WEB */
+          };
+          return handleRecaptchaFlow(
+            auth2,
+            request,
+            "signInWithPassword",
+            signInWithPassword,
+            "EMAIL_PASSWORD_PROVIDER"
+            /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
+          );
+        case "emailLink":
+          return signInWithEmailLink$1(auth2, {
+            email: this._email,
+            oobCode: this._password
+          });
+        default:
+          _fail(
+            auth2,
+            "internal-error"
+            /* AuthErrorCode.INTERNAL_ERROR */
+          );
+      }
+    }
+    /** @internal */
+    async _linkToIdToken(auth2, idToken) {
+      switch (this.signInMethod) {
+        case "password":
+          const request = {
+            idToken,
+            returnSecureToken: true,
+            email: this._email,
+            password: this._password,
+            clientType: "CLIENT_TYPE_WEB"
+            /* RecaptchaClientType.WEB */
+          };
+          return handleRecaptchaFlow(
+            auth2,
+            request,
+            "signUpPassword",
+            linkEmailPassword,
+            "EMAIL_PASSWORD_PROVIDER"
+            /* RecaptchaAuthProvider.EMAIL_PASSWORD_PROVIDER */
+          );
+        case "emailLink":
+          return signInWithEmailLinkForLinking(auth2, {
+            idToken,
+            email: this._email,
+            oobCode: this._password
+          });
+        default:
+          _fail(
+            auth2,
+            "internal-error"
+            /* AuthErrorCode.INTERNAL_ERROR */
+          );
+      }
+    }
+    /** @internal */
+    _getReauthenticationResolver(auth2) {
+      return this._getIdTokenResponse(auth2);
+    }
+  };
+  async function signInWithIdp(auth2, request) {
+    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithIdp", _addTidIfNecessary(auth2, request));
+  }
+  var IDP_REQUEST_URI$1 = "http://localhost";
+  var OAuthCredential = class _OAuthCredential extends AuthCredential {
+    constructor() {
+      super(...arguments);
+      this.pendingToken = null;
+    }
+    /** @internal */
+    static _fromParams(params) {
+      const cred = new _OAuthCredential(params.providerId, params.signInMethod);
+      if (params.idToken || params.accessToken) {
+        if (params.idToken) {
+          cred.idToken = params.idToken;
+        }
+        if (params.accessToken) {
+          cred.accessToken = params.accessToken;
+        }
+        if (params.nonce && !params.pendingToken) {
+          cred.nonce = params.nonce;
+        }
+        if (params.pendingToken) {
+          cred.pendingToken = params.pendingToken;
+        }
+      } else if (params.oauthToken && params.oauthTokenSecret) {
+        cred.accessToken = params.oauthToken;
+        cred.secret = params.oauthTokenSecret;
+      } else {
+        _fail(
+          "argument-error"
+          /* AuthErrorCode.ARGUMENT_ERROR */
+        );
+      }
+      return cred;
+    }
+    /** {@inheritdoc AuthCredential.toJSON}  */
+    toJSON() {
+      return {
+        idToken: this.idToken,
+        accessToken: this.accessToken,
+        secret: this.secret,
+        nonce: this.nonce,
+        pendingToken: this.pendingToken,
+        providerId: this.providerId,
+        signInMethod: this.signInMethod
+      };
+    }
+    /**
+     * Static method to deserialize a JSON representation of an object into an
+     * {@link  AuthCredential}.
+     *
+     * @param json - Input can be either Object or the stringified representation of the object.
+     * When string is provided, JSON.parse would be called first.
+     *
+     * @returns If the JSON input does not represent an {@link  AuthCredential}, null is returned.
+     */
+    static fromJSON(json) {
+      const obj = typeof json === "string" ? JSON.parse(json) : json;
+      const { providerId, signInMethod, ...rest } = obj;
+      if (!providerId || !signInMethod) {
+        return null;
+      }
+      const cred = new _OAuthCredential(providerId, signInMethod);
+      cred.idToken = rest.idToken || void 0;
+      cred.accessToken = rest.accessToken || void 0;
+      cred.secret = rest.secret;
+      cred.nonce = rest.nonce;
+      cred.pendingToken = rest.pendingToken || null;
+      return cred;
+    }
+    /** @internal */
+    _getIdTokenResponse(auth2) {
+      const request = this.buildRequest();
+      return signInWithIdp(auth2, request);
+    }
+    /** @internal */
+    _linkToIdToken(auth2, idToken) {
+      const request = this.buildRequest();
+      request.idToken = idToken;
+      return signInWithIdp(auth2, request);
+    }
+    /** @internal */
+    _getReauthenticationResolver(auth2) {
+      const request = this.buildRequest();
+      request.autoCreate = false;
+      return signInWithIdp(auth2, request);
+    }
+    buildRequest() {
+      const request = {
+        requestUri: IDP_REQUEST_URI$1,
+        returnSecureToken: true
+      };
+      if (this.pendingToken) {
+        request.pendingToken = this.pendingToken;
+      } else {
+        const postBody = {};
+        if (this.idToken) {
+          postBody["id_token"] = this.idToken;
+        }
+        if (this.accessToken) {
+          postBody["access_token"] = this.accessToken;
+        }
+        if (this.secret) {
+          postBody["oauth_token_secret"] = this.secret;
+        }
+        postBody["providerId"] = this.providerId;
+        if (this.nonce && !this.pendingToken) {
+          postBody["nonce"] = this.nonce;
+        }
+        request.postBody = querystring(postBody);
+      }
+      return request;
+    }
+  };
+  async function sendPhoneVerificationCode(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v1/accounts:sendVerificationCode", _addTidIfNecessary(auth2, request));
+  }
+  async function signInWithPhoneNumber$1(auth2, request) {
+    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPhoneNumber", _addTidIfNecessary(auth2, request));
+  }
+  async function linkWithPhoneNumber$1(auth2, request) {
+    const response = await _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPhoneNumber", _addTidIfNecessary(auth2, request));
+    if (response.temporaryProof) {
+      throw _makeTaggedError(auth2, "account-exists-with-different-credential", response);
+    }
+    return response;
+  }
+  var VERIFY_PHONE_NUMBER_FOR_EXISTING_ERROR_MAP_ = {
+    [
+      "USER_NOT_FOUND"
+      /* ServerError.USER_NOT_FOUND */
+    ]: "user-not-found"
+    /* AuthErrorCode.USER_DELETED */
+  };
+  async function verifyPhoneNumberForExisting(auth2, request) {
+    const apiRequest = {
+      ...request,
+      operation: "REAUTH"
+    };
+    return _performSignInRequest(auth2, "POST", "/v1/accounts:signInWithPhoneNumber", _addTidIfNecessary(auth2, apiRequest), VERIFY_PHONE_NUMBER_FOR_EXISTING_ERROR_MAP_);
+  }
+  var PhoneAuthCredential = class _PhoneAuthCredential extends AuthCredential {
+    constructor(params) {
+      super(
+        "phone",
+        "phone"
+        /* SignInMethod.PHONE */
+      );
+      this.params = params;
+    }
+    /** @internal */
+    static _fromVerification(verificationId, verificationCode) {
+      return new _PhoneAuthCredential({ verificationId, verificationCode });
+    }
+    /** @internal */
+    static _fromTokenResponse(phoneNumber, temporaryProof) {
+      return new _PhoneAuthCredential({ phoneNumber, temporaryProof });
+    }
+    /** @internal */
+    _getIdTokenResponse(auth2) {
+      return signInWithPhoneNumber$1(auth2, this._makeVerificationRequest());
+    }
+    /** @internal */
+    _linkToIdToken(auth2, idToken) {
+      return linkWithPhoneNumber$1(auth2, {
+        idToken,
+        ...this._makeVerificationRequest()
+      });
+    }
+    /** @internal */
+    _getReauthenticationResolver(auth2) {
+      return verifyPhoneNumberForExisting(auth2, this._makeVerificationRequest());
+    }
+    /** @internal */
+    _makeVerificationRequest() {
+      const { temporaryProof, phoneNumber, verificationId, verificationCode } = this.params;
+      if (temporaryProof && phoneNumber) {
+        return { temporaryProof, phoneNumber };
+      }
+      return {
+        sessionInfo: verificationId,
+        code: verificationCode
+      };
+    }
+    /** {@inheritdoc AuthCredential.toJSON} */
+    toJSON() {
+      const obj = {
+        providerId: this.providerId
+      };
+      if (this.params.phoneNumber) {
+        obj.phoneNumber = this.params.phoneNumber;
+      }
+      if (this.params.temporaryProof) {
+        obj.temporaryProof = this.params.temporaryProof;
+      }
+      if (this.params.verificationCode) {
+        obj.verificationCode = this.params.verificationCode;
+      }
+      if (this.params.verificationId) {
+        obj.verificationId = this.params.verificationId;
+      }
+      return obj;
+    }
+    /** Generates a phone credential based on a plain object or a JSON string. */
+    static fromJSON(json) {
+      if (typeof json === "string") {
+        json = JSON.parse(json);
+      }
+      const { verificationId, verificationCode, phoneNumber, temporaryProof } = json;
+      if (!verificationCode && !verificationId && !phoneNumber && !temporaryProof) {
+        return null;
+      }
+      return new _PhoneAuthCredential({
+        verificationId,
+        verificationCode,
+        phoneNumber,
+        temporaryProof
+      });
+    }
+  };
+  function parseMode(mode) {
+    switch (mode) {
+      case "recoverEmail":
+        return "RECOVER_EMAIL";
+      case "resetPassword":
+        return "PASSWORD_RESET";
+      case "signIn":
+        return "EMAIL_SIGNIN";
+      case "verifyEmail":
+        return "VERIFY_EMAIL";
+      case "verifyAndChangeEmail":
+        return "VERIFY_AND_CHANGE_EMAIL";
+      case "revertSecondFactorAddition":
+        return "REVERT_SECOND_FACTOR_ADDITION";
+      default:
+        return null;
+    }
+  }
+  function parseDeepLink(url) {
+    const link = querystringDecode(extractQuerystring(url))["link"];
+    const doubleDeepLink = link ? querystringDecode(extractQuerystring(link))["deep_link_id"] : null;
+    const iOSDeepLink = querystringDecode(extractQuerystring(url))["deep_link_id"];
+    const iOSDoubleDeepLink = iOSDeepLink ? querystringDecode(extractQuerystring(iOSDeepLink))["link"] : null;
+    return iOSDoubleDeepLink || iOSDeepLink || doubleDeepLink || link || url;
+  }
+  var ActionCodeURL = class _ActionCodeURL {
+    /**
+     * @param actionLink - The link from which to extract the URL.
+     * @returns The {@link ActionCodeURL} object, or null if the link is invalid.
+     *
+     * @internal
+     */
+    constructor(actionLink) {
+      const searchParams = querystringDecode(extractQuerystring(actionLink));
+      const apiKey = searchParams[
+        "apiKey"
+        /* QueryField.API_KEY */
+      ] ?? null;
+      const code = searchParams[
+        "oobCode"
+        /* QueryField.CODE */
+      ] ?? null;
+      const operation = parseMode(searchParams[
+        "mode"
+        /* QueryField.MODE */
+      ] ?? null);
+      _assert(
+        apiKey && code && operation,
+        "argument-error"
+        /* AuthErrorCode.ARGUMENT_ERROR */
+      );
+      this.apiKey = apiKey;
+      this.operation = operation;
+      this.code = code;
+      this.continueUrl = searchParams[
+        "continueUrl"
+        /* QueryField.CONTINUE_URL */
+      ] ?? null;
+      this.languageCode = searchParams[
+        "lang"
+        /* QueryField.LANGUAGE_CODE */
+      ] ?? null;
+      this.tenantId = searchParams[
+        "tenantId"
+        /* QueryField.TENANT_ID */
+      ] ?? null;
+    }
+    /**
+     * Parses the email action link string and returns an {@link ActionCodeURL} if the link is valid,
+     * otherwise returns null.
+     *
+     * @param link  - The email action link string.
+     * @returns The {@link ActionCodeURL} object, or null if the link is invalid.
+     *
+     * @public
+     */
+    static parseLink(link) {
+      const actionLink = parseDeepLink(link);
+      try {
+        return new _ActionCodeURL(actionLink);
+      } catch {
+        return null;
+      }
+    }
+  };
+  var EmailAuthProvider = class _EmailAuthProvider {
+    constructor() {
+      this.providerId = _EmailAuthProvider.PROVIDER_ID;
+    }
+    /**
+     * Initialize an {@link AuthCredential} using an email and password.
+     *
+     * @example
+     * ```javascript
+     * const authCredential = EmailAuthProvider.credential(email, password);
+     * const userCredential = await signInWithCredential(auth, authCredential);
+     * ```
+     *
+     * @example
+     * ```javascript
+     * const userCredential = await signInWithEmailAndPassword(auth, email, password);
+     * ```
+     *
+     * @param email - Email address.
+     * @param password - User account password.
+     * @returns The auth provider credential.
+     */
+    static credential(email, password) {
+      return EmailAuthCredential._fromEmailAndPassword(email, password);
+    }
+    /**
+     * Initialize an {@link AuthCredential} using an email and an email link after a sign in with
+     * email link operation.
+     *
+     * @example
+     * ```javascript
+     * const authCredential = EmailAuthProvider.credentialWithLink(auth, email, emailLink);
+     * const userCredential = await signInWithCredential(auth, authCredential);
+     * ```
+     *
+     * @example
+     * ```javascript
+     * await sendSignInLinkToEmail(auth, email);
+     * // Obtain emailLink from user.
+     * const userCredential = await signInWithEmailLink(auth, email, emailLink);
+     * ```
+     *
+     * @param auth - The {@link Auth} instance used to verify the link.
+     * @param email - Email address.
+     * @param emailLink - Sign-in email link.
+     * @returns - The auth provider credential.
+     */
+    static credentialWithLink(email, emailLink) {
+      const actionCodeUrl = ActionCodeURL.parseLink(emailLink);
+      _assert(
+        actionCodeUrl,
+        "argument-error"
+        /* AuthErrorCode.ARGUMENT_ERROR */
+      );
+      return EmailAuthCredential._fromEmailAndCode(email, actionCodeUrl.code, actionCodeUrl.tenantId);
+    }
+  };
+  EmailAuthProvider.PROVIDER_ID = "password";
+  EmailAuthProvider.EMAIL_PASSWORD_SIGN_IN_METHOD = "password";
+  EmailAuthProvider.EMAIL_LINK_SIGN_IN_METHOD = "emailLink";
+  var FederatedAuthProvider = class {
+    /**
+     * Constructor for generic OAuth providers.
+     *
+     * @param providerId - Provider for which credentials should be generated.
+     */
+    constructor(providerId) {
+      this.providerId = providerId;
+      this.defaultLanguageCode = null;
+      this.customParameters = {};
+    }
+    /**
+     * Set the language gode.
+     *
+     * @param languageCode - language code
+     */
+    setDefaultLanguage(languageCode) {
+      this.defaultLanguageCode = languageCode;
+    }
+    /**
+     * Sets the OAuth custom parameters to pass in an OAuth request for popup and redirect sign-in
+     * operations.
+     *
+     * @remarks
+     * For a detailed list, check the reserved required OAuth 2.0 parameters such as `client_id`,
+     * `redirect_uri`, `scope`, `response_type`, and `state` are not allowed and will be ignored.
+     *
+     * @param customOAuthParameters - The custom OAuth parameters to pass in the OAuth request.
+     */
+    setCustomParameters(customOAuthParameters) {
+      this.customParameters = customOAuthParameters;
+      return this;
+    }
+    /**
+     * Retrieve the current list of {@link CustomParameters}.
+     */
+    getCustomParameters() {
+      return this.customParameters;
+    }
+  };
+  var BaseOAuthProvider = class extends FederatedAuthProvider {
+    constructor() {
+      super(...arguments);
+      this.scopes = [];
+    }
+    /**
+     * Add an OAuth scope to the credential.
+     *
+     * @param scope - Provider OAuth scope to add.
+     */
+    addScope(scope) {
+      if (!this.scopes.includes(scope)) {
+        this.scopes.push(scope);
+      }
+      return this;
+    }
+    /**
+     * Retrieve the current list of OAuth scopes.
+     */
+    getScopes() {
+      return [...this.scopes];
+    }
+  };
+  var FacebookAuthProvider = class _FacebookAuthProvider extends BaseOAuthProvider {
+    constructor() {
+      super(
+        "facebook.com"
+        /* ProviderId.FACEBOOK */
+      );
+    }
+    /**
+     * Creates a credential for Facebook.
+     *
+     * @example
+     * ```javascript
+     * // `event` from the Facebook auth.authResponseChange callback.
+     * const credential = FacebookAuthProvider.credential(event.authResponse.accessToken);
+     * const result = await signInWithCredential(credential);
+     * ```
+     *
+     * @param accessToken - Facebook access token.
+     */
+    static credential(accessToken) {
+      return OAuthCredential._fromParams({
+        providerId: _FacebookAuthProvider.PROVIDER_ID,
+        signInMethod: _FacebookAuthProvider.FACEBOOK_SIGN_IN_METHOD,
+        accessToken
+      });
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromResult(userCredential) {
+      return _FacebookAuthProvider.credentialFromTaggedObject(userCredential);
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
+     * thrown during a sign-in, link, or reauthenticate operation.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromError(error) {
+      return _FacebookAuthProvider.credentialFromTaggedObject(error.customData || {});
+    }
+    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
+      if (!tokenResponse || !("oauthAccessToken" in tokenResponse)) {
+        return null;
+      }
+      if (!tokenResponse.oauthAccessToken) {
+        return null;
+      }
+      try {
+        return _FacebookAuthProvider.credential(tokenResponse.oauthAccessToken);
+      } catch {
+        return null;
+      }
+    }
+  };
+  FacebookAuthProvider.FACEBOOK_SIGN_IN_METHOD = "facebook.com";
+  FacebookAuthProvider.PROVIDER_ID = "facebook.com";
+  var GoogleAuthProvider = class _GoogleAuthProvider extends BaseOAuthProvider {
+    constructor() {
+      super(
+        "google.com"
+        /* ProviderId.GOOGLE */
+      );
+      this.addScope("profile");
+    }
+    /**
+     * Creates a credential for Google. At least one of ID token and access token is required.
+     *
+     * @example
+     * ```javascript
+     * // \`googleUser\` from the onsuccess Google Sign In callback.
+     * const credential = GoogleAuthProvider.credential(googleUser.getAuthResponse().id_token);
+     * const result = await signInWithCredential(credential);
+     * ```
+     *
+     * @param idToken - Google ID token.
+     * @param accessToken - Google access token.
+     */
+    static credential(idToken, accessToken) {
+      return OAuthCredential._fromParams({
+        providerId: _GoogleAuthProvider.PROVIDER_ID,
+        signInMethod: _GoogleAuthProvider.GOOGLE_SIGN_IN_METHOD,
+        idToken,
+        accessToken
+      });
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromResult(userCredential) {
+      return _GoogleAuthProvider.credentialFromTaggedObject(userCredential);
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
+     * thrown during a sign-in, link, or reauthenticate operation.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromError(error) {
+      return _GoogleAuthProvider.credentialFromTaggedObject(error.customData || {});
+    }
+    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
+      if (!tokenResponse) {
+        return null;
+      }
+      const { oauthIdToken, oauthAccessToken } = tokenResponse;
+      if (!oauthIdToken && !oauthAccessToken) {
+        return null;
+      }
+      try {
+        return _GoogleAuthProvider.credential(oauthIdToken, oauthAccessToken);
+      } catch {
+        return null;
+      }
+    }
+  };
+  GoogleAuthProvider.GOOGLE_SIGN_IN_METHOD = "google.com";
+  GoogleAuthProvider.PROVIDER_ID = "google.com";
+  var GithubAuthProvider = class _GithubAuthProvider extends BaseOAuthProvider {
+    constructor() {
+      super(
+        "github.com"
+        /* ProviderId.GITHUB */
+      );
+    }
+    /**
+     * Creates a credential for GitHub.
+     *
+     * @param accessToken - GitHub access token.
+     */
+    static credential(accessToken) {
+      return OAuthCredential._fromParams({
+        providerId: _GithubAuthProvider.PROVIDER_ID,
+        signInMethod: _GithubAuthProvider.GITHUB_SIGN_IN_METHOD,
+        accessToken
+      });
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromResult(userCredential) {
+      return _GithubAuthProvider.credentialFromTaggedObject(userCredential);
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
+     * thrown during a sign-in, link, or reauthenticate operation.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromError(error) {
+      return _GithubAuthProvider.credentialFromTaggedObject(error.customData || {});
+    }
+    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
+      if (!tokenResponse || !("oauthAccessToken" in tokenResponse)) {
+        return null;
+      }
+      if (!tokenResponse.oauthAccessToken) {
+        return null;
+      }
+      try {
+        return _GithubAuthProvider.credential(tokenResponse.oauthAccessToken);
+      } catch {
+        return null;
+      }
+    }
+  };
+  GithubAuthProvider.GITHUB_SIGN_IN_METHOD = "github.com";
+  GithubAuthProvider.PROVIDER_ID = "github.com";
+  var TwitterAuthProvider = class _TwitterAuthProvider extends BaseOAuthProvider {
+    constructor() {
+      super(
+        "twitter.com"
+        /* ProviderId.TWITTER */
+      );
+    }
+    /**
+     * Creates a credential for Twitter.
+     *
+     * @param token - Twitter access token.
+     * @param secret - Twitter secret.
+     */
+    static credential(token, secret) {
+      return OAuthCredential._fromParams({
+        providerId: _TwitterAuthProvider.PROVIDER_ID,
+        signInMethod: _TwitterAuthProvider.TWITTER_SIGN_IN_METHOD,
+        oauthToken: token,
+        oauthTokenSecret: secret
+      });
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link UserCredential}.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromResult(userCredential) {
+      return _TwitterAuthProvider.credentialFromTaggedObject(userCredential);
+    }
+    /**
+     * Used to extract the underlying {@link OAuthCredential} from a {@link AuthError} which was
+     * thrown during a sign-in, link, or reauthenticate operation.
+     *
+     * @param userCredential - The user credential.
+     */
+    static credentialFromError(error) {
+      return _TwitterAuthProvider.credentialFromTaggedObject(error.customData || {});
+    }
+    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
+      if (!tokenResponse) {
+        return null;
+      }
+      const { oauthAccessToken, oauthTokenSecret } = tokenResponse;
+      if (!oauthAccessToken || !oauthTokenSecret) {
+        return null;
+      }
+      try {
+        return _TwitterAuthProvider.credential(oauthAccessToken, oauthTokenSecret);
+      } catch {
+        return null;
+      }
+    }
+  };
+  TwitterAuthProvider.TWITTER_SIGN_IN_METHOD = "twitter.com";
+  TwitterAuthProvider.PROVIDER_ID = "twitter.com";
+  var UserCredentialImpl = class _UserCredentialImpl {
+    constructor(params) {
+      this.user = params.user;
+      this.providerId = params.providerId;
+      this._tokenResponse = params._tokenResponse;
+      this.operationType = params.operationType;
+    }
+    static async _fromIdTokenResponse(auth2, operationType, idTokenResponse, isAnonymous = false) {
+      const user = await UserImpl._fromIdTokenResponse(auth2, idTokenResponse, isAnonymous);
+      const providerId = providerIdForResponse(idTokenResponse);
+      const userCred = new _UserCredentialImpl({
+        user,
+        providerId,
+        _tokenResponse: idTokenResponse,
+        operationType
+      });
+      return userCred;
+    }
+    static async _forOperation(user, operationType, response) {
+      await user._updateTokensIfNecessary(
+        response,
+        /* reload */
+        true
+      );
+      const providerId = providerIdForResponse(response);
+      return new _UserCredentialImpl({
+        user,
+        providerId,
+        _tokenResponse: response,
+        operationType
+      });
+    }
+  };
+  function providerIdForResponse(response) {
+    if (response.providerId) {
+      return response.providerId;
+    }
+    if ("phoneNumber" in response) {
+      return "phone";
+    }
+    return null;
+  }
+  var MultiFactorError = class _MultiFactorError extends FirebaseError {
+    constructor(auth2, error, operationType, user) {
+      super(error.code, error.message);
+      this.operationType = operationType;
+      this.user = user;
+      Object.setPrototypeOf(this, _MultiFactorError.prototype);
+      this.customData = {
+        appName: auth2.name,
+        tenantId: auth2.tenantId ?? void 0,
+        _serverResponse: error.customData._serverResponse,
+        operationType
+      };
+    }
+    static _fromErrorAndOperation(auth2, error, operationType, user) {
+      return new _MultiFactorError(auth2, error, operationType, user);
+    }
+  };
+  function _processCredentialSavingMfaContextIfNecessary(auth2, operationType, credential, user) {
+    const idTokenProvider = operationType === "reauthenticate" ? credential._getReauthenticationResolver(auth2) : credential._getIdTokenResponse(auth2);
+    return idTokenProvider.catch((error) => {
+      if (error.code === `auth/${"multi-factor-auth-required"}`) {
+        throw MultiFactorError._fromErrorAndOperation(auth2, error, operationType, user);
+      }
+      throw error;
+    });
+  }
+  async function _link$1(user, credential, bypassAuthState = false) {
+    const response = await _logoutIfInvalidated(user, credential._linkToIdToken(user.auth, await user.getIdToken()), bypassAuthState);
+    return UserCredentialImpl._forOperation(user, "link", response);
+  }
+  async function _reauthenticate(user, credential, bypassAuthState = false) {
+    const { auth: auth2 } = user;
+    if (_isFirebaseServerApp(auth2.app)) {
+      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
+    }
+    const operationType = "reauthenticate";
+    try {
+      const response = await _logoutIfInvalidated(user, _processCredentialSavingMfaContextIfNecessary(auth2, operationType, credential, user), bypassAuthState);
+      _assert(
+        response.idToken,
+        auth2,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const parsed = _parseToken(response.idToken);
+      _assert(
+        parsed,
+        auth2,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const { sub: localId } = parsed;
+      _assert(
+        user.uid === localId,
+        auth2,
+        "user-mismatch"
+        /* AuthErrorCode.USER_MISMATCH */
+      );
+      return UserCredentialImpl._forOperation(user, operationType, response);
+    } catch (e2) {
+      if (e2?.code === `auth/${"user-not-found"}`) {
+        _fail(
+          auth2,
+          "user-mismatch"
+          /* AuthErrorCode.USER_MISMATCH */
+        );
+      }
+      throw e2;
+    }
+  }
+  async function _signInWithCredential(auth2, credential, bypassAuthState = false) {
+    if (_isFirebaseServerApp(auth2.app)) {
+      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
+    }
+    const operationType = "signIn";
+    const response = await _processCredentialSavingMfaContextIfNecessary(auth2, operationType, credential);
+    const userCredential = await UserCredentialImpl._fromIdTokenResponse(auth2, operationType, response);
+    if (!bypassAuthState) {
+      await auth2._updateCurrentUser(userCredential.user);
+    }
+    return userCredential;
+  }
+  async function signInWithCredential(auth2, credential) {
+    return _signInWithCredential(_castAuth(auth2), credential);
+  }
+  async function recachePasswordPolicy(auth2) {
+    const authInternal = _castAuth(auth2);
+    if (authInternal._getPasswordPolicyInternal()) {
+      await authInternal._updatePasswordPolicy();
+    }
+  }
+  function signInWithEmailAndPassword(auth2, email, password) {
+    if (_isFirebaseServerApp(auth2.app)) {
+      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
+    }
+    return signInWithCredential(getModularInstance(auth2), EmailAuthProvider.credential(email, password)).catch(async (error) => {
+      if (error.code === `auth/${"password-does-not-meet-requirements"}`) {
+        void recachePasswordPolicy(auth2);
+      }
+      throw error;
+    });
+  }
+  function setPersistence(auth2, persistence) {
+    return getModularInstance(auth2).setPersistence(persistence);
+  }
+  function onIdTokenChanged(auth2, nextOrObserver, error, completed) {
+    return getModularInstance(auth2).onIdTokenChanged(nextOrObserver, error, completed);
+  }
+  function beforeAuthStateChanged(auth2, callback, onAbort) {
+    return getModularInstance(auth2).beforeAuthStateChanged(callback, onAbort);
+  }
+  function onAuthStateChanged(auth2, nextOrObserver, error, completed) {
+    return getModularInstance(auth2).onAuthStateChanged(nextOrObserver, error, completed);
+  }
+  function signOut(auth2) {
+    return getModularInstance(auth2).signOut();
+  }
+  function startEnrollPhoneMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:start", _addTidIfNecessary(auth2, request));
+  }
+  function finalizeEnrollPhoneMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:finalize", _addTidIfNecessary(auth2, request));
+  }
+  function startEnrollTotpMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:start", _addTidIfNecessary(auth2, request));
+  }
+  function finalizeEnrollTotpMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaEnrollment:finalize", _addTidIfNecessary(auth2, request));
+  }
+  var STORAGE_AVAILABLE_KEY = "__sak";
+  var BrowserPersistenceClass = class {
+    constructor(storageRetriever, type) {
+      this.storageRetriever = storageRetriever;
+      this.type = type;
+    }
+    _isAvailable() {
+      try {
+        if (!this.storage) {
+          return Promise.resolve(false);
+        }
+        this.storage.setItem(STORAGE_AVAILABLE_KEY, "1");
+        this.storage.removeItem(STORAGE_AVAILABLE_KEY);
+        return Promise.resolve(true);
+      } catch {
+        return Promise.resolve(false);
+      }
+    }
+    _set(key, value) {
+      this.storage.setItem(key, JSON.stringify(value));
+      return Promise.resolve();
+    }
+    _get(key) {
+      const json = this.storage.getItem(key);
+      return Promise.resolve(json ? JSON.parse(json) : null);
+    }
+    _remove(key) {
+      this.storage.removeItem(key);
+      return Promise.resolve();
+    }
+    get storage() {
+      return this.storageRetriever();
+    }
+  };
+  var _POLLING_INTERVAL_MS$1 = 1e3;
+  var IE10_LOCAL_STORAGE_SYNC_DELAY = 10;
+  var BrowserLocalPersistence = class extends BrowserPersistenceClass {
+    constructor() {
+      super(
+        () => window.localStorage,
+        "LOCAL"
+        /* PersistenceType.LOCAL */
+      );
+      this.boundEventHandler = (event, poll) => this.onStorageEvent(event, poll);
+      this.listeners = {};
+      this.localCache = {};
+      this.pollTimer = null;
+      this.fallbackToPolling = _isMobileBrowser();
+      this._shouldAllowMigration = true;
+    }
+    forAllChangedKeys(cb) {
+      for (const key of Object.keys(this.listeners)) {
+        const newValue = this.storage.getItem(key);
+        const oldValue = this.localCache[key];
+        if (newValue !== oldValue) {
+          cb(key, oldValue, newValue);
+        }
+      }
+    }
+    onStorageEvent(event, poll = false) {
+      if (!event.key) {
+        this.forAllChangedKeys((key2, _oldValue, newValue) => {
+          this.notifyListeners(key2, newValue);
+        });
+        return;
+      }
+      const key = event.key;
+      if (poll) {
+        this.detachListener();
+      } else {
+        this.stopPolling();
+      }
+      const triggerListeners = () => {
+        const storedValue2 = this.storage.getItem(key);
+        if (!poll && this.localCache[key] === storedValue2) {
+          return;
+        }
+        this.notifyListeners(key, storedValue2);
+      };
+      const storedValue = this.storage.getItem(key);
+      if (_isIE10() && storedValue !== event.newValue && event.newValue !== event.oldValue) {
+        setTimeout(triggerListeners, IE10_LOCAL_STORAGE_SYNC_DELAY);
+      } else {
+        triggerListeners();
+      }
+    }
+    notifyListeners(key, value) {
+      this.localCache[key] = value;
+      const listeners = this.listeners[key];
+      if (listeners) {
+        for (const listener of Array.from(listeners)) {
+          listener(value ? JSON.parse(value) : value);
+        }
+      }
+    }
+    startPolling() {
+      this.stopPolling();
+      this.pollTimer = setInterval(() => {
+        this.forAllChangedKeys((key, oldValue, newValue) => {
+          this.onStorageEvent(
+            new StorageEvent("storage", {
+              key,
+              oldValue,
+              newValue
+            }),
+            /* poll */
+            true
+          );
+        });
+      }, _POLLING_INTERVAL_MS$1);
+    }
+    stopPolling() {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+    }
+    attachListener() {
+      window.addEventListener("storage", this.boundEventHandler);
+    }
+    detachListener() {
+      window.removeEventListener("storage", this.boundEventHandler);
+    }
+    _addListener(key, listener) {
+      if (Object.keys(this.listeners).length === 0) {
+        if (this.fallbackToPolling) {
+          this.startPolling();
+        } else {
+          this.attachListener();
+        }
+      }
+      if (!this.listeners[key]) {
+        this.listeners[key] = /* @__PURE__ */ new Set();
+        this.localCache[key] = this.storage.getItem(key);
+      }
+      this.listeners[key].add(listener);
+    }
+    _removeListener(key, listener) {
+      if (this.listeners[key]) {
+        this.listeners[key].delete(listener);
+        if (this.listeners[key].size === 0) {
+          delete this.listeners[key];
+        }
+      }
+      if (Object.keys(this.listeners).length === 0) {
+        this.detachListener();
+        this.stopPolling();
+      }
+    }
+    // Update local cache on base operations:
+    async _set(key, value) {
+      await super._set(key, value);
+      this.localCache[key] = JSON.stringify(value);
+    }
+    async _get(key) {
+      const value = await super._get(key);
+      this.localCache[key] = JSON.stringify(value);
+      return value;
+    }
+    async _remove(key) {
+      await super._remove(key);
+      delete this.localCache[key];
+    }
+  };
+  BrowserLocalPersistence.type = "LOCAL";
+  var browserLocalPersistence = BrowserLocalPersistence;
+  var POLLING_INTERVAL_MS = 1e3;
+  function getDocumentCookie(name4) {
+    const escapedName = name4.replace(/[\\^$.*+?()[\]{}|]/g, "\\$&");
+    const matcher = RegExp(`${escapedName}=([^;]+)`);
+    return document.cookie.match(matcher)?.[1] ?? null;
+  }
+  function getCookieName(key) {
+    const isDevMode = window.location.protocol === "http:";
+    return `${isDevMode ? "__dev_" : "__HOST-"}FIREBASE_${key.split(":")[3]}`;
+  }
+  var CookiePersistence = class {
+    constructor() {
+      this.type = "COOKIE";
+      this.listenerUnsubscribes = /* @__PURE__ */ new Map();
+    }
+    // used to get the URL to the backend to proxy to
+    _getFinalTarget(originalUrl) {
+      if (typeof window === void 0) {
+        return originalUrl;
+      }
+      const url = new URL(`${window.location.origin}/__cookies__`);
+      url.searchParams.set("finalTarget", originalUrl);
+      return url;
+    }
+    // To be a usable persistence method in a chain browserCookiePersistence ensures that
+    // prerequisites have been met, namely that we're in a secureContext, navigator and document are
+    // available and cookies are enabled. Not all UAs support these method, so fallback accordingly.
+    async _isAvailable() {
+      if (typeof isSecureContext === "boolean" && !isSecureContext) {
+        return false;
+      }
+      if (typeof navigator === "undefined" || typeof document === "undefined") {
+        return false;
+      }
+      return navigator.cookieEnabled ?? true;
+    }
+    // Set should be a noop as we expect middleware to handle this
+    async _set(_key, _value) {
+      return;
+    }
+    // Attempt to get the cookie from cookieStore, fallback to document.cookie
+    async _get(key) {
+      if (!this._isAvailable()) {
+        return null;
+      }
+      const name4 = getCookieName(key);
+      if (window.cookieStore) {
+        const cookie = await window.cookieStore.get(name4);
+        return cookie?.value;
+      }
+      return getDocumentCookie(name4);
+    }
+    // Log out by overriding the idToken with a sentinel value of ""
+    async _remove(key) {
+      if (!this._isAvailable()) {
+        return;
+      }
+      const existingValue = await this._get(key);
+      if (!existingValue) {
+        return;
+      }
+      const name4 = getCookieName(key);
+      document.cookie = `${name4}=;Max-Age=34560000;Partitioned;Secure;SameSite=Strict;Path=/;Priority=High`;
+      await fetch(`/__cookies__`, { method: "DELETE" }).catch(() => void 0);
+    }
+    // Listen for cookie changes, both cookieStore and fallback to polling document.cookie
+    _addListener(key, listener) {
+      if (!this._isAvailable()) {
+        return;
+      }
+      const name4 = getCookieName(key);
+      if (window.cookieStore) {
+        const cb = ((event) => {
+          const changedCookie = event.changed.find((change) => change.name === name4);
+          if (changedCookie) {
+            listener(changedCookie.value);
+          }
+          const deletedCookie = event.deleted.find((change) => change.name === name4);
+          if (deletedCookie) {
+            listener(null);
+          }
+        });
+        const unsubscribe2 = () => window.cookieStore.removeEventListener("change", cb);
+        this.listenerUnsubscribes.set(listener, unsubscribe2);
+        return window.cookieStore.addEventListener("change", cb);
+      }
+      let lastValue = getDocumentCookie(name4);
+      const interval = setInterval(() => {
+        const currentValue = getDocumentCookie(name4);
+        if (currentValue !== lastValue) {
+          listener(currentValue);
+          lastValue = currentValue;
+        }
+      }, POLLING_INTERVAL_MS);
+      const unsubscribe = () => clearInterval(interval);
+      this.listenerUnsubscribes.set(listener, unsubscribe);
+    }
+    _removeListener(_key, listener) {
+      const unsubscribe = this.listenerUnsubscribes.get(listener);
+      if (!unsubscribe) {
+        return;
+      }
+      unsubscribe();
+      this.listenerUnsubscribes.delete(listener);
+    }
+  };
+  CookiePersistence.type = "COOKIE";
+  var BrowserSessionPersistence = class extends BrowserPersistenceClass {
+    constructor() {
+      super(
+        () => window.sessionStorage,
+        "SESSION"
+        /* PersistenceType.SESSION */
+      );
+    }
+    _addListener(_key, _listener) {
+      return;
+    }
+    _removeListener(_key, _listener) {
+      return;
+    }
+  };
+  BrowserSessionPersistence.type = "SESSION";
+  var browserSessionPersistence = BrowserSessionPersistence;
+  function _allSettled(promises) {
+    return Promise.all(promises.map(async (promise) => {
+      try {
+        const value = await promise;
+        return {
+          fulfilled: true,
+          value
+        };
+      } catch (reason) {
+        return {
+          fulfilled: false,
+          reason
+        };
+      }
+    }));
+  }
+  var Receiver = class _Receiver {
+    constructor(eventTarget) {
+      this.eventTarget = eventTarget;
+      this.handlersMap = {};
+      this.boundEventHandler = this.handleEvent.bind(this);
+    }
+    /**
+     * Obtain an instance of a Receiver for a given event target, if none exists it will be created.
+     *
+     * @param eventTarget - An event target (such as window or self) through which the underlying
+     * messages will be received.
+     */
+    static _getInstance(eventTarget) {
+      const existingInstance = this.receivers.find((receiver) => receiver.isListeningto(eventTarget));
+      if (existingInstance) {
+        return existingInstance;
+      }
+      const newInstance = new _Receiver(eventTarget);
+      this.receivers.push(newInstance);
+      return newInstance;
+    }
+    isListeningto(eventTarget) {
+      return this.eventTarget === eventTarget;
+    }
+    /**
+     * Fans out a MessageEvent to the appropriate listeners.
+     *
+     * @remarks
+     * Sends an {@link Status.ACK} upon receipt and a {@link Status.DONE} once all handlers have
+     * finished processing.
+     *
+     * @param event - The MessageEvent.
+     *
+     */
+    async handleEvent(event) {
+      const messageEvent = event;
+      const { eventId, eventType, data } = messageEvent.data;
+      const handlers = this.handlersMap[eventType];
+      if (!handlers?.size) {
+        return;
+      }
+      messageEvent.ports[0].postMessage({
+        status: "ack",
+        eventId,
+        eventType
+      });
+      const promises = Array.from(handlers).map(async (handler) => handler(messageEvent.origin, data));
+      const response = await _allSettled(promises);
+      messageEvent.ports[0].postMessage({
+        status: "done",
+        eventId,
+        eventType,
+        response
+      });
+    }
+    /**
+     * Subscribe an event handler for a particular event.
+     *
+     * @param eventType - Event name to subscribe to.
+     * @param eventHandler - The event handler which should receive the events.
+     *
+     */
+    _subscribe(eventType, eventHandler) {
+      if (Object.keys(this.handlersMap).length === 0) {
+        this.eventTarget.addEventListener("message", this.boundEventHandler);
+      }
+      if (!this.handlersMap[eventType]) {
+        this.handlersMap[eventType] = /* @__PURE__ */ new Set();
+      }
+      this.handlersMap[eventType].add(eventHandler);
+    }
+    /**
+     * Unsubscribe an event handler from a particular event.
+     *
+     * @param eventType - Event name to unsubscribe from.
+     * @param eventHandler - Optional event handler, if none provided, unsubscribe all handlers on this event.
+     *
+     */
+    _unsubscribe(eventType, eventHandler) {
+      if (this.handlersMap[eventType] && eventHandler) {
+        this.handlersMap[eventType].delete(eventHandler);
+      }
+      if (!eventHandler || this.handlersMap[eventType].size === 0) {
+        delete this.handlersMap[eventType];
+      }
+      if (Object.keys(this.handlersMap).length === 0) {
+        this.eventTarget.removeEventListener("message", this.boundEventHandler);
+      }
+    }
+  };
+  Receiver.receivers = [];
+  function _generateEventId(prefix = "", digits = 10) {
+    let random = "";
+    for (let i2 = 0; i2 < digits; i2++) {
+      random += Math.floor(Math.random() * 10);
+    }
+    return prefix + random;
+  }
+  var Sender = class {
+    constructor(target) {
+      this.target = target;
+      this.handlers = /* @__PURE__ */ new Set();
+    }
+    /**
+     * Unsubscribe the handler and remove it from our tracking Set.
+     *
+     * @param handler - The handler to unsubscribe.
+     */
+    removeMessageHandler(handler) {
+      if (handler.messageChannel) {
+        handler.messageChannel.port1.removeEventListener("message", handler.onMessage);
+        handler.messageChannel.port1.close();
+      }
+      this.handlers.delete(handler);
+    }
+    /**
+     * Send a message to the Receiver located at {@link target}.
+     *
+     * @remarks
+     * We'll first wait a bit for an ACK , if we get one we will wait significantly longer until the
+     * receiver has had a chance to fully process the event.
+     *
+     * @param eventType - Type of event to send.
+     * @param data - The payload of the event.
+     * @param timeout - Timeout for waiting on an ACK from the receiver.
+     *
+     * @returns An array of settled promises from all the handlers that were listening on the receiver.
+     */
+    async _send(eventType, data, timeout = 50) {
+      const messageChannel = typeof MessageChannel !== "undefined" ? new MessageChannel() : null;
+      if (!messageChannel) {
+        throw new Error(
+          "connection_unavailable"
+          /* _MessageError.CONNECTION_UNAVAILABLE */
+        );
+      }
+      let completionTimer;
+      let handler;
+      return new Promise((resolve, reject) => {
+        const eventId = _generateEventId("", 20);
+        messageChannel.port1.start();
+        const ackTimer = setTimeout(() => {
+          reject(new Error(
+            "unsupported_event"
+            /* _MessageError.UNSUPPORTED_EVENT */
+          ));
+        }, timeout);
+        handler = {
+          messageChannel,
+          onMessage(event) {
+            const messageEvent = event;
+            if (messageEvent.data.eventId !== eventId) {
+              return;
+            }
+            switch (messageEvent.data.status) {
+              case "ack":
+                clearTimeout(ackTimer);
+                completionTimer = setTimeout(
+                  () => {
+                    reject(new Error(
+                      "timeout"
+                      /* _MessageError.TIMEOUT */
+                    ));
+                  },
+                  3e3
+                  /* _TimeoutDuration.COMPLETION */
+                );
+                break;
+              case "done":
+                clearTimeout(completionTimer);
+                resolve(messageEvent.data.response);
+                break;
+              default:
+                clearTimeout(ackTimer);
+                clearTimeout(completionTimer);
+                reject(new Error(
+                  "invalid_response"
+                  /* _MessageError.INVALID_RESPONSE */
+                ));
+                break;
+            }
+          }
+        };
+        this.handlers.add(handler);
+        messageChannel.port1.addEventListener("message", handler.onMessage);
+        this.target.postMessage({
+          eventType,
+          eventId,
+          data
+        }, [messageChannel.port2]);
+      }).finally(() => {
+        if (handler) {
+          this.removeMessageHandler(handler);
+        }
+      });
+    }
+  };
+  function _window() {
+    return window;
+  }
+  function _setWindowLocation(url) {
+    _window().location.href = url;
+  }
+  function _isWorker() {
+    return typeof _window()["WorkerGlobalScope"] !== "undefined" && typeof _window()["importScripts"] === "function";
+  }
+  async function _getActiveServiceWorker() {
+    if (!navigator?.serviceWorker) {
+      return null;
+    }
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      return registration.active;
+    } catch {
+      return null;
+    }
+  }
+  function _getServiceWorkerController() {
+    return navigator?.serviceWorker?.controller || null;
+  }
+  function _getWorkerGlobalScope() {
+    return _isWorker() ? self : null;
+  }
+  var DB_NAME2 = "firebaseLocalStorageDb";
+  var DB_VERSION2 = 1;
+  var DB_OBJECTSTORE_NAME = "firebaseLocalStorage";
+  var DB_DATA_KEYPATH = "fbase_key";
+  var DBPromise = class {
+    constructor(request) {
+      this.request = request;
+    }
+    toPromise() {
+      return new Promise((resolve, reject) => {
+        this.request.addEventListener("success", () => {
+          resolve(this.request.result);
+        });
+        this.request.addEventListener("error", () => {
+          reject(this.request.error);
+        });
+      });
+    }
+  };
+  function getObjectStore(db2, isReadWrite) {
+    return db2.transaction([DB_OBJECTSTORE_NAME], isReadWrite ? "readwrite" : "readonly").objectStore(DB_OBJECTSTORE_NAME);
+  }
+  function _deleteDatabase() {
+    const request = indexedDB.deleteDatabase(DB_NAME2);
+    return new DBPromise(request).toPromise();
+  }
+  function _openDatabase() {
+    const request = indexedDB.open(DB_NAME2, DB_VERSION2);
+    return new Promise((resolve, reject) => {
+      request.addEventListener("error", () => {
+        reject(request.error);
+      });
+      request.addEventListener("upgradeneeded", () => {
+        const db2 = request.result;
+        try {
+          db2.createObjectStore(DB_OBJECTSTORE_NAME, { keyPath: DB_DATA_KEYPATH });
+        } catch (e2) {
+          reject(e2);
+        }
+      });
+      request.addEventListener("success", async () => {
+        const db2 = request.result;
+        if (!db2.objectStoreNames.contains(DB_OBJECTSTORE_NAME)) {
+          db2.close();
+          await _deleteDatabase();
+          resolve(await _openDatabase());
+        } else {
+          resolve(db2);
+        }
+      });
+    });
+  }
+  async function _putObject(db2, key, value) {
+    const request = getObjectStore(db2, true).put({
+      [DB_DATA_KEYPATH]: key,
+      value
+    });
+    return new DBPromise(request).toPromise();
+  }
+  async function getObject(db2, key) {
+    const request = getObjectStore(db2, false).get(key);
+    const data = await new DBPromise(request).toPromise();
+    return data === void 0 ? null : data.value;
+  }
+  function _deleteObject(db2, key) {
+    const request = getObjectStore(db2, true).delete(key);
+    return new DBPromise(request).toPromise();
+  }
+  var _POLLING_INTERVAL_MS = 800;
+  var _TRANSACTION_RETRY_COUNT = 3;
+  var IndexedDBLocalPersistence = class {
+    registerLifecycleListeners() {
+      if (typeof window !== "undefined" && typeof window.addEventListener === "function") {
+        window.addEventListener("pagehide", this.onPageHide);
+        window.addEventListener("pageshow", this.onPageShow);
+      }
+    }
+    unregisterLifecycleListeners() {
+      if (typeof window !== "undefined" && typeof window.removeEventListener === "function") {
+        window.removeEventListener("pagehide", this.onPageHide);
+        window.removeEventListener("pageshow", this.onPageShow);
+      }
+    }
+    constructor() {
+      this.type = "LOCAL";
+      this.dbPromise = null;
+      this._shouldAllowMigration = true;
+      this.listeners = {};
+      this.localCache = {};
+      this.pollTimer = null;
+      this.isClosing = false;
+      this.pendingWrites = 0;
+      this.receiver = null;
+      this.sender = null;
+      this.serviceWorkerReceiverAvailable = false;
+      this.activeServiceWorker = null;
+      this.onPageHide = () => {
+        this.isClosing = true;
+        this.stopPolling();
+        if (this.dbPromise) {
+          this.dbPromise.then((db2) => db2.close()).catch(() => {
+          });
+          this.dbPromise = null;
+        }
+      };
+      this.onPageShow = () => {
+        if (this.isClosing) {
+          this.isClosing = false;
+          if (Object.keys(this.listeners).length > 0) {
+            this.startPolling();
+          }
+        }
+      };
+      this._workerInitializationPromise = this.initializeServiceWorkerMessaging().then(() => {
+      }, () => {
+      });
+    }
+    async _openDb() {
+      if (this.dbPromise) {
+        return this.dbPromise;
+      }
+      this.dbPromise = _openDatabase();
+      this.dbPromise.catch(() => {
+        this.dbPromise = null;
+      });
+      return this.dbPromise;
+    }
+    async _withRetries(op) {
+      let numAttempts = 0;
+      while (true) {
+        try {
+          const db2 = await this._openDb();
+          return await op(db2);
+        } catch (e2) {
+          if (numAttempts++ > _TRANSACTION_RETRY_COUNT) {
+            throw e2;
+          }
+          if (this.dbPromise) {
+            const dbPromise2 = this.dbPromise;
+            this.dbPromise = null;
+            try {
+              const db2 = await dbPromise2;
+              db2.close();
+            } catch {
+            }
+          }
+        }
+      }
+    }
+    /**
+     * IndexedDB events do not propagate from the main window to the worker context.  We rely on a
+     * postMessage interface to send these events to the worker ourselves.
+     */
+    async initializeServiceWorkerMessaging() {
+      return _isWorker() ? this.initializeReceiver() : this.initializeSender();
+    }
+    /**
+     * As the worker we should listen to events from the main window.
+     */
+    async initializeReceiver() {
+      this.receiver = Receiver._getInstance(_getWorkerGlobalScope());
+      this.receiver._subscribe("keyChanged", async (_origin, data) => {
+        const keys = await this._poll();
+        return {
+          keyProcessed: keys.includes(data.key)
+        };
+      });
+      this.receiver._subscribe("ping", async (_origin, _data) => {
+        return [
+          "keyChanged"
+          /* _EventType.KEY_CHANGED */
+        ];
+      });
+    }
+    /**
+     * As the main window, we should let the worker know when keys change (set and remove).
+     *
+     * @remarks
+     * {@link https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/ready | ServiceWorkerContainer.ready}
+     * may not resolve.
+     */
+    async initializeSender() {
+      this.activeServiceWorker = await _getActiveServiceWorker();
+      if (!this.activeServiceWorker) {
+        return;
+      }
+      this.sender = new Sender(this.activeServiceWorker);
+      const results = await this.sender._send(
+        "ping",
+        {},
+        800
+        /* _TimeoutDuration.LONG_ACK */
+      );
+      if (!results) {
+        return;
+      }
+      if (results[0]?.fulfilled && results[0]?.value.includes(
+        "keyChanged"
+        /* _EventType.KEY_CHANGED */
+      )) {
+        this.serviceWorkerReceiverAvailable = true;
+      }
+    }
+    /**
+     * Let the worker know about a changed key, the exact key doesn't technically matter since the
+     * worker will just trigger a full sync anyway.
+     *
+     * @remarks
+     * For now, we only support one service worker per page.
+     *
+     * @param key - Storage key which changed.
+     */
+    async notifyServiceWorker(key) {
+      if (!this.sender || !this.activeServiceWorker || _getServiceWorkerController() !== this.activeServiceWorker) {
+        return;
+      }
+      try {
+        await this.sender._send(
+          "keyChanged",
+          { key },
+          // Use long timeout if receiver has previously responded to a ping from us.
+          this.serviceWorkerReceiverAvailable ? 800 : 50
+          /* _TimeoutDuration.ACK */
+        );
+      } catch {
+      }
+    }
+    async _isAvailable() {
+      try {
+        if (!indexedDB) {
+          return false;
+        }
+        await this._withRetries(async (db2) => {
+          await _putObject(db2, STORAGE_AVAILABLE_KEY, "1");
+          await _deleteObject(db2, STORAGE_AVAILABLE_KEY);
+        });
+        return true;
+      } catch {
+      }
+      return false;
+    }
+    async _withPendingWrite(write) {
+      this.pendingWrites++;
+      try {
+        await write();
+      } finally {
+        this.pendingWrites--;
+      }
+    }
+    async _set(key, value) {
+      return this._withPendingWrite(async () => {
+        await this._withRetries((db2) => _putObject(db2, key, value));
+        this.localCache[key] = value;
+        return this.notifyServiceWorker(key);
+      });
+    }
+    async _get(key) {
+      const obj = await this._withRetries((db2) => getObject(db2, key));
+      this.localCache[key] = obj;
+      return obj;
+    }
+    async _remove(key) {
+      return this._withPendingWrite(async () => {
+        await this._withRetries((db2) => _deleteObject(db2, key));
+        delete this.localCache[key];
+        return this.notifyServiceWorker(key);
+      });
+    }
+    async _poll() {
+      if (this.isClosing) {
+        return [];
+      }
+      try {
+        const result = await this._withRetries((db2) => {
+          const getAllRequest = getObjectStore(db2, false).getAll();
+          return new DBPromise(getAllRequest).toPromise();
+        });
+        if (this.isClosing) {
+          return [];
+        }
+        if (!result) {
+          return [];
+        }
+        if (this.pendingWrites !== 0) {
+          return [];
+        }
+        const keys = [];
+        const keysInResult = /* @__PURE__ */ new Set();
+        if (result.length !== 0) {
+          for (const { fbase_key: key, value } of result) {
+            keysInResult.add(key);
+            if (JSON.stringify(this.localCache[key]) !== JSON.stringify(value)) {
+              this.notifyListeners(key, value);
+              keys.push(key);
+            }
+          }
+        }
+        for (const localKey of Object.keys(this.localCache)) {
+          if (this.localCache[localKey] && !keysInResult.has(localKey)) {
+            this.notifyListeners(localKey, null);
+            keys.push(localKey);
+          }
+        }
+        return keys;
+      } catch (e2) {
+        if (!this.isClosing) {
+          _logWarn(`Firebase Auth cross-tab polling failed with error: ${e2}`);
+        }
+        return [];
+      }
+    }
+    notifyListeners(key, newValue) {
+      this.localCache[key] = newValue;
+      const listeners = this.listeners[key];
+      if (listeners) {
+        for (const listener of Array.from(listeners)) {
+          listener(newValue);
+        }
+      }
+    }
+    startPolling() {
+      this.stopPolling();
+      this.pollTimer = setInterval(async () => this._poll(), _POLLING_INTERVAL_MS);
+    }
+    stopPolling() {
+      if (this.pollTimer) {
+        clearInterval(this.pollTimer);
+        this.pollTimer = null;
+      }
+    }
+    _addListener(key, listener) {
+      if (Object.keys(this.listeners).length === 0) {
+        this.startPolling();
+        this.registerLifecycleListeners();
+      }
+      if (!this.listeners[key]) {
+        this.listeners[key] = /* @__PURE__ */ new Set();
+        void this._get(key);
+      }
+      this.listeners[key].add(listener);
+    }
+    _removeListener(key, listener) {
+      if (this.listeners[key]) {
+        this.listeners[key].delete(listener);
+        if (this.listeners[key].size === 0) {
+          delete this.listeners[key];
+        }
+      }
+      if (Object.keys(this.listeners).length === 0) {
+        this.stopPolling();
+        this.unregisterLifecycleListeners();
+      }
+    }
+  };
+  IndexedDBLocalPersistence.type = "LOCAL";
+  var indexedDBLocalPersistence = IndexedDBLocalPersistence;
+  function startSignInPhoneMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaSignIn:start", _addTidIfNecessary(auth2, request));
+  }
+  function finalizeSignInPhoneMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaSignIn:finalize", _addTidIfNecessary(auth2, request));
+  }
+  function finalizeSignInTotpMfa(auth2, request) {
+    return _performApiRequest(auth2, "POST", "/v2/accounts/mfaSignIn:finalize", _addTidIfNecessary(auth2, request));
+  }
+  var _JSLOAD_CALLBACK = _generateCallbackName("rcb");
+  var NETWORK_TIMEOUT_DELAY = new Delay(3e4, 6e4);
+  var RECAPTCHA_VERIFIER_TYPE = "recaptcha";
+  async function _verifyPhoneNumber(auth2, options, verifier) {
+    if (!auth2._getRecaptchaConfig()) {
+      try {
+        await _initializeRecaptchaConfig(auth2);
+      } catch (error) {
+        console.log("Failed to initialize reCAPTCHA Enterprise config. Triggering the reCAPTCHA v2 verification.");
+      }
+    }
+    try {
+      let phoneInfoOptions;
+      if (typeof options === "string") {
+        phoneInfoOptions = {
+          phoneNumber: options
+        };
+      } else {
+        phoneInfoOptions = options;
+      }
+      if ("session" in phoneInfoOptions) {
+        const session = phoneInfoOptions.session;
+        if ("phoneNumber" in phoneInfoOptions) {
+          _assert(
+            session.type === "enroll",
+            auth2,
+            "internal-error"
+            /* AuthErrorCode.INTERNAL_ERROR */
+          );
+          const startPhoneMfaEnrollmentRequest = {
+            idToken: session.credential,
+            phoneEnrollmentInfo: {
+              phoneNumber: phoneInfoOptions.phoneNumber,
+              clientType: "CLIENT_TYPE_WEB"
+              /* RecaptchaClientType.WEB */
+            }
+          };
+          const startEnrollPhoneMfaActionCallback = async (authInstance, request) => {
+            if (request.phoneEnrollmentInfo.captchaResponse === FAKE_TOKEN) {
+              _assert(
+                verifier?.type === RECAPTCHA_VERIFIER_TYPE,
+                authInstance,
+                "argument-error"
+                /* AuthErrorCode.ARGUMENT_ERROR */
+              );
+              const requestWithRecaptchaV2 = await injectRecaptchaV2Token(authInstance, request, verifier);
+              return startEnrollPhoneMfa(authInstance, requestWithRecaptchaV2);
+            }
+            return startEnrollPhoneMfa(authInstance, request);
+          };
+          const startPhoneMfaEnrollmentResponse = handleRecaptchaFlow(
+            auth2,
+            startPhoneMfaEnrollmentRequest,
+            "mfaSmsEnrollment",
+            startEnrollPhoneMfaActionCallback,
+            "PHONE_PROVIDER"
+            /* RecaptchaAuthProvider.PHONE_PROVIDER */
+          );
+          const response = await startPhoneMfaEnrollmentResponse.catch((error) => {
+            return Promise.reject(error);
+          });
+          return response.phoneSessionInfo.sessionInfo;
+        } else {
+          _assert(
+            session.type === "signin",
+            auth2,
+            "internal-error"
+            /* AuthErrorCode.INTERNAL_ERROR */
+          );
+          const mfaEnrollmentId = phoneInfoOptions.multiFactorHint?.uid || phoneInfoOptions.multiFactorUid;
+          _assert(
+            mfaEnrollmentId,
+            auth2,
+            "missing-multi-factor-info"
+            /* AuthErrorCode.MISSING_MFA_INFO */
+          );
+          const startPhoneMfaSignInRequest = {
+            mfaPendingCredential: session.credential,
+            mfaEnrollmentId,
+            phoneSignInInfo: {
+              clientType: "CLIENT_TYPE_WEB"
+              /* RecaptchaClientType.WEB */
+            }
+          };
+          const startSignInPhoneMfaActionCallback = async (authInstance, request) => {
+            if (request.phoneSignInInfo.captchaResponse === FAKE_TOKEN) {
+              _assert(
+                verifier?.type === RECAPTCHA_VERIFIER_TYPE,
+                authInstance,
+                "argument-error"
+                /* AuthErrorCode.ARGUMENT_ERROR */
+              );
+              const requestWithRecaptchaV2 = await injectRecaptchaV2Token(authInstance, request, verifier);
+              return startSignInPhoneMfa(authInstance, requestWithRecaptchaV2);
+            }
+            return startSignInPhoneMfa(authInstance, request);
+          };
+          const startPhoneMfaSignInResponse = handleRecaptchaFlow(
+            auth2,
+            startPhoneMfaSignInRequest,
+            "mfaSmsSignIn",
+            startSignInPhoneMfaActionCallback,
+            "PHONE_PROVIDER"
+            /* RecaptchaAuthProvider.PHONE_PROVIDER */
+          );
+          const response = await startPhoneMfaSignInResponse.catch((error) => {
+            return Promise.reject(error);
+          });
+          return response.phoneResponseInfo.sessionInfo;
+        }
+      } else {
+        const sendPhoneVerificationCodeRequest = {
+          phoneNumber: phoneInfoOptions.phoneNumber,
+          clientType: "CLIENT_TYPE_WEB"
+          /* RecaptchaClientType.WEB */
+        };
+        const sendPhoneVerificationCodeActionCallback = async (authInstance, request) => {
+          if (request.captchaResponse === FAKE_TOKEN) {
+            _assert(
+              verifier?.type === RECAPTCHA_VERIFIER_TYPE,
+              authInstance,
+              "argument-error"
+              /* AuthErrorCode.ARGUMENT_ERROR */
+            );
+            const requestWithRecaptchaV2 = await injectRecaptchaV2Token(authInstance, request, verifier);
+            return sendPhoneVerificationCode(authInstance, requestWithRecaptchaV2);
+          }
+          return sendPhoneVerificationCode(authInstance, request);
+        };
+        const sendPhoneVerificationCodeResponse = handleRecaptchaFlow(
+          auth2,
+          sendPhoneVerificationCodeRequest,
+          "sendVerificationCode",
+          sendPhoneVerificationCodeActionCallback,
+          "PHONE_PROVIDER"
+          /* RecaptchaAuthProvider.PHONE_PROVIDER */
+        );
+        const response = await sendPhoneVerificationCodeResponse.catch((error) => {
+          return Promise.reject(error);
+        });
+        return response.sessionInfo;
+      }
+    } finally {
+      verifier?._reset();
+    }
+  }
+  async function injectRecaptchaV2Token(auth2, request, recaptchaV2Verifier) {
+    _assert(
+      recaptchaV2Verifier.type === RECAPTCHA_VERIFIER_TYPE,
+      auth2,
+      "argument-error"
+      /* AuthErrorCode.ARGUMENT_ERROR */
+    );
+    const recaptchaV2Token = await recaptchaV2Verifier.verify();
+    _assert(
+      typeof recaptchaV2Token === "string",
+      auth2,
+      "argument-error"
+      /* AuthErrorCode.ARGUMENT_ERROR */
+    );
+    const newRequest = { ...request };
+    if ("phoneEnrollmentInfo" in newRequest) {
+      const phoneNumber = newRequest.phoneEnrollmentInfo.phoneNumber;
+      const captchaResponse = newRequest.phoneEnrollmentInfo.captchaResponse;
+      const clientType = newRequest.phoneEnrollmentInfo.clientType;
+      const recaptchaVersion = newRequest.phoneEnrollmentInfo.recaptchaVersion;
+      Object.assign(newRequest, {
+        "phoneEnrollmentInfo": {
+          phoneNumber,
+          recaptchaToken: recaptchaV2Token,
+          captchaResponse,
+          clientType,
+          recaptchaVersion
+        }
+      });
+      return newRequest;
+    } else if ("phoneSignInInfo" in newRequest) {
+      const captchaResponse = newRequest.phoneSignInInfo.captchaResponse;
+      const clientType = newRequest.phoneSignInInfo.clientType;
+      const recaptchaVersion = newRequest.phoneSignInInfo.recaptchaVersion;
+      Object.assign(newRequest, {
+        "phoneSignInInfo": {
+          recaptchaToken: recaptchaV2Token,
+          captchaResponse,
+          clientType,
+          recaptchaVersion
+        }
+      });
+      return newRequest;
+    } else {
+      Object.assign(newRequest, { "recaptchaToken": recaptchaV2Token });
+      return newRequest;
+    }
+  }
+  var PhoneAuthProvider = class _PhoneAuthProvider {
+    /**
+     * @param auth - The Firebase {@link Auth} instance in which sign-ins should occur.
+     *
+     */
+    constructor(auth2) {
+      this.providerId = _PhoneAuthProvider.PROVIDER_ID;
+      this.auth = _castAuth(auth2);
+    }
+    /**
+     *
+     * Starts a phone number authentication flow by sending a verification code to the given phone
+     * number.
+     *
+     * @example
+     * ```javascript
+     * const provider = new PhoneAuthProvider(auth);
+     * const verificationId = await provider.verifyPhoneNumber(phoneNumber, applicationVerifier);
+     * // Obtain verificationCode from the user.
+     * const authCredential = PhoneAuthProvider.credential(verificationId, verificationCode);
+     * const userCredential = await signInWithCredential(auth, authCredential);
+     * ```
+     *
+     * @example
+     * An alternative flow is provided using the `signInWithPhoneNumber` method.
+     * ```javascript
+     * const confirmationResult = signInWithPhoneNumber(auth, phoneNumber, applicationVerifier);
+     * // Obtain verificationCode from the user.
+     * const userCredential = confirmationResult.confirm(verificationCode);
+     * ```
+     *
+     * @param phoneInfoOptions - The user's {@link PhoneInfoOptions}. The phone number should be in
+     * E.164 format (e.g. +16505550101).
+     * @param applicationVerifier - An {@link ApplicationVerifier}, which prevents
+     * requests from unauthorized clients. This SDK includes an implementation
+     * based on reCAPTCHA v2, {@link RecaptchaVerifier}. If you've enabled
+     * reCAPTCHA Enterprise bot protection in Enforce mode, this parameter is
+     * optional; in all other configurations, the parameter is required.
+     *
+     * @returns A Promise for a verification ID that can be passed to
+     * {@link PhoneAuthProvider.credential} to identify this flow.
+     */
+    verifyPhoneNumber(phoneOptions, applicationVerifier) {
+      return _verifyPhoneNumber(this.auth, phoneOptions, getModularInstance(applicationVerifier));
+    }
+    /**
+     * Creates a phone auth credential, given the verification ID from
+     * {@link PhoneAuthProvider.verifyPhoneNumber} and the code that was sent to the user's
+     * mobile device.
+     *
+     * @example
+     * ```javascript
+     * const provider = new PhoneAuthProvider(auth);
+     * const verificationId = provider.verifyPhoneNumber(phoneNumber, applicationVerifier);
+     * // Obtain verificationCode from the user.
+     * const authCredential = PhoneAuthProvider.credential(verificationId, verificationCode);
+     * const userCredential = signInWithCredential(auth, authCredential);
+     * ```
+     *
+     * @example
+     * An alternative flow is provided using the `signInWithPhoneNumber` method.
+     * ```javascript
+     * const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, applicationVerifier);
+     * // Obtain verificationCode from the user.
+     * const userCredential = await confirmationResult.confirm(verificationCode);
+     * ```
+     *
+     * @param verificationId - The verification ID returned from {@link PhoneAuthProvider.verifyPhoneNumber}.
+     * @param verificationCode - The verification code sent to the user's mobile device.
+     *
+     * @returns The auth provider credential.
+     */
+    static credential(verificationId, verificationCode) {
+      return PhoneAuthCredential._fromVerification(verificationId, verificationCode);
+    }
+    /**
+     * Generates an {@link AuthCredential} from a {@link UserCredential}.
+     * @param userCredential - The user credential.
+     */
+    static credentialFromResult(userCredential) {
+      const credential = userCredential;
+      return _PhoneAuthProvider.credentialFromTaggedObject(credential);
+    }
+    /**
+     * Returns an {@link AuthCredential} when passed an error.
+     *
+     * @remarks
+     *
+     * This method works for errors like
+     * `auth/account-exists-with-different-credentials`. This is useful for
+     * recovering when attempting to set a user's phone number but the number
+     * in question is already tied to another account. For example, the following
+     * code tries to update the current user's phone number, and if that
+     * fails, links the user with the account associated with that number:
+     *
+     * ```js
+     * const provider = new PhoneAuthProvider(auth);
+     * const verificationId = await provider.verifyPhoneNumber(number, verifier);
+     * try {
+     *   const code = ''; // Prompt the user for the verification code
+     *   await updatePhoneNumber(
+     *       auth.currentUser,
+     *       PhoneAuthProvider.credential(verificationId, code));
+     * } catch (e) {
+     *   if ((e as FirebaseError)?.code === 'auth/account-exists-with-different-credential') {
+     *     const cred = PhoneAuthProvider.credentialFromError(e);
+     *     await linkWithCredential(auth.currentUser, cred);
+     *   }
+     * }
+     *
+     * // At this point, auth.currentUser.phoneNumber === number.
+     * ```
+     *
+     * @param error - The error to generate a credential from.
+     */
+    static credentialFromError(error) {
+      return _PhoneAuthProvider.credentialFromTaggedObject(error.customData || {});
+    }
+    static credentialFromTaggedObject({ _tokenResponse: tokenResponse }) {
+      if (!tokenResponse) {
+        return null;
+      }
+      const { phoneNumber, temporaryProof } = tokenResponse;
+      if (phoneNumber && temporaryProof) {
+        return PhoneAuthCredential._fromTokenResponse(phoneNumber, temporaryProof);
+      }
+      return null;
+    }
+  };
+  PhoneAuthProvider.PROVIDER_ID = "phone";
+  PhoneAuthProvider.PHONE_SIGN_IN_METHOD = "phone";
+  function _withDefaultResolver(auth2, resolverOverride) {
+    if (resolverOverride) {
+      return _getInstance(resolverOverride);
+    }
+    _assert(
+      auth2._popupRedirectResolver,
+      auth2,
+      "argument-error"
+      /* AuthErrorCode.ARGUMENT_ERROR */
+    );
+    return auth2._popupRedirectResolver;
+  }
+  var IdpCredential = class extends AuthCredential {
+    constructor(params) {
+      super(
+        "custom",
+        "custom"
+        /* ProviderId.CUSTOM */
+      );
+      this.params = params;
+    }
+    _getIdTokenResponse(auth2) {
+      return signInWithIdp(auth2, this._buildIdpRequest());
+    }
+    _linkToIdToken(auth2, idToken) {
+      return signInWithIdp(auth2, this._buildIdpRequest(idToken));
+    }
+    _getReauthenticationResolver(auth2) {
+      return signInWithIdp(auth2, this._buildIdpRequest());
+    }
+    _buildIdpRequest(idToken) {
+      const request = {
+        requestUri: this.params.requestUri,
+        sessionId: this.params.sessionId,
+        postBody: this.params.postBody,
+        tenantId: this.params.tenantId,
+        pendingToken: this.params.pendingToken,
+        returnSecureToken: true,
+        returnIdpCredential: true
+      };
+      if (idToken) {
+        request.idToken = idToken;
+      }
+      return request;
+    }
+  };
+  function _signIn(params) {
+    return _signInWithCredential(params.auth, new IdpCredential(params), params.bypassAuthState);
+  }
+  function _reauth(params) {
+    const { auth: auth2, user } = params;
+    _assert(
+      user,
+      auth2,
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    return _reauthenticate(user, new IdpCredential(params), params.bypassAuthState);
+  }
+  async function _link(params) {
+    const { auth: auth2, user } = params;
+    _assert(
+      user,
+      auth2,
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    return _link$1(user, new IdpCredential(params), params.bypassAuthState);
+  }
+  var AbstractPopupRedirectOperation = class {
+    constructor(auth2, filter, resolver, user, bypassAuthState = false) {
+      this.auth = auth2;
+      this.resolver = resolver;
+      this.user = user;
+      this.bypassAuthState = bypassAuthState;
+      this.pendingPromise = null;
+      this.eventManager = null;
+      this.filter = Array.isArray(filter) ? filter : [filter];
+    }
+    execute() {
+      return new Promise(async (resolve, reject) => {
+        this.pendingPromise = { resolve, reject };
+        try {
+          this.eventManager = await this.resolver._initialize(this.auth);
+          await this.onExecution();
+          this.eventManager.registerConsumer(this);
+        } catch (e2) {
+          this.reject(e2);
+        }
+      });
+    }
+    async onAuthEvent(event) {
+      const { urlResponse, sessionId, postBody, tenantId, error, type } = event;
+      if (error) {
+        this.reject(error);
+        return;
+      }
+      const params = {
+        auth: this.auth,
+        requestUri: urlResponse,
+        sessionId,
+        tenantId: tenantId || void 0,
+        postBody: postBody || void 0,
+        user: this.user,
+        bypassAuthState: this.bypassAuthState
+      };
+      try {
+        this.resolve(await this.getIdpTask(type)(params));
+      } catch (e2) {
+        this.reject(e2);
+      }
+    }
+    onError(error) {
+      this.reject(error);
+    }
+    getIdpTask(type) {
+      switch (type) {
+        case "signInViaPopup":
+        case "signInViaRedirect":
+          return _signIn;
+        case "linkViaPopup":
+        case "linkViaRedirect":
+          return _link;
+        case "reauthViaPopup":
+        case "reauthViaRedirect":
+          return _reauth;
+        default:
+          _fail(
+            this.auth,
+            "internal-error"
+            /* AuthErrorCode.INTERNAL_ERROR */
+          );
+      }
+    }
+    resolve(cred) {
+      debugAssert(this.pendingPromise, "Pending promise was never set");
+      this.pendingPromise.resolve(cred);
+      this.unregisterAndCleanUp();
+    }
+    reject(error) {
+      debugAssert(this.pendingPromise, "Pending promise was never set");
+      this.pendingPromise.reject(error);
+      this.unregisterAndCleanUp();
+    }
+    unregisterAndCleanUp() {
+      if (this.eventManager) {
+        this.eventManager.unregisterConsumer(this);
+      }
+      this.pendingPromise = null;
+      this.cleanUp();
+    }
+  };
+  var _POLL_WINDOW_CLOSE_TIMEOUT = new Delay(2e3, 1e4);
+  var PopupOperation = class _PopupOperation extends AbstractPopupRedirectOperation {
+    constructor(auth2, filter, provider, resolver, user) {
+      super(auth2, filter, resolver, user);
+      this.provider = provider;
+      this.authWindow = null;
+      this.pollId = null;
+      if (_PopupOperation.currentPopupAction) {
+        _PopupOperation.currentPopupAction.cancel();
+      }
+      _PopupOperation.currentPopupAction = this;
+    }
+    async executeNotNull() {
+      const result = await this.execute();
+      _assert(
+        result,
+        this.auth,
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      return result;
+    }
+    async onExecution() {
+      debugAssert(this.filter.length === 1, "Popup operations only handle one event");
+      const eventId = _generateEventId();
+      this.authWindow = await this.resolver._openPopup(
+        this.auth,
+        this.provider,
+        this.filter[0],
+        // There's always one, see constructor
+        eventId
+      );
+      this.authWindow.associatedEvent = eventId;
+      this.resolver._originValidation(this.auth).catch((e2) => {
+        this.reject(e2);
+      });
+      this.resolver._isIframeWebStorageSupported(this.auth, (isSupported) => {
+        if (!isSupported) {
+          this.reject(_createError(
+            this.auth,
+            "web-storage-unsupported"
+            /* AuthErrorCode.WEB_STORAGE_UNSUPPORTED */
+          ));
+        }
+      });
+      this.pollUserCancellation();
+    }
+    get eventId() {
+      return this.authWindow?.associatedEvent || null;
+    }
+    cancel() {
+      this.reject(_createError(
+        this.auth,
+        "cancelled-popup-request"
+        /* AuthErrorCode.EXPIRED_POPUP_REQUEST */
+      ));
+    }
+    cleanUp() {
+      if (this.authWindow) {
+        this.authWindow.close();
+      }
+      if (this.pollId) {
+        window.clearTimeout(this.pollId);
+      }
+      this.authWindow = null;
+      this.pollId = null;
+      _PopupOperation.currentPopupAction = null;
+    }
+    pollUserCancellation() {
+      const poll = () => {
+        if (this.authWindow?.window?.closed) {
+          this.pollId = window.setTimeout(
+            () => {
+              this.pollId = null;
+              this.reject(_createError(
+                this.auth,
+                "popup-closed-by-user"
+                /* AuthErrorCode.POPUP_CLOSED_BY_USER */
+              ));
+            },
+            8e3
+            /* _Timeout.AUTH_EVENT */
+          );
+          return;
+        }
+        this.pollId = window.setTimeout(poll, _POLL_WINDOW_CLOSE_TIMEOUT.get());
+      };
+      poll();
+    }
+  };
+  PopupOperation.currentPopupAction = null;
+  var PENDING_REDIRECT_KEY = "pendingRedirect";
+  var redirectOutcomeMap = /* @__PURE__ */ new Map();
+  var RedirectAction = class extends AbstractPopupRedirectOperation {
+    constructor(auth2, resolver, bypassAuthState = false) {
+      super(auth2, [
+        "signInViaRedirect",
+        "linkViaRedirect",
+        "reauthViaRedirect",
+        "unknown"
+        /* AuthEventType.UNKNOWN */
+      ], resolver, void 0, bypassAuthState);
+      this.eventId = null;
+    }
+    /**
+     * Override the execute function; if we already have a redirect result, then
+     * just return it.
+     */
+    async execute() {
+      let readyOutcome = redirectOutcomeMap.get(this.auth._key());
+      if (!readyOutcome) {
+        try {
+          const hasPendingRedirect = await _getAndClearPendingRedirectStatus(this.resolver, this.auth);
+          const result = hasPendingRedirect ? await super.execute() : null;
+          readyOutcome = () => Promise.resolve(result);
+        } catch (e2) {
+          readyOutcome = () => Promise.reject(e2);
+        }
+        redirectOutcomeMap.set(this.auth._key(), readyOutcome);
+      }
+      if (!this.bypassAuthState) {
+        redirectOutcomeMap.set(this.auth._key(), () => Promise.resolve(null));
+      }
+      return readyOutcome();
+    }
+    async onAuthEvent(event) {
+      if (event.type === "signInViaRedirect") {
+        return super.onAuthEvent(event);
+      } else if (event.type === "unknown") {
+        this.resolve(null);
+        return;
+      }
+      if (event.eventId) {
+        const user = await this.auth._redirectUserForId(event.eventId);
+        if (user) {
+          this.user = user;
+          return super.onAuthEvent(event);
+        } else {
+          this.resolve(null);
+        }
+      }
+    }
+    async onExecution() {
+    }
+    cleanUp() {
+    }
+  };
+  async function _getAndClearPendingRedirectStatus(resolver, auth2) {
+    const key = pendingRedirectKey(auth2);
+    const persistence = resolverPersistence(resolver);
+    if (!await persistence._isAvailable()) {
+      return false;
+    }
+    const hasPendingRedirect = await persistence._get(key) === "true";
+    await persistence._remove(key);
+    return hasPendingRedirect;
+  }
+  function _overrideRedirectResult(auth2, result) {
+    redirectOutcomeMap.set(auth2._key(), result);
+  }
+  function resolverPersistence(resolver) {
+    return _getInstance(resolver._redirectPersistence);
+  }
+  function pendingRedirectKey(auth2) {
+    return _persistenceKeyName(PENDING_REDIRECT_KEY, auth2.config.apiKey, auth2.name);
+  }
+  async function _getRedirectResult(auth2, resolverExtern, bypassAuthState = false) {
+    if (_isFirebaseServerApp(auth2.app)) {
+      return Promise.reject(_serverAppCurrentUserOperationNotSupportedError(auth2));
+    }
+    const authInternal = _castAuth(auth2);
+    const resolver = _withDefaultResolver(authInternal, resolverExtern);
+    const action = new RedirectAction(authInternal, resolver, bypassAuthState);
+    const result = await action.execute();
+    if (result && !bypassAuthState) {
+      delete result.user._redirectEventId;
+      await authInternal._persistUserIfCurrent(result.user);
+      await authInternal._setRedirectUser(null, resolverExtern);
+    }
+    return result;
+  }
+  var EVENT_DUPLICATION_CACHE_DURATION_MS = 10 * 60 * 1e3;
+  var AuthEventManager = class {
+    constructor(auth2) {
+      this.auth = auth2;
+      this.cachedEventUids = /* @__PURE__ */ new Set();
+      this.consumers = /* @__PURE__ */ new Set();
+      this.queuedRedirectEvent = null;
+      this.hasHandledPotentialRedirect = false;
+      this.lastProcessedEventTime = Date.now();
+    }
+    registerConsumer(authEventConsumer) {
+      this.consumers.add(authEventConsumer);
+      if (this.queuedRedirectEvent && this.isEventForConsumer(this.queuedRedirectEvent, authEventConsumer)) {
+        this.sendToConsumer(this.queuedRedirectEvent, authEventConsumer);
+        this.saveEventToCache(this.queuedRedirectEvent);
+        this.queuedRedirectEvent = null;
+      }
+    }
+    unregisterConsumer(authEventConsumer) {
+      this.consumers.delete(authEventConsumer);
+    }
+    onEvent(event) {
+      if (this.hasEventBeenHandled(event)) {
+        return false;
+      }
+      let handled = false;
+      this.consumers.forEach((consumer) => {
+        if (this.isEventForConsumer(event, consumer)) {
+          handled = true;
+          this.sendToConsumer(event, consumer);
+          this.saveEventToCache(event);
+        }
+      });
+      if (this.hasHandledPotentialRedirect || !isRedirectEvent(event)) {
+        return handled;
+      }
+      this.hasHandledPotentialRedirect = true;
+      if (!handled) {
+        this.queuedRedirectEvent = event;
+        handled = true;
+      }
+      return handled;
+    }
+    sendToConsumer(event, consumer) {
+      if (event.error && !isNullRedirectEvent(event)) {
+        const code = event.error.code?.split("auth/")[1] || "internal-error";
+        consumer.onError(_createError(this.auth, code));
+      } else {
+        consumer.onAuthEvent(event);
+      }
+    }
+    isEventForConsumer(event, consumer) {
+      const eventIdMatches = consumer.eventId === null || !!event.eventId && event.eventId === consumer.eventId;
+      return consumer.filter.includes(event.type) && eventIdMatches;
+    }
+    hasEventBeenHandled(event) {
+      if (Date.now() - this.lastProcessedEventTime >= EVENT_DUPLICATION_CACHE_DURATION_MS) {
+        this.cachedEventUids.clear();
+      }
+      return this.cachedEventUids.has(eventUid(event));
+    }
+    saveEventToCache(event) {
+      this.cachedEventUids.add(eventUid(event));
+      this.lastProcessedEventTime = Date.now();
+    }
+  };
+  function eventUid(e2) {
+    return [e2.type, e2.eventId, e2.sessionId, e2.tenantId].filter((v2) => v2).join("-");
+  }
+  function isNullRedirectEvent({ type, error }) {
+    return type === "unknown" && error?.code === `auth/${"no-auth-event"}`;
+  }
+  function isRedirectEvent(event) {
+    switch (event.type) {
+      case "signInViaRedirect":
+      case "linkViaRedirect":
+      case "reauthViaRedirect":
+        return true;
+      case "unknown":
+        return isNullRedirectEvent(event);
+      default:
+        return false;
+    }
+  }
+  async function _getProjectConfig(auth2, request = {}) {
+    return _performApiRequest(auth2, "GET", "/v1/projects", request);
+  }
+  var IP_ADDRESS_REGEX = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+  var HTTP_REGEX = /^https?/;
+  async function _validateOrigin(auth2) {
+    if (auth2.config.emulator) {
+      return;
+    }
+    const { authorizedDomains } = await _getProjectConfig(auth2);
+    for (const domain of authorizedDomains) {
+      try {
+        if (matchDomain(domain)) {
+          return;
+        }
+      } catch {
+      }
+    }
+    _fail(
+      auth2,
+      "unauthorized-domain"
+      /* AuthErrorCode.INVALID_ORIGIN */
+    );
+  }
+  function matchDomain(expected) {
+    const currentUrl = _getCurrentUrl();
+    const { protocol, hostname } = new URL(currentUrl);
+    if (expected.startsWith("chrome-extension://")) {
+      const ceUrl = new URL(expected);
+      if (ceUrl.hostname === "" && hostname === "") {
+        return protocol === "chrome-extension:" && expected.replace("chrome-extension://", "") === currentUrl.replace("chrome-extension://", "");
+      }
+      return protocol === "chrome-extension:" && ceUrl.hostname === hostname;
+    }
+    if (!HTTP_REGEX.test(protocol)) {
+      return false;
+    }
+    if (IP_ADDRESS_REGEX.test(expected)) {
+      return hostname === expected;
+    }
+    const escapedDomainPattern = expected.replace(/\./g, "\\.");
+    const re = new RegExp("^(.+\\." + escapedDomainPattern + "|" + escapedDomainPattern + ")$", "i");
+    return re.test(hostname);
+  }
+  var NETWORK_TIMEOUT = new Delay(3e4, 6e4);
+  function resetUnloadedGapiModules() {
+    const beacon = _window().___jsl;
+    if (beacon?.H) {
+      for (const hint of Object.keys(beacon.H)) {
+        beacon.H[hint].r = beacon.H[hint].r || [];
+        beacon.H[hint].L = beacon.H[hint].L || [];
+        beacon.H[hint].r = [...beacon.H[hint].L];
+        if (beacon.CP) {
+          for (let i2 = 0; i2 < beacon.CP.length; i2++) {
+            beacon.CP[i2] = null;
+          }
+        }
+      }
+    }
+  }
+  function loadGapi(auth2) {
+    return new Promise((resolve, reject) => {
+      function loadGapiIframe() {
+        resetUnloadedGapiModules();
+        gapi.load("gapi.iframes", {
+          callback: () => {
+            resolve(gapi.iframes.getContext());
+          },
+          ontimeout: () => {
+            resetUnloadedGapiModules();
+            reject(_createError(
+              auth2,
+              "network-request-failed"
+              /* AuthErrorCode.NETWORK_REQUEST_FAILED */
+            ));
+          },
+          timeout: NETWORK_TIMEOUT.get()
+        });
+      }
+      if (_window().gapi?.iframes?.Iframe) {
+        resolve(gapi.iframes.getContext());
+      } else if (!!_window().gapi?.load) {
+        loadGapiIframe();
+      } else {
+        const cbName = _generateCallbackName("iframefcb");
+        _window()[cbName] = () => {
+          if (!!gapi.load) {
+            loadGapiIframe();
+          } else {
+            reject(_createError(
+              auth2,
+              "network-request-failed"
+              /* AuthErrorCode.NETWORK_REQUEST_FAILED */
+            ));
+          }
+        };
+        return _loadJS(`${_gapiScriptUrl()}?onload=${cbName}`).catch((e2) => reject(e2));
+      }
+    }).catch((error) => {
+      cachedGApiLoader = null;
+      throw error;
+    });
+  }
+  var cachedGApiLoader = null;
+  function _loadGapi(auth2) {
+    cachedGApiLoader = cachedGApiLoader || loadGapi(auth2);
+    return cachedGApiLoader;
+  }
+  var PING_TIMEOUT = new Delay(5e3, 15e3);
+  var IFRAME_PATH = "__/auth/iframe";
+  var EMULATED_IFRAME_PATH = "emulator/auth/iframe";
+  var IFRAME_ATTRIBUTES = {
+    style: {
+      position: "absolute",
+      top: "-100px",
+      width: "1px",
+      height: "1px"
+    },
+    "aria-hidden": "true",
+    tabindex: "-1"
+  };
+  var EID_FROM_APIHOST = /* @__PURE__ */ new Map([
+    ["identitytoolkit.googleapis.com", "p"],
+    // production
+    ["staging-identitytoolkit.sandbox.googleapis.com", "s"],
+    // staging
+    ["test-identitytoolkit.sandbox.googleapis.com", "t"]
+    // test
+  ]);
+  function getIframeUrl(auth2) {
+    const config = auth2.config;
+    _assert(
+      config.authDomain,
+      auth2,
+      "auth-domain-config-required"
+      /* AuthErrorCode.MISSING_AUTH_DOMAIN */
+    );
+    const url = config.emulator ? _emulatorUrl(config, EMULATED_IFRAME_PATH) : `https://${auth2.config.authDomain}/${IFRAME_PATH}`;
+    const params = {
+      apiKey: config.apiKey,
+      appName: auth2.name,
+      v: SDK_VERSION
+    };
+    const eid = EID_FROM_APIHOST.get(auth2.config.apiHost);
+    if (eid) {
+      params.eid = eid;
+    }
+    const frameworks = auth2._getFrameworks();
+    if (frameworks.length) {
+      params.fw = frameworks.join(",");
+    }
+    return `${url}?${querystring(params).slice(1)}`;
+  }
+  async function _openIframe(auth2) {
+    const context = await _loadGapi(auth2);
+    const gapi2 = _window().gapi;
+    _assert(
+      gapi2,
+      auth2,
+      "internal-error"
+      /* AuthErrorCode.INTERNAL_ERROR */
+    );
+    return context.open({
+      where: document.body,
+      url: getIframeUrl(auth2),
+      messageHandlersFilter: gapi2.iframes.CROSS_ORIGIN_IFRAMES_FILTER,
+      attributes: IFRAME_ATTRIBUTES,
+      dontclear: true
+    }, (iframe) => new Promise(async (resolve, reject) => {
+      await iframe.restyle({
+        // Prevent iframe from closing on mouse out.
+        setHideOnLeave: false
+      });
+      const networkError = _createError(
+        auth2,
+        "network-request-failed"
+        /* AuthErrorCode.NETWORK_REQUEST_FAILED */
+      );
+      const networkErrorTimer = _window().setTimeout(() => {
+        reject(networkError);
+      }, PING_TIMEOUT.get());
+      function clearTimerAndResolve() {
+        _window().clearTimeout(networkErrorTimer);
+        resolve(iframe);
+      }
+      iframe.ping(clearTimerAndResolve).then(clearTimerAndResolve, () => {
+        reject(networkError);
+      });
+    }));
+  }
+  var BASE_POPUP_OPTIONS = {
+    location: "yes",
+    resizable: "yes",
+    statusbar: "yes",
+    toolbar: "no"
+  };
+  var DEFAULT_WIDTH = 500;
+  var DEFAULT_HEIGHT = 600;
+  var TARGET_BLANK = "_blank";
+  var FIREFOX_EMPTY_URL = "http://localhost";
+  var AuthPopup = class {
+    constructor(window2) {
+      this.window = window2;
+      this.associatedEvent = null;
+    }
+    close() {
+      if (this.window) {
+        try {
+          this.window.close();
+        } catch (e2) {
+        }
+      }
+    }
+  };
+  function _open(auth2, url, name4, width = DEFAULT_WIDTH, height = DEFAULT_HEIGHT) {
+    const top = Math.max((window.screen.availHeight - height) / 2, 0).toString();
+    const left = Math.max((window.screen.availWidth - width) / 2, 0).toString();
+    let target = "";
+    const options = {
+      ...BASE_POPUP_OPTIONS,
+      width: width.toString(),
+      height: height.toString(),
+      top,
+      left
+    };
+    const ua2 = getUA().toLowerCase();
+    if (name4) {
+      target = _isChromeIOS(ua2) ? TARGET_BLANK : name4;
+    }
+    if (_isFirefox(ua2)) {
+      url = url || FIREFOX_EMPTY_URL;
+      options.scrollbars = "yes";
+    }
+    const optionsString = Object.entries(options).reduce((accum, [key, value]) => `${accum}${key}=${value},`, "");
+    if (_isIOSStandalone(ua2) && target !== "_self") {
+      openAsNewWindowIOS(url || "", target);
+      return new AuthPopup(null);
+    }
+    const newWin = window.open(url || "", target, optionsString);
+    _assert(
+      newWin,
+      auth2,
+      "popup-blocked"
+      /* AuthErrorCode.POPUP_BLOCKED */
+    );
+    try {
+      newWin.focus();
+    } catch (e2) {
+    }
+    return new AuthPopup(newWin);
+  }
+  function openAsNewWindowIOS(url, target) {
+    const el = document.createElement("a");
+    el.href = url;
+    el.target = target;
+    const click = document.createEvent("MouseEvent");
+    click.initMouseEvent("click", true, true, window, 1, 0, 0, 0, 0, false, false, false, false, 1, null);
+    el.dispatchEvent(click);
+  }
+  var WIDGET_PATH = "__/auth/handler";
+  var EMULATOR_WIDGET_PATH = "emulator/auth/handler";
+  var FIREBASE_APP_CHECK_FRAGMENT_ID = encodeURIComponent("fac");
+  async function _getRedirectUrl(auth2, provider, authType, redirectUrl, eventId, additionalParams) {
+    _assert(
+      auth2.config.authDomain,
+      auth2,
+      "auth-domain-config-required"
+      /* AuthErrorCode.MISSING_AUTH_DOMAIN */
+    );
+    _assert(
+      auth2.config.apiKey,
+      auth2,
+      "invalid-api-key"
+      /* AuthErrorCode.INVALID_API_KEY */
+    );
+    const params = {
+      apiKey: auth2.config.apiKey,
+      appName: auth2.name,
+      authType,
+      redirectUrl,
+      v: SDK_VERSION,
+      eventId
+    };
+    if (provider instanceof FederatedAuthProvider) {
+      provider.setDefaultLanguage(auth2.languageCode);
+      params.providerId = provider.providerId || "";
+      if (!isEmpty(provider.getCustomParameters())) {
+        params.customParameters = JSON.stringify(provider.getCustomParameters());
+      }
+      for (const [key, value] of Object.entries(additionalParams || {})) {
+        params[key] = value;
+      }
+    }
+    if (provider instanceof BaseOAuthProvider) {
+      const scopes = provider.getScopes().filter((scope) => scope !== "");
+      if (scopes.length > 0) {
+        params.scopes = scopes.join(",");
+      }
+    }
+    if (auth2.tenantId) {
+      params.tid = auth2.tenantId;
+    }
+    const paramsDict = params;
+    for (const key of Object.keys(paramsDict)) {
+      if (paramsDict[key] === void 0) {
+        delete paramsDict[key];
+      }
+    }
+    const appCheckToken = await auth2._getAppCheckToken();
+    const appCheckTokenFragment = appCheckToken ? `#${FIREBASE_APP_CHECK_FRAGMENT_ID}=${encodeURIComponent(appCheckToken)}` : "";
+    return `${getHandlerBase(auth2)}?${querystring(paramsDict).slice(1)}${appCheckTokenFragment}`;
+  }
+  function getHandlerBase({ config }) {
+    if (!config.emulator) {
+      return `https://${config.authDomain}/${WIDGET_PATH}`;
+    }
+    return _emulatorUrl(config, EMULATOR_WIDGET_PATH);
+  }
+  var WEB_STORAGE_SUPPORT_KEY = "webStorageSupport";
+  var BrowserPopupRedirectResolver = class {
+    constructor() {
+      this.eventManagers = {};
+      this.iframes = {};
+      this.originValidationPromises = {};
+      this._redirectPersistence = browserSessionPersistence;
+      this._completeRedirectFn = _getRedirectResult;
+      this._overrideRedirectResult = _overrideRedirectResult;
+    }
+    // Wrapping in async even though we don't await anywhere in order
+    // to make sure errors are raised as promise rejections
+    async _openPopup(auth2, provider, authType, eventId) {
+      debugAssert(this.eventManagers[auth2._key()]?.manager, "_initialize() not called before _openPopup()");
+      const url = await _getRedirectUrl(auth2, provider, authType, _getCurrentUrl(), eventId);
+      return _open(auth2, url, _generateEventId());
+    }
+    async _openRedirect(auth2, provider, authType, eventId) {
+      await this._originValidation(auth2);
+      const url = await _getRedirectUrl(auth2, provider, authType, _getCurrentUrl(), eventId);
+      _setWindowLocation(url);
+      return new Promise(() => {
+      });
+    }
+    _initialize(auth2) {
+      const key = auth2._key();
+      if (this.eventManagers[key]) {
+        const { manager, promise: promise2 } = this.eventManagers[key];
+        if (manager) {
+          return Promise.resolve(manager);
+        } else {
+          debugAssert(promise2, "If manager is not set, promise should be");
+          return promise2;
+        }
+      }
+      const promise = this.initAndGetManager(auth2);
+      this.eventManagers[key] = { promise };
+      promise.catch(() => {
+        delete this.eventManagers[key];
+      });
+      return promise;
+    }
+    async initAndGetManager(auth2) {
+      const iframe = await _openIframe(auth2);
+      const manager = new AuthEventManager(auth2);
+      iframe.register("authEvent", (iframeEvent) => {
+        _assert(
+          iframeEvent?.authEvent,
+          auth2,
+          "invalid-auth-event"
+          /* AuthErrorCode.INVALID_AUTH_EVENT */
+        );
+        const handled = manager.onEvent(iframeEvent.authEvent);
+        return {
+          status: handled ? "ACK" : "ERROR"
+          /* GapiOutcome.ERROR */
+        };
+      }, gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER);
+      this.eventManagers[auth2._key()] = { manager };
+      this.iframes[auth2._key()] = iframe;
+      return manager;
+    }
+    _isIframeWebStorageSupported(auth2, cb) {
+      const iframe = this.iframes[auth2._key()];
+      iframe.send(WEB_STORAGE_SUPPORT_KEY, { type: WEB_STORAGE_SUPPORT_KEY }, (result) => {
+        const isSupported = result?.[0]?.[WEB_STORAGE_SUPPORT_KEY];
+        if (isSupported !== void 0) {
+          cb(!!isSupported);
+        }
+        _fail(
+          auth2,
+          "internal-error"
+          /* AuthErrorCode.INTERNAL_ERROR */
+        );
+      }, gapi.iframes.CROSS_ORIGIN_IFRAMES_FILTER);
+    }
+    _originValidation(auth2) {
+      const key = auth2._key();
+      if (!this.originValidationPromises[key]) {
+        this.originValidationPromises[key] = _validateOrigin(auth2);
+      }
+      return this.originValidationPromises[key];
+    }
+    get _shouldInitProactively() {
+      return _isMobileBrowser() || _isSafari() || _isIOS();
+    }
+  };
+  var browserPopupRedirectResolver = BrowserPopupRedirectResolver;
+  var MultiFactorAssertionImpl = class {
+    constructor(factorId) {
+      this.factorId = factorId;
+    }
+    _process(auth2, session, displayName) {
+      switch (session.type) {
+        case "enroll":
+          return this._finalizeEnroll(auth2, session.credential, displayName);
+        case "signin":
+          return this._finalizeSignIn(auth2, session.credential);
+        default:
+          return debugFail("unexpected MultiFactorSessionType");
+      }
+    }
+  };
+  var PhoneMultiFactorAssertionImpl = class _PhoneMultiFactorAssertionImpl extends MultiFactorAssertionImpl {
+    constructor(credential) {
+      super(
+        "phone"
+        /* FactorId.PHONE */
+      );
+      this.credential = credential;
+    }
+    /** @internal */
+    static _fromCredential(credential) {
+      return new _PhoneMultiFactorAssertionImpl(credential);
+    }
+    /** @internal */
+    _finalizeEnroll(auth2, idToken, displayName) {
+      return finalizeEnrollPhoneMfa(auth2, {
+        idToken,
+        displayName,
+        phoneVerificationInfo: this.credential._makeVerificationRequest()
+      });
+    }
+    /** @internal */
+    _finalizeSignIn(auth2, mfaPendingCredential) {
+      return finalizeSignInPhoneMfa(auth2, {
+        mfaPendingCredential,
+        phoneVerificationInfo: this.credential._makeVerificationRequest()
+      });
+    }
+  };
+  var PhoneMultiFactorGenerator = class {
+    constructor() {
+    }
+    /**
+     * Provides a {@link PhoneMultiFactorAssertion} to confirm ownership of the phone second factor.
+     *
+     * @remarks
+     * This method does not work in a Node.js environment.
+     *
+     * @param phoneAuthCredential - A credential provided by {@link PhoneAuthProvider.credential}.
+     * @returns A {@link PhoneMultiFactorAssertion} which can be used with
+     * {@link MultiFactorResolver.resolveSignIn}
+     */
+    static assertion(credential) {
+      return PhoneMultiFactorAssertionImpl._fromCredential(credential);
+    }
+  };
+  PhoneMultiFactorGenerator.FACTOR_ID = "phone";
+  var TotpMultiFactorGenerator = class {
+    /**
+     * Provides a {@link TotpMultiFactorAssertion} to confirm ownership of
+     * the TOTP (time-based one-time password) second factor.
+     * This assertion is used to complete enrollment in TOTP second factor.
+     *
+     * @param secret A {@link TotpSecret} containing the shared secret key and other TOTP parameters.
+     * @param oneTimePassword One-time password from TOTP App.
+     * @returns A {@link TotpMultiFactorAssertion} which can be used with
+     * {@link MultiFactorUser.enroll}.
+     */
+    static assertionForEnrollment(secret, oneTimePassword) {
+      return TotpMultiFactorAssertionImpl._fromSecret(secret, oneTimePassword);
+    }
+    /**
+     * Provides a {@link TotpMultiFactorAssertion} to confirm ownership of the TOTP second factor.
+     * This assertion is used to complete signIn with TOTP as the second factor.
+     *
+     * @param enrollmentId identifies the enrolled TOTP second factor.
+     * @param oneTimePassword One-time password from TOTP App.
+     * @returns A {@link TotpMultiFactorAssertion} which can be used with
+     * {@link MultiFactorResolver.resolveSignIn}.
+     */
+    static assertionForSignIn(enrollmentId, oneTimePassword) {
+      return TotpMultiFactorAssertionImpl._fromEnrollmentId(enrollmentId, oneTimePassword);
+    }
+    /**
+     * Returns a promise to {@link TotpSecret} which contains the TOTP shared secret key and other parameters.
+     * Creates a TOTP secret as part of enrolling a TOTP second factor.
+     * Used for generating a QR code URL or inputting into a TOTP app.
+     * This method uses the auth instance corresponding to the user in the multiFactorSession.
+     *
+     * @param session The {@link MultiFactorSession} that the user is part of.
+     * @returns A promise to {@link TotpSecret}.
+     */
+    static async generateSecret(session) {
+      const mfaSession = session;
+      _assert(
+        typeof mfaSession.user?.auth !== "undefined",
+        "internal-error"
+        /* AuthErrorCode.INTERNAL_ERROR */
+      );
+      const response = await startEnrollTotpMfa(mfaSession.user.auth, {
+        idToken: mfaSession.credential,
+        totpEnrollmentInfo: {}
+      });
+      return TotpSecret._fromStartTotpMfaEnrollmentResponse(response, mfaSession.user.auth);
+    }
+  };
+  TotpMultiFactorGenerator.FACTOR_ID = "totp";
+  var TotpMultiFactorAssertionImpl = class _TotpMultiFactorAssertionImpl extends MultiFactorAssertionImpl {
+    constructor(otp, enrollmentId, secret) {
+      super(
+        "totp"
+        /* FactorId.TOTP */
+      );
+      this.otp = otp;
+      this.enrollmentId = enrollmentId;
+      this.secret = secret;
+    }
+    /** @internal */
+    static _fromSecret(secret, otp) {
+      return new _TotpMultiFactorAssertionImpl(otp, void 0, secret);
+    }
+    /** @internal */
+    static _fromEnrollmentId(enrollmentId, otp) {
+      return new _TotpMultiFactorAssertionImpl(otp, enrollmentId);
+    }
+    /** @internal */
+    async _finalizeEnroll(auth2, idToken, displayName) {
+      _assert(
+        typeof this.secret !== "undefined",
+        auth2,
+        "argument-error"
+        /* AuthErrorCode.ARGUMENT_ERROR */
+      );
+      return finalizeEnrollTotpMfa(auth2, {
+        idToken,
+        displayName,
+        totpVerificationInfo: this.secret._makeTotpVerificationInfo(this.otp)
+      });
+    }
+    /** @internal */
+    async _finalizeSignIn(auth2, mfaPendingCredential) {
+      _assert(
+        this.enrollmentId !== void 0 && this.otp !== void 0,
+        auth2,
+        "argument-error"
+        /* AuthErrorCode.ARGUMENT_ERROR */
+      );
+      const totpVerificationInfo = { verificationCode: this.otp };
+      return finalizeSignInTotpMfa(auth2, {
+        mfaPendingCredential,
+        mfaEnrollmentId: this.enrollmentId,
+        totpVerificationInfo
+      });
+    }
+  };
+  var TotpSecret = class _TotpSecret {
+    // The public members are declared outside the constructor so the docs can be generated.
+    constructor(secretKey, hashingAlgorithm, codeLength, codeIntervalSeconds, enrollmentCompletionDeadline, sessionInfo, auth2) {
+      this.sessionInfo = sessionInfo;
+      this.auth = auth2;
+      this.secretKey = secretKey;
+      this.hashingAlgorithm = hashingAlgorithm;
+      this.codeLength = codeLength;
+      this.codeIntervalSeconds = codeIntervalSeconds;
+      this.enrollmentCompletionDeadline = enrollmentCompletionDeadline;
+    }
+    /** @internal */
+    static _fromStartTotpMfaEnrollmentResponse(response, auth2) {
+      return new _TotpSecret(response.totpSessionInfo.sharedSecretKey, response.totpSessionInfo.hashingAlgorithm, response.totpSessionInfo.verificationCodeLength, response.totpSessionInfo.periodSec, new Date(response.totpSessionInfo.finalizeEnrollmentTime).toUTCString(), response.totpSessionInfo.sessionInfo, auth2);
+    }
+    /** @internal */
+    _makeTotpVerificationInfo(otp) {
+      return { sessionInfo: this.sessionInfo, verificationCode: otp };
+    }
+    /**
+     * Returns a QR code URL as described in
+     * https://github.com/google/google-authenticator/wiki/Key-Uri-Format
+     * This can be displayed to the user as a QR code to be scanned into a TOTP app like Google Authenticator.
+     * If the optional parameters are unspecified, an accountName of <userEmail> and issuer of <firebaseAppName> are used.
+     *
+     * @param accountName the name of the account/app along with a user identifier.
+     * @param issuer issuer of the TOTP (likely the app name).
+     * @returns A QR code URL string.
+     */
+    generateQrCodeUrl(accountName, issuer) {
+      let useDefaults = false;
+      if (_isEmptyString(accountName) || _isEmptyString(issuer)) {
+        useDefaults = true;
+      }
+      if (useDefaults) {
+        if (_isEmptyString(accountName)) {
+          accountName = this.auth.currentUser?.email || "unknownuser";
+        }
+        if (_isEmptyString(issuer)) {
+          issuer = this.auth.name;
+        }
+      }
+      return `otpauth://totp/${issuer}:${accountName}?secret=${this.secretKey}&issuer=${issuer}&algorithm=${this.hashingAlgorithm}&digits=${this.codeLength}`;
+    }
+  };
+  function _isEmptyString(input) {
+    return typeof input === "undefined" || input?.length === 0;
+  }
+  var name3 = "@firebase/auth";
+  var version3 = "1.13.7";
+  var AuthInterop = class {
+    constructor(auth2) {
+      this.auth = auth2;
+      this.internalListeners = /* @__PURE__ */ new Map();
+    }
+    getUid() {
+      this.assertAuthConfigured();
+      return this.auth.currentUser?.uid || null;
+    }
+    async getToken(forceRefresh) {
+      this.assertAuthConfigured();
+      await this.auth._initializationPromise;
+      if (!this.auth.currentUser) {
+        return null;
+      }
+      const accessToken = await this.auth.currentUser.getIdToken(forceRefresh);
+      return { accessToken };
+    }
+    addAuthTokenListener(listener) {
+      this.assertAuthConfigured();
+      if (this.internalListeners.has(listener)) {
+        return;
+      }
+      const unsubscribe = this.auth.onIdTokenChanged((user) => {
+        listener(user?.stsTokenManager.accessToken || null);
+      });
+      this.internalListeners.set(listener, unsubscribe);
+      this.updateProactiveRefresh();
+    }
+    removeAuthTokenListener(listener) {
+      this.assertAuthConfigured();
+      const unsubscribe = this.internalListeners.get(listener);
+      if (!unsubscribe) {
+        return;
+      }
+      this.internalListeners.delete(listener);
+      unsubscribe();
+      this.updateProactiveRefresh();
+    }
+    assertAuthConfigured() {
+      _assert(
+        this.auth._initializationPromise,
+        "dependent-sdk-initialized-before-auth"
+        /* AuthErrorCode.DEPENDENT_SDK_INIT_BEFORE_AUTH */
+      );
+    }
+    updateProactiveRefresh() {
+      if (this.internalListeners.size > 0) {
+        this.auth._startProactiveRefresh();
+      } else {
+        this.auth._stopProactiveRefresh();
+      }
+    }
+  };
+  function getVersionForPlatform(clientPlatform) {
+    switch (clientPlatform) {
+      case "Node":
+        return "node";
+      case "ReactNative":
+        return "rn";
+      case "Worker":
+        return "webworker";
+      case "Cordova":
+        return "cordova";
+      case "WebExtension":
+        return "web-extension";
+      default:
+        return void 0;
+    }
+  }
+  function registerAuth(clientPlatform) {
+    _registerComponent(new Component(
+      "auth",
+      (container, { options: deps }) => {
+        const app2 = container.getProvider("app").getImmediate();
+        const heartbeatServiceProvider = container.getProvider("heartbeat");
+        const appCheckServiceProvider = container.getProvider("app-check-internal");
+        const { apiKey, authDomain } = app2.options;
+        _assert(apiKey && !apiKey.includes(":"), "invalid-api-key", { appName: app2.name });
+        const config = {
+          apiKey,
+          authDomain,
+          clientPlatform,
+          apiHost: "identitytoolkit.googleapis.com",
+          tokenApiHost: "securetoken.googleapis.com",
+          apiScheme: "https",
+          sdkClientVersion: _getClientVersion(clientPlatform)
+        };
+        const authInstance = new AuthImpl(app2, heartbeatServiceProvider, appCheckServiceProvider, config);
+        _initializeAuthInstance(authInstance, deps);
+        return authInstance;
+      },
+      "PUBLIC"
+      /* ComponentType.PUBLIC */
+    ).setInstantiationMode(
+      "EXPLICIT"
+      /* InstantiationMode.EXPLICIT */
+    ).setInstanceCreatedCallback((container, _instanceIdentifier, _instance) => {
+      const authInternalProvider = container.getProvider(
+        "auth-internal"
+        /* _ComponentName.AUTH_INTERNAL */
+      );
+      authInternalProvider.initialize();
+    }));
+    _registerComponent(new Component(
+      "auth-internal",
+      (container) => {
+        const auth2 = _castAuth(container.getProvider(
+          "auth"
+          /* _ComponentName.AUTH */
+        ).getImmediate());
+        return ((auth3) => new AuthInterop(auth3))(auth2);
+      },
+      "PRIVATE"
+      /* ComponentType.PRIVATE */
+    ).setInstantiationMode(
+      "EXPLICIT"
+      /* InstantiationMode.EXPLICIT */
+    ));
+    registerVersion(name3, version3, getVersionForPlatform(clientPlatform));
+    registerVersion(name3, version3, "esm2020");
+  }
+  var DEFAULT_ID_TOKEN_MAX_AGE = 5 * 60;
+  var authIdTokenMaxAge = getExperimentalSetting("authIdTokenMaxAge") || DEFAULT_ID_TOKEN_MAX_AGE;
+  var lastPostedIdToken = null;
+  var mintCookieFactory = (url) => async (user) => {
+    const idTokenResult = user && await user.getIdTokenResult();
+    const idTokenAge = idTokenResult && ((/* @__PURE__ */ new Date()).getTime() - Date.parse(idTokenResult.issuedAtTime)) / 1e3;
+    if (idTokenAge && idTokenAge > authIdTokenMaxAge) {
+      return;
+    }
+    const idToken = idTokenResult?.token;
+    if (lastPostedIdToken === idToken) {
+      return;
+    }
+    lastPostedIdToken = idToken;
+    await fetch(url, {
+      method: idToken ? "POST" : "DELETE",
+      headers: idToken ? {
+        "Authorization": `Bearer ${idToken}`
+      } : {}
+    });
+  };
+  function getAuth(app2 = getApp()) {
+    const provider = _getProvider(app2, "auth");
+    if (provider.isInitialized()) {
+      return provider.getImmediate();
+    }
+    const auth2 = initializeAuth(app2, {
+      popupRedirectResolver: browserPopupRedirectResolver,
+      persistence: [
+        indexedDBLocalPersistence,
+        browserLocalPersistence,
+        browserSessionPersistence
+      ]
+    });
+    const authTokenSyncPath = getExperimentalSetting("authTokenSyncURL");
+    if (authTokenSyncPath && typeof isSecureContext === "boolean" && isSecureContext) {
+      const authTokenSyncUrl = new URL(authTokenSyncPath, location.origin);
+      if (location.origin === authTokenSyncUrl.origin) {
+        const mintCookie = mintCookieFactory(authTokenSyncUrl.toString());
+        beforeAuthStateChanged(auth2, mintCookie, () => mintCookie(auth2.currentUser));
+        onIdTokenChanged(auth2, (user) => mintCookie(user));
+      }
+    }
+    const authEmulatorHost = getDefaultEmulatorHost("auth");
+    if (authEmulatorHost) {
+      connectAuthEmulator(auth2, `http://${authEmulatorHost}`);
+    }
+    return auth2;
+  }
+  function getScriptParentElement() {
+    return document.getElementsByTagName("head")?.[0] ?? document;
+  }
+  _setExternalJSProvider({
+    loadJS(url) {
+      return new Promise((resolve, reject) => {
+        const el = document.createElement("script");
+        el.setAttribute("src", url);
+        el.onload = resolve;
+        el.onerror = (e2) => {
+          const error = _createError(
+            "internal-error"
+            /* AuthErrorCode.INTERNAL_ERROR */
+          );
+          error.customData = e2;
+          reject(error);
+        };
+        el.type = "text/javascript";
+        el.charset = "UTF-8";
+        getScriptParentElement().appendChild(el);
+      });
+    },
+    gapiScript: "https://apis.google.com/js/api.js",
+    recaptchaV2Script: "https://www.google.com/recaptcha/api.js",
+    recaptchaEnterpriseScript: "https://www.google.com/recaptcha/enterprise.js?render="
+  });
+  registerAuth(
+    "Browser"
+    /* ClientPlatform.BROWSER */
+  );
+
   // src/firebase/init.js
   var OperationType2 = {
     CREATE: "create",
@@ -34808,8 +34179,8 @@ This typically indicates that your device does not have a healthy Internet conne
     try {
       const colRef = getProgressColRef();
       if (role !== ROLES.PARENT && !userUid) return [];
-      const q = role === ROLES.PARENT ? colRef : query(colRef, where("studentUid", "==", userUid));
-      const snap = await getDocs(q);
+      const q2 = role === ROLES.PARENT ? colRef : query(colRef, where("studentUid", "==", userUid));
+      const snap = await getDocs(q2);
       return snap.docs.map((d) => ({ id: d.id, ...d.data() })).sort((a, b2) => (b2.recordedAt?.seconds || 0) - (a.recordedAt?.seconds || 0));
     } catch (error) {
       console.warn("[M\u0101jas skola] Progresa vaic\u0101jums:", error?.code || "unknown");
@@ -34833,9 +34204,1103 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     return count;
   }
+  async function resetChildProgress(childRole, expectedCount) {
+    const parent = auth?.currentUser;
+    if (!db || !parent) throw new Error("Nepiecie\u0161ama vec\u0101ka pieteik\u0161an\u0101s.");
+    if (childRole !== ROLES.MARKS && childRole !== ROLES.SAMANTA) throw new Error("Nepareiza b\u0113rna izv\u0113le.");
+    const profile = await getUserProfile(parent.uid);
+    if (profile?.role !== ROLES.PARENT) throw new Error("Atiestat\u012B\u0161ana pieejama tikai vec\u0101kam.");
+    const childUid = childRole === ROLES.MARKS ? "w4nbeq1UguRFrvdwVSFOkk46zXA2" : "txTRitErw8c4NRK87v1JFrFkoPa2";
+    const docs = await getDocs(query(getProgressColRef(), where("studentUid", "==", childUid)));
+    if (typeof expectedCount !== "number" || docs.size !== expectedCount)
+      throw new Error("Ierakstu skaits ir main\u012Bjies. Atjauno lapu un apstiprini v\u0113lreiz.");
+    for (const d of docs.docs) if (d.data().studentUid !== childUid || d.data().studentRole !== childRole)
+      throw new Error("Atrasts neatbilsto\u0161s ieraksts. Dz\u0113\u0161ana p\u0101rtraukta.");
+    let deleted = 0;
+    for (const d of docs.docs) {
+      await deleteDoc(d.ref);
+      deleted++;
+    }
+    return deleted;
+  }
+
+  // src/rewards-system.js
+  function calculateChildPoints(role, progressRecords = [], now = /* @__PURE__ */ new Date()) {
+    const records = Array.isArray(progressRecords) ? progressRecords : [];
+    const childUid = role === "marks" ? "w4nbeq1UguRFrvdwVSFOkk46zXA2" : role === "samanta" ? "txTRitErw8c4NRK87v1JFrFkoPa2" : null;
+    if (!childUid) return { totalEarned: 0, todayEarned: 0, spent: 0, balance: 0, provisional: true, activityCount: 0 };
+    const date = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(now);
+    const dayOf = (stamp) => {
+      if (!stamp) return null;
+      const millis = typeof stamp.toMillis === "function" ? stamp.toMillis() : typeof stamp.seconds === "number" ? stamp.seconds * 1e3 : typeof stamp === "string" ? Date.parse(stamp) : stamp instanceof Date ? stamp.getTime() : null;
+      return Number.isFinite(millis) ? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(millis)) : null;
+    };
+    const bestByTopic = /* @__PURE__ */ new Map();
+    let todayEarned = 0, activityCount = 0;
+    for (const item of [...records].sort((a, b2) => (a.recordedAt?.seconds || 0) - (b2.recordedAt?.seconds || 0))) {
+      if (item.studentUid !== childUid || item.studentRole !== role || !Number.isFinite(item.score)) continue;
+      const pct = Math.max(0, Math.min(100, item.score));
+      const subject = String(item.subject || "Visp\u0101r\u012Bgi").trim();
+      const topic = String(item.activityType || "trenins").split(" \xB7 ")[0].trim();
+      const key = subject + "|" + topic;
+      const potential = pct < 40 ? 0 : pct < 60 ? 4 : pct < 75 ? 8 : pct < 90 ? 12 : 16;
+      const previous = bestByTopic.get(key) || 0;
+      const improvement = Math.max(0, potential - previous);
+      bestByTopic.set(key, Math.max(previous, potential));
+      if (improvement && dayOf(item.recordedAt) === date) todayEarned += improvement;
+      activityCount++;
+    }
+    const totalEarned = [...bestByTopic.values()].reduce((sum, n2) => sum + n2, 0);
+    return { totalEarned, todayEarned, spent: 0, balance: totalEarned, provisional: true, activityCount, goal: 250, remaining: Math.max(0, 250 - totalEarned) };
+  }
+  var rewards = [
+    { id: "popcorn", title: "Svaigs popkorns kino vakaram", cost: 40, icon: "\u{1F37F}" },
+    { id: "cola", title: "V\u0113sa kola vai m\u012B\u013C\u0101kais dz\u0113riens kino", cost: 40, icon: "\u{1F964}" },
+    { id: "icecream", title: "M\u012B\u013C\u0101kais sald\u0113jums vai na\u0161\u0137is", cost: 50, icon: "\u{1F366}" },
+    { id: "extra20", title: "Papildu 20 min\u016Btes pirms miega", cost: 70, icon: "\u23F0" },
+    { id: "phone20", title: "Papildu 20 min\u016Btes telefon\u0101", cost: 80, icon: "\u{1F4F1}" },
+    { id: "movie-pick", title: "Filmas izv\u0113les \u0161efs piektdien\u0101", cost: 90, icon: "\u{1F3AC}" },
+    { id: "breakfast", title: "Sv\u0113tdienas brokastu pas\u016Bt\u012Bjums (pank\u016Bkas)", cost: 110, icon: "\u{1F95E}" },
+    { id: "board-game", title: "Galda sp\u0113\u013Cu vakars p\u0113c b\u0113rna noteikumiem", cost: 130, icon: "\u{1F3B2}" },
+    { id: "games40", title: "Papildu 40 min\u016Btes sp\u0113\u013Cu laika", cost: 150, icon: "\u{1F3AE}" },
+    { id: "film", title: "Lielais \u0123imenes kino vakars ar popkorna komplektu", cost: 200, icon: "\u{1F451}" }
+  ];
+  var claims = () => collection(db, "homeSchool", "data", "rewardRequests");
+  var make = (tag, text) => {
+    const e2 = document.createElement(tag);
+    if (text !== void 0) e2.textContent = text;
+    return e2;
+  };
+  var button = (parent, label, handler) => {
+    const b2 = make("button", label);
+    b2.type = "button";
+    b2.className = "action-button";
+    b2.onclick = handler;
+    parent.append(b2);
+    return b2;
+  };
+  async function identity() {
+    if (!db || !auth.currentUser) throw Error("Piesl\u0113dzies savam kontam.");
+    const p2 = await getUserProfile(auth.currentUser.uid);
+    if (!p2?.approved) throw Error("Konts nav apstiprin\u0101ts.");
+    return { uid: auth.currentUser.uid, role: p2.role };
+  }
+  async function getRequests(role) {
+    const user = await identity();
+    if (user.role !== ROLES.PARENT && user.role !== role) throw Error("\u0160ie pieteikumi nav pieejami.");
+    const q2 = user.role === ROLES.PARENT ? claims() : query(claims(), where("studentUid", "==", user.uid));
+    const snap = await getDocs(q2);
+    return snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+  }
+  async function submitWish(role, reward) {
+    const user = await identity();
+    if (user.role !== role || user.role === ROLES.PARENT) throw Error("V\u0113lmi dr\u012Bkst pieteikt tikai b\u0113rns sav\u0101 kont\u0101.");
+    const existing = await getRequests(role);
+    if (existing.some((c2) => c2.rewardId === reward.id && c2.status === "pending")) throw Error("\u0160\u012B v\u0113lme jau gaida izskat\u012B\u0161anu.");
+    await addDoc(claims(), { studentUid: user.uid, studentRole: role, rewardId: reward.id, rewardTitle: reward.title, cost: reward.cost, status: "pending", kind: "wish_only", createdAt: serverTimestamp(), updatedAt: serverTimestamp() });
+  }
+  async function parentDecision(id, status) {
+    const user = await identity();
+    if (user.role !== ROLES.PARENT) throw Error("Tikai vec\u0101ks var izskat\u012Bt v\u0113lmi.");
+    const ref = doc(db, "homeSchool", "data", "rewardRequests", id);
+    const snap = await getDoc(ref);
+    if (!snap.exists() || snap.data().status !== "pending" || snap.data().kind !== "wish_only") throw Error("V\u0113lme jau izskat\u012Bta vai nav pieejama.");
+    await updateDoc(ref, { status, reviewedBy: user.uid, updatedAt: serverTimestamp() });
+  }
+  function renderRewardShop(container, { studentRole, progressRecords = [], onBack } = {}) {
+    const root = make("section");
+    root.className = "module learning-hub";
+    container.replaceChildren(root);
+    const points = calculateChildPoints(studentRole, progressRecords);
+    root.append(make("h2", "\u{1F3AC} Ce\u013C\u0161 uz kino vakaru"), make("p", "Tavs \u0161odienas aptuvenais pienesums: +" + points.todayEarned + " BP. No saglab\u0101tajiem rezult\u0101tiem apr\u0113\u0137in\u0101ti " + points.balance + " / 250 BP. L\u012Bdz m\u0113r\u0137im: " + points.remaining + " BP."));
+    const meter = make("progress");
+    meter.max = 250;
+    meter.value = Math.min(250, points.balance);
+    meter.style.cssText = "width:100%;height:24px;accent-color:#6fca9e";
+    meter.setAttribute("aria-label", "Progress l\u012Bdz kino vakaram");
+    root.append(meter);
+    root.append(make("p", "\u0160ie ir provizoriski motiv\u0101cijas punkti no Firebase rezult\u0101tu v\u0113stures, nevis apstiprin\u0101ts balvu maks. Vec\u0101ks lemj par kino vakaru. Vien\u0101 t\u0113m\u0101 ieskait\u0101m tikai lab\u0101k\u0101 rezult\u0101ta pieaugumu."));
+    root.append(make("h2", "\u{1F381} Balvu v\u0113lmes"));
+    const status = make("p");
+    status.setAttribute("role", "status");
+    root.append(status);
+    const list = make("div");
+    list.className = "topic-grid";
+    root.append(list);
+    const draw = async () => {
+      list.replaceChildren();
+      try {
+        const user = await identity();
+        const existing = await getRequests(studentRole);
+        for (const reward of rewards) {
+          const card = make("div");
+          card.className = "card";
+          card.append(make("h3", reward.icon + " " + reward.title), make("p", "Pl\u0101not\u0101 cena: " + reward.cost + " BP (punktu t\u0113r\u0113\u0161ana v\u0113l nav iesl\u0113gta)."));
+          const own = existing.find((c2) => c2.rewardId === reward.id && c2.status === "pending");
+          const b2 = button(card, own ? "\u23F3 Gaida vec\u0101ka atbildi" : "\u{1F48C} Pieteikt v\u0113lmi", async () => {
+            b2.disabled = true;
+            try {
+              await submitWish(studentRole, reward);
+              status.textContent = "V\u0113lme saglab\u0101ta Firebase. Vec\u0101ks to var\u0113s redz\u0113t sav\u0101 panel\u012B.";
+              await draw();
+            } catch (e2) {
+              status.textContent = "Neizdev\u0101s: " + e2.message;
+              b2.disabled = false;
+            }
+          });
+          b2.disabled = Boolean(own) || user.role !== studentRole;
+          list.append(card);
+        }
+        const history2 = make("div");
+        history2.className = "card";
+        history2.append(make("h3", "Manu v\u0113lmju v\u0113sture"));
+        existing.forEach((c2) => history2.append(make("p", c2.rewardTitle + " \u2014 " + ({ pending: "Gaida", approved: "Vec\u0101ks piekrita", rejected: "Noraid\u012Bta" }[c2.status] || c2.status))));
+        list.append(history2);
+      } catch (e2) {
+        status.textContent = "Firebase v\u0113lmes nav pieejamas: " + e2.message;
+      }
+    };
+    if (onBack) button(root, "\u2190 Atpaka\u013C uz priek\u0161metiem", onBack);
+    void draw();
+    return root;
+  }
+  function renderParentRewardManager(container) {
+    const section = make("section");
+    section.className = "module";
+    section.style.gridColumn = "1/-1";
+    section.append(make("h2", "\u{1F381} B\u0113rnu balvu v\u0113lmes"), make("p", "\u0160ie ir b\u0113rnu v\u0113lmju pieteikumi Firebase, nevis apmaks\u0101tas balvas. Apstiprin\u0101jums neveic BP norakst\u012B\u0161anu."));
+    const status = make("p");
+    status.setAttribute("role", "status");
+    section.append(status);
+    const list = make("div");
+    list.className = "topic-grid";
+    section.append(list);
+    container.append(section);
+    const draw = async () => {
+      list.replaceChildren();
+      try {
+        const user = await identity();
+        if (user.role !== ROLES.PARENT) throw Error("Nepiecie\u0161ams vec\u0101ka konts.");
+        const requests = await getRequests(ROLES.PARENT);
+        requests.sort((a, b2) => (b2.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+        if (!requests.length) list.append(make("p", "V\u0113lmju v\u0113l nav."));
+        for (const c2 of requests) {
+          const card = make("div");
+          card.className = "card";
+          card.append(make("h3", (c2.studentRole === "marks" ? "Marks" : "Samanta") + " \u2014 " + c2.rewardTitle), make("p", "Statuss: " + ({ pending: "Gaida", approved: "Piekritu (bez BP noraksta)", rejected: "Noraid\u012Bta" }[c2.status] || c2.status)));
+          if (c2.status === "pending") {
+            for (const [label, next] of [["\u2705 Piekrist", "approved"], ["\u274C Noraid\u012Bt", "rejected"]]) button(card, label, async () => {
+              try {
+                await parentDecision(c2.id, next);
+                await draw();
+              } catch (e2) {
+                status.textContent = e2.message;
+              }
+            });
+          }
+          list.append(card);
+        }
+      } catch (e2) {
+        status.textContent = "Firebase pieteikumu iel\u0101de neizdev\u0101s: " + e2.message;
+      }
+    };
+    void draw();
+    return section;
+  }
+
+  // src/personal-theme.js
+  var palettes = {
+    marks: { dragon: ["#6452eb", "#38cab8", "#f0eeff"], night: ["#344f8a", "#67d2e1", "#eaf3ff"], forest: ["#287b65", "#e1a853", "#e9f8ee"] },
+    samanta: { peach: ["#e86996", "#f8b966", "#fff0f4"], ocean: ["#229bad", "#7f83e8", "#e9fbff"], lavender: ["#9161c8", "#ef9dc0", "#f8eeff"] }
+  };
+  var defaults = { marks: "dragon", samanta: "peach" };
+  var themeNames = { dragon: "P\u016B\u0137u sala", night: "Zvaig\u017E\u0146u nakts", forest: "Me\u017Ea eksped\u012Bcija", peach: "Saulainais d\u0101rzs", ocean: "Oke\u0101ns", lavender: "Lavandas sapnis" };
+  function applyPersonalTheme(role) {
+    const key = "home-school-theme-" + role;
+    let theme = defaults[role] || "dragon";
+    try {
+      const selected = localStorage.getItem(key);
+      if (palettes[role]?.[selected]) theme = selected;
+    } catch {
+    }
+    const root = document.documentElement;
+    const [primary, accent, tint] = palettes[role]?.[theme] || palettes.marks.dragon;
+    root.style.setProperty("--personal-primary", primary);
+    root.style.setProperty("--personal-accent", accent);
+    root.style.setProperty("--personal-tint", tint);
+    root.dataset.schoolTheme = role;
+    root.dataset.themeVariant = theme;
+    root.style.setProperty("--theme-glow", accent);
+    return theme;
+  }
+  function renderThemePicker(parent, role) {
+    if (!palettes[role]) return;
+    const box = document.createElement("section");
+    box.className = "theme-picker";
+    box.setAttribute("aria-label", "Piel\u0101got dizainu");
+    const heading = document.createElement("strong");
+    heading.textContent = "\u{1F3A8} Mana pasaule";
+    box.append(heading);
+    const subtitle = document.createElement("p");
+    subtitle.textContent = "Izv\u0113lies savas pasaules kr\u0101sas. Main\u012Bsies ar\u012B fons un misiju kart\u012Btes.";
+    box.append(subtitle);
+    const selected = document.createElement("div");
+    selected.className = "theme-selected";
+    selected.setAttribute("role", "status");
+    box.append(selected);
+    const variants = document.createElement("div");
+    variants.className = "theme-variants";
+    box.append(variants);
+    const labels = { dragon: "\u{1F409} P\u016B\u0137u sala", night: "\u{1F30C} Zvaig\u017E\u0146u nakts", forest: "\u{1F332} Me\u017Ea eksped\u012Bcija", peach: "\u{1F338} Saulainais d\u0101rzs", ocean: "\u{1F30A} Oke\u0101ns", lavender: "\u{1F984} Lavandas sapnis" };
+    let active = applyPersonalTheme(role);
+    const showSelected = () => {
+      selected.textContent = "\u2713 Izv\u0113l\u0113ta: " + themeNames[active];
+    };
+    showSelected();
+    for (const [name4, colors] of Object.entries(palettes[role])) {
+      const b2 = document.createElement("button");
+      b2.type = "button";
+      b2.className = "theme-choice";
+      b2.setAttribute("aria-pressed", String(active === name4));
+      const swatch = document.createElement("span");
+      swatch.className = "theme-swatch";
+      swatch.style.background = "linear-gradient(135deg," + colors[0] + "," + colors[1] + ")";
+      b2.append(swatch, document.createTextNode(labels[name4]));
+      variants.append(b2);
+      b2.onclick = () => {
+        active = name4;
+        try {
+          localStorage.setItem("home-school-theme-" + role, name4);
+        } catch {
+        }
+        applyPersonalTheme(role);
+        showSelected();
+        for (const child of variants.children) child.setAttribute("aria-pressed", String(child === b2));
+      };
+    }
+    parent.append(box);
+  }
+
+  // src/points-policy.js
+  var REWARD_CAP = 20;
+  function calculatePracticePoints({ correct, total, maxStreak = 0, mode = "practice" } = {}) {
+    if (!Number.isInteger(total) || total <= 0 || !Number.isInteger(correct) || correct < 0 || correct > total) throw new Error("Neder\u012Bgs rezult\u0101ts");
+    const percent = Math.round(100 * correct / total);
+    if (mode === "learn" || mode === "errors" || mode === "mistakes" || mode === "review")
+      return { percent, base: 0, streakBonus: 0, potential: 0, eligible: false, reason: "M\u0101c\u012Bbu vai k\u013C\u016Bdu labo\u0161anas re\u017E\u012Bms" };
+    const bands = [[0, 39, 0, 3], [40, 59, 4, 7], [60, 74, 8, 11], [75, 89, 12, 15], [90, 100, 16, 18]];
+    const band = bands.find(([lo2, hi2]) => percent >= lo2 && percent <= hi2);
+    const [lo, hi, low, high] = band;
+    const base = percent === 0 ? 0 : Math.min(high, Math.floor(low + (percent - lo) * (high - low) / Math.max(1, hi - lo)));
+    const streakBonus = (maxStreak >= 5 ? 1 : 0) + (maxStreak >= 10 ? 1 : 0);
+    const potential = Math.min(REWARD_CAP, base + streakBonus);
+    return { percent, base, streakBonus, potential, eligible: true, cap: REWARD_CAP };
+  }
+  function previewImprovement(bestBefore, potential) {
+    const before = Math.max(0, Math.min(REWARD_CAP, Number(bestBefore) || 0));
+    const after = Math.max(before, Math.min(REWARD_CAP, potential));
+    return { earned: after - before, best: after };
+  }
+
+  // src/samanta-math.js
+  var shuffle4 = (a) => {
+    const b2 = [...a];
+    for (let i2 = b2.length - 1; i2 > 0; i2--) {
+      const j = Math.floor(Math.random() * (i2 + 1));
+      [b2[i2], b2[j]] = [b2[j], b2[i2]];
+    }
+    return b2;
+  };
+  function makeMathQuestions(type = "mixed", family = 0, count = 12) {
+    const base = [];
+    for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
+      if (family && a !== family && b2 !== family) continue;
+      const product = a * b2;
+      if (type !== "division" && type !== "visual" && type !== "story") {
+        base.push({ key: "m-" + a + "-" + b2, kind: "multiply", a, b: b2, answer: product, prompt: a + " \xD7 " + b2 + " = ?", hint: a + " grupas, katr\u0101 " + b2 + " priek\u0161meti. Kop\u0101 ir " + product + "." });
+        base.push({ key: "missing-m-" + a + "-" + b2, kind: "missing", a, b: b2, answer: b2, prompt: a + " \xD7 \u25A1 = " + product, hint: "Atrodi skaitli, kuru reizinot ar " + a + ", ieg\u016Bst " + product + "." });
+      }
+      if (type !== "multiply" && type !== "visual" && type !== "story") {
+        base.push({ key: "d-" + a + "-" + b2, kind: "divide", a, b: b2, answer: b2, prompt: product + " \xF7 " + a + " = ?", hint: "Ja " + product + " sadala " + a + " vien\u0101d\u0101s grup\u0101s, katr\u0101 ir " + b2 + "." });
+        base.push({ key: "missing-d-" + a + "-" + b2, kind: "missing", a, b: b2, answer: a, prompt: product + " \xF7 \u25A1 = " + b2, hint: "Atrodi dal\u012Bt\u0101ju, kas dod rezult\u0101tu " + b2 + "." });
+      }
+    }
+    if (type === "visual" || type === "story") {
+      const objects = ["\u{1F34E}", "\u2B50", "\u{1F33C}", "\u{1F98B}", "\u{1F7E3}"];
+      const people = ["Samanta", "L\u012Bga", "Anna", "Marta", "Elza"];
+      for (let a = 1; a <= 10; a++) for (let b2 = 1; b2 <= 10; b2++) {
+        if (family && a !== family && b2 !== family) continue;
+        const icon = objects[(a + b2) % objects.length], person = people[(a + b2) % people.length];
+        if (type === "visual") {
+          base.push({ key: "v-m-" + a + "-" + b2, kind: "visual-multiply", a, b: b2, answer: a * b2, prompt: "Cik priek\u0161metu ir kop\u0101?", icon, hint: a + " grupas pa " + b2 + " ir " + a * b2 + "." });
+          base.push({ key: "v-d-" + a + "-" + b2, kind: "visual-divide", a, b: b2, answer: b2, prompt: "Cik priek\u0161metu ir katr\u0101 grup\u0101?", icon, hint: a * b2 + " priek\u0161metus sadalot " + a + " vien\u0101d\u0101s grup\u0101s, katr\u0101 b\u016Bs " + b2 + "." });
+        } else {
+          base.push({ key: "s-m-" + a + "-" + b2, kind: "story-multiply", a, b: b2, answer: a * b2, prompt: person + " salika " + a + " grozi\u0146us. Katr\u0101 grozi\u0146\u0101 ir " + b2 + " \u0101boli. Cik \u0101bolu ir kop\u0101?", hint: "Saskaiti " + a + " grupas pa " + b2 + " \u0101boliem." });
+          base.push({ key: "s-d-" + a + "-" + b2, kind: "story-divide", a, b: b2, answer: b2, prompt: person + " vien\u0101di sadal\u012Bja " + a * b2 + " uzl\u012Bmes " + a + " draugiem. Cik uzl\u012Bmju sa\u0146\u0113ma katrs draugs?", hint: "Sadal\u0101m " + a * b2 + " ar " + a + "." });
+        }
+      }
+    }
+    return shuffle4(base).slice(0, count);
+  }
+  function renderSamantaMath(container, { canSubmit = false, currentUid = "", saveProgress = async () => {
+  } } = {}) {
+    const storagePrefix = canSubmit && currentUid ? "majas-skola:" + currentUid + ":samanta-math:" : null;
+    const historyKey = storagePrefix + "history-v2";
+    function history2() {
+      if (!storagePrefix) return [];
+      try {
+        const x2 = JSON.parse(localStorage.getItem(historyKey) || "[]");
+        return Array.isArray(x2) ? x2.slice(-50) : [];
+      } catch {
+        return [];
+      }
+    }
+    function store(result) {
+      if (!storagePrefix) return;
+      try {
+        localStorage.setItem(historyKey, JSON.stringify([...history2(), result].slice(-50)));
+      } catch {
+      }
+    }
+    const host = document.createElement("section");
+    host.className = "module learning-hub math-hub";
+    host.style.gridColumn = "1/-1";
+    container.append(host);
+    let session = null, errors = [], currentMode = "mixed", family = 0, answerTimer = null;
+    const stopAnswerTimer = () => {
+      if (answerTimer !== null) {
+        clearTimeout(answerTimer);
+        answerTimer = null;
+      }
+    };
+    function el(tag, cls, text) {
+      const e2 = document.createElement(tag);
+      if (cls) e2.className = cls;
+      if (text !== void 0) e2.textContent = text;
+      return e2;
+    }
+    function button2(parent, text, action, cls = "action-button") {
+      const b2 = el("button", cls, text);
+      b2.type = "button";
+      b2.onclick = action;
+      parent.append(b2);
+      return b2;
+    }
+    function shell(title, subtitle) {
+      stopAnswerTimer();
+      host.replaceChildren();
+      const head = el("div", "learning-heading");
+      head.append(el("span", "eyebrow", "\u2726 SAMANTAS MATEM\u0100TIKAS LABORATORIJA"), el("h2", "", title), el("p", "", subtitle));
+      host.append(head);
+    }
+    function welcome() {
+      shell("Skait\u013Cu piedz\u012Bvojums", "Reizini, dali un k\u013C\u016Bsti arvien dro\u0161\u0101ka! Te vari m\u0113\u0123in\u0101t tik rei\u017Eu, cik v\u0113lies.");
+      const stats = history2().filter((x2) => x2.type);
+      if (stats.length) {
+        const last = stats.at(-1), row = el("div", "stat-strip");
+        row.append(el("span", "", "\u{1F3C5} Lab\u0101kais " + Math.max(...stats.map((x2) => x2.percent)) + "%"), el("span", "", "\u{1F4C8} P\u0113d\u0113jais " + last.percent + "%"), el("span", "", "\u2726 Treni\u0146i " + stats.length));
+        host.append(row);
+      }
+      const modeRow = el("div", "topic-grid");
+      host.append(modeRow);
+      for (const [type, icon, title, desc] of [["multiply", "\u2716", "Reizr\u0113\u0137ins", "Skait\u013Ci no 1 l\u012Bdz 10"], ["division", "\u2797", "Dal\u012B\u0161ana", "Dal\u0101m tikai bez atlikuma"], ["mixed", "\u26A1", "Jauktais izaicin\u0101jums", "Reizin\u0101\u0161ana un dal\u012B\u0161ana kop\u0101"], ["visual", "\u{1F9E9}", "Redzu un skaitu", "Uzdevumi ar priek\u0161metu grup\u0101m"], ["story", "\u{1F4D6}", "St\u0101stu uzdevumi", "\u012Asi teksta uzdevumi ar balsi"]]) {
+        const b2 = el("button", "topic-tile");
+        b2.type = "button";
+        b2.append(el("span", "topic-emoji", icon), el("strong", "", title), el("small", "", desc));
+        b2.onclick = () => settings(type);
+        modeRow.append(b2);
+      }
+      if (errors.length) {
+        const alert2 = el("div", "soft-notice", "\u{1F3AF} Tev ir " + errors.length + " jaut\u0101jumi, kurus vari patren\u0113t v\u0113lreiz.");
+        host.append(alert2);
+        button2(host, "Tren\u0113t manas k\u013C\u016Bdas", () => start2(currentMode, family, "mistakes"));
+      }
+      const grid = el("div", "table-area");
+      grid.append(el("h3", "", "\u{1F522} Reizin\u0101\u0161anas tabula"));
+      const table = el("div", "times-grid");
+      for (let a = 1; a <= 10; a++) {
+        const line = el("div", "times-line");
+        for (let b2 = 1; b2 <= 10; b2++) {
+          const cell = el("span", "times-cell", String(a * b2));
+          cell.title = a + " \xD7 " + b2;
+          line.append(cell);
+        }
+        table.append(line);
+      }
+      grid.append(table);
+      host.append(grid);
+    }
+    function settings(type) {
+      currentMode = type;
+      shell(type === "multiply" ? "\u2716 Reizr\u0113\u0137ins" : type === "division" ? "\u2797 Dal\u012B\u0161ana" : type === "visual" ? "\u{1F9E9} Redzu un skaitu" : type === "story" ? "\u{1F4D6} St\u0101stu uzdevumi" : "\u26A1 Jauktais izaicin\u0101jums", "Izv\u0113lies, ko v\u0113lies patren\u0113t.");
+      const controls = el("div", "settings-panel");
+      controls.append(el("label", "", "Kuru reizin\u0101\u0161anas tabulu?"));
+      const select = el("select", "select-control");
+      for (let i2 = 0; i2 <= 10; i2++) {
+        const op = el("option", "", i2 === 0 ? "Visas tabulas 1\u201310" : i2 + ". tabula");
+        op.value = i2;
+        select.append(op);
+      }
+      select.value = String(family);
+      select.onchange = () => {
+        family = Number(select.value);
+      };
+      controls.append(select);
+      host.append(controls);
+      const buttons = el("div", "button-cluster");
+      host.append(buttons);
+      button2(buttons, "\u{1F331} M\u0101cos \xB7 8 uzdevumi", () => start2(type, Number(select.value), "learn"));
+      button2(buttons, "\u{1F3AF} Tren\u0113jos \xB7 12 uzdevumi", () => start2(type, Number(select.value), "practice"));
+      button2(buttons, "\u{1F3C6} P\u0101rbaudu sevi \xB7 20 uzdevumi", () => start2(type, Number(select.value), "exam"));
+      button2(host, "\u2190 Visas t\u0113mas", welcome, "quiet-button");
+    }
+    function start2(type, fam, mode) {
+      const source = makeMathQuestions(type, fam, mode === "learn" ? 8 : mode === "exam" ? 20 : mode === "mistakes" ? Math.min(10, Math.max(4, errors.length * 2)) : 12);
+      const previous = new Set(errors.map((q2) => q2.key));
+      const related = mode === "mistakes" ? errors.flatMap((q2) => {
+        const all = makeMathQuestions("mixed", 0, 400);
+        return all.filter((x2) => x2.a === q2.a && x2.b === q2.b && !previous.has(x2.key));
+      }) : [];
+      const distinct = [...new Map(related.map((q2) => [q2.key, q2])).values()];
+      const review = shuffle4(distinct).slice(0, 10);
+      const items = mode === "mistakes" ? review.length ? review : source.filter((q2) => !previous.has(q2.key)).slice(0, 10) : source;
+      session = { type, fam, mode, items, index: 0, correct: 0, misses: [], answers: [], began: Date.now() };
+      step();
+    }
+    function step() {
+      if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+      const s2 = session;
+      if (s2.index >= s2.items.length) {
+        void finish();
+        return;
+      }
+      const q2 = s2.items[s2.index];
+      shell("Atrisini uzdevumu", "Jaut\u0101jums " + (s2.index + 1) + " no " + s2.items.length);
+      const bar = el("div", "progress-track");
+      const fill = el("div", "progress-fill");
+      fill.style.width = Math.round(s2.index / s2.items.length * 100) + "%";
+      bar.append(fill);
+      host.append(bar);
+      const streakLabel = el("div", "streak-label", "\u{1F525} " + (s2.streak || 0) + " pareizas atbildes p\u0113c k\u0101rtas \xB7 Rekords: " + (s2.maxStreak || 0));
+      host.append(streakLabel);
+      const card = el("div", "question-stage");
+      card.append(el("span", "eyebrow", s2.mode === "exam" ? "P\u0100RBAUDES RE\u017D\u012AMS" : "TAVS IZAICIN\u0100JUMS"), el("div", q2.kind.startsWith("story") ? "story-expression" : "math-expression", q2.prompt));
+      if (q2.kind.startsWith("visual")) {
+        const grid = el("div", "visual-groups");
+        grid.setAttribute("role", "img");
+        grid.setAttribute("aria-label", q2.a + " grupas ar " + q2.b + " priek\u0161metiem katr\u0101");
+        for (let i2 = 0; i2 < q2.a; i2++) {
+          const group = el("div", "visual-group");
+          for (let j = 0; j < q2.b; j++) group.append(el("span", "visual-object", q2.icon));
+          grid.append(group);
+        }
+        card.append(grid);
+      }
+      if (q2.kind.startsWith("story")) {
+        const controls = el("div", "reading-controls");
+        const read = button2(controls, "\u{1F50A} Nolas\u012Bt uzdevumu", () => {
+          if (!("speechSynthesis" in window)) {
+            feedback.textContent = "\u0160aj\u0101 p\u0101rl\u016Bk\u0101 balss nolas\u012B\u0161ana nav pieejama.";
+            return;
+          }
+          window.speechSynthesis.cancel();
+          const speech = new SpeechSynthesisUtterance(q2.prompt);
+          speech.lang = "lv-LV";
+          speech.rate = 0.85;
+          speech.pitch = 1;
+          const available = window.speechSynthesis.getVoices().find((v2) => v2.lang.toLowerCase().startsWith("lv"));
+          if (available) speech.voice = available;
+          window.speechSynthesis.speak(speech);
+        }, "quiet-button");
+        read.setAttribute("aria-label", "Nolas\u012Bt teksta uzdevumu ska\u013Ci");
+        button2(controls, "\u23F9 Aptur\u0113t", () => {
+          if ("speechSynthesis" in window) window.speechSynthesis.cancel();
+        }, "quiet-button");
+        card.append(controls);
+      }
+      const form = el("form", "math-answer-form");
+      const inp = el("input", "big-number-input");
+      inp.type = "number";
+      inp.inputMode = "numeric";
+      inp.min = "0";
+      inp.max = "100";
+      inp.step = "1";
+      inp.required = true;
+      inp.placeholder = "?";
+      inp.autocomplete = "off";
+      inp.setAttribute("aria-label", "Tava atbilde");
+      form.append(inp);
+      const feedback = el("p", "feedback-line");
+      feedback.setAttribute("role", "status");
+      if (s2.mode === "learn") button2(card, "\u{1F4A1} Par\u0101di pavedienu", () => {
+        feedback.textContent = q2.kind.includes("multiply") ? "Atceries: reizin\u0101\u0161ana ir atk\u0101rtota saskait\u012B\u0161ana." : q2.kind.includes("divide") ? "P\u0101rbaudi dal\u012B\u0161anu ar reizin\u0101\u0161anu." : "Dom\u0101, kura darb\u012Bba j\u0101izpilda.";
+      }, "quiet-button");
+      const submit = el("button", "action-button", "P\u0101rbaud\u012Bt");
+      submit.type = "submit";
+      form.append(submit);
+      card.append(form, feedback);
+      const numpad = attachTouchNumpad(card, inp);
+      host.append(card);
+      let answered = false, advanced = false;
+      form.onsubmit = (e2) => {
+        e2.preventDefault();
+        if (answered || !card.isConnected) return;
+        const val = Number(inp.value);
+        if (!Number.isInteger(val) || inp.value === "") return;
+        answered = true;
+        const good = val === q2.answer;
+        s2.correct += Number(good);
+        s2.answers.push({ key: q2.key, correct: good });
+        s2.streak = good ? (s2.streak || 0) + 1 : 0;
+        s2.maxStreak = Math.max(s2.maxStreak || 0, s2.streak);
+        if (!good) s2.misses.push(q2);
+        inp.disabled = true;
+        submit.disabled = true;
+        numpad.querySelectorAll("button").forEach((b2) => b2.disabled = true);
+        feedback.textContent = good ? "\u{1F389} Pareizi! Malacis!" : s2.mode === "exam" ? "Atbilde pie\u0146emta. Pareizo atbildi redz\u0113si rezult\u0101tu p\u0101rskat\u0101." : "\u274C Pareiz\u0101 atbilde: " + q2.answer + ". " + q2.hint;
+        feedback.className = "feedback-line answer-feedback " + (good ? "answer-feedback-good" : "answer-feedback-error");
+        const advance = () => {
+          if (advanced || !card.isConnected) return;
+          advanced = true;
+          stopAnswerTimer();
+          s2.index++;
+          step();
+        };
+        button2(card, s2.index + 1 === s2.items.length ? "Skat\u012Bt rezult\u0101tu \u2192" : "Turpin\u0101t uzreiz \u2192", advance);
+        if (good || s2.mode !== "exam") answerTimer = setTimeout(advance, good ? 1150 : 3e3);
+      };
+    }
+    async function finish() {
+      const s2 = session, pct = Math.round(s2.correct / s2.items.length * 100);
+      errors = s2.misses;
+      currentMode = s2.type;
+      family = s2.fam;
+      shell("Tavs rezult\u0101ts", "Katrs m\u0113\u0123in\u0101jums pal\u012Bdz k\u013C\u016Bt dro\u0161\u0101kai.");
+      host.append(el("div", "result-hero", pct + "%"), el("p", "result-subtitle", s2.correct + " pareizi no " + s2.items.length + " uzdevumiem"));
+      const weak = el("div", "soft-notice", s2.misses.length ? "Visvair\u0101k j\u0101nostiprina " + (s2.type === "multiply" ? "reizin\u0101\u0161ana" : s2.type === "division" ? "dal\u012B\u0161ana" : "da\u017Eas reizin\u0101\u0161anas un dal\u012B\u0161anas darb\u012Bbas") + "." : "\u{1F31F} Visas atbildes pareizas!");
+      host.append(weak);
+      if (s2.misses.length) {
+        const review = el("div", "soft-notice");
+        review.append(el("h3", "", "Pareiz\u0101s atbildes"));
+        for (const q2 of s2.misses) review.append(el("p", "", q2.prompt + "  \u2192  " + q2.answer));
+        host.append(review);
+      }
+      const policy = calculatePracticePoints({ correct: s2.correct, total: s2.items.length, maxStreak: s2.maxStreak || 0, mode: s2.mode });
+      const key = storagePrefix + "best-" + s2.type + "-" + s2.fam;
+      let previous = 0;
+      if (storagePrefix) try {
+        previous = Number(localStorage.getItem(key)) || 0;
+      } catch {
+      }
+      const award = previewImprovement(previous, policy.potential);
+      const row = { type: s2.type, mode: s2.mode, percent: pct, correct: s2.correct, total: s2.items.length, date: (/* @__PURE__ */ new Date()).toISOString(), streak: s2.maxStreak || 0, pointsPreview: award.earned, pointsPotential: policy.potential };
+      const pts = el("div", "soft-notice", policy.eligible ? "\u{1F3C5} \u0160\u012B m\u0113\u0123in\u0101juma punktu potenci\u0101ls: " + policy.potential + "/20 \xB7 Jauns uzlabojums: +" + award.earned + " treni\u0146a BP \xB7 S\u0113rijas bonuss: " + policy.streakBonus : "\u{1F331} \u0160is ir m\u0101c\u012Bbu re\u017E\u012Bms \u2014 bez balvu punktiem.");
+      host.append(pts);
+      const disclaimer = el("p", "points-disclaimer", "Treni\u0146a BP pagaid\u0101m ir informat\u012Bvi. Balvu makam tos nepieskaita, l\u012Bdz ir dro\u0161a servera v\u0113rt\u0113\u0161ana.");
+      host.append(disclaimer);
+      const status = el("p", "save-status");
+      host.append(status);
+      if (canSubmit) {
+        try {
+          const id = await saveProgress({ studentRole: "samanta", subject: "Matem\u0101tika", activityType: "Reizr\u0113\u0137ins un dal\u012B\u0161ana \xB7 " + s2.type + " \xB7 " + s2.mode, score: pct, notes: JSON.stringify(row) });
+          if (id) {
+            store(row);
+            if (storagePrefix) try {
+              localStorage.setItem(key, String(award.best));
+            } catch {
+            }
+            ;
+            status.textContent = "\u2705 Rezult\u0101ts saglab\u0101ts.";
+          } else status.textContent = "\u26A0\uFE0F Saglab\u0101\u0161anu nevar\u0113ja apstiprin\u0101t.";
+        } catch {
+          status.textContent = "\u26A0\uFE0F Firebase saglab\u0101\u0161ana neizdev\u0101s. Rezult\u0101ts paliek \u0161\u012Bs p\u0101rl\u016Bkprogrammas v\u0113stur\u0113.";
+        }
+      } else status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums \u2014 rezult\u0101ts netiek ieskait\u012Bts.";
+      const actions = el("div", "button-cluster");
+      host.append(actions);
+      if (s2.misses.length) {
+        button2(actions, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(s2.type, s2.fam, "mistakes"));
+        button2(actions, "V\u0113l\u0101k", welcome, "quiet-button");
+      }
+      button2(actions, "M\u0113\u0123in\u0101t v\u0113lreiz", () => start2(s2.type, s2.fam, s2.mode));
+      button2(actions, "\u2190 Uz s\u0101kumu", welcome, "quiet-button");
+    }
+    welcome();
+  }
+
+  // src/latvian-school.js
+  var TOPICS = [
+    { id: "morfemas", name: "V\u0101rda sast\u0101vs un v\u0101rddarin\u0101\u0161ana", icon: "\u{1F50E}" },
+    { id: "galotnes", name: "\u{1F3AF} Galot\u0146u detekt\u012Bvs & Lamatas", icon: "\u{1F575}\uFE0F" },
+    { id: "sazina", name: "Sazi\u0146a un sazi\u0146as veidi", icon: "\u{1F4AC}" },
+    { id: "vardskiras", name: "V\u0101rd\u0161\u0137iras un v\u0101rda pamatforma", icon: "\u{1F4DA}" }
+  ];
+  var BANK = {
+    morfemas: [
+      ["Kas ir v\u0101rda sakne?", ["V\u0101rda da\u013Ca, kas kop\u012Bga radniec\u012Bgiem v\u0101rdiem", "Vienm\u0113r v\u0101rda p\u0113d\u0113jais burts", "V\u0101rda s\u0101kum\u0101 eso\u0161s pried\u0113klis"], 0, "Sakne izsaka radniec\u012Bgo v\u0101rdu kop\u012Bgo noz\u012Bmi."],
+      ["Kur\u0161 ir saliktenis?", ["saules stars", "saulespu\u0137e", "skaista pu\u0137e"], 1, "Saliktenis veidots no div\u0101m vai vair\u0101k\u0101m sakn\u0113m."],
+      ["Kur\u0161 ir v\u0101rdu savienojums?", ["sniegav\u012Brs", "\u016Bdensroze", "\u016Bdens pudele"], 2, "V\u0101rdu savienojumu raksta atsevi\u0161\u0137os v\u0101rdos."],
+      ["Kur\u0161 v\u0101rds ir radniec\u012Bgs v\u0101rdam \u201Cme\u017Es\u201D?", ["me\u017Eains", "m\u0113ness", "maiss"], 0, "Radniec\u012Bgiem v\u0101rdiem ir kop\u012Bga sakne un saist\u012Bta noz\u012Bme."],
+      ["Kas atrodas pirms saknes v\u0101rd\u0101, ja v\u0101rdam ir pried\u0113klis?", ["galotne", "pried\u0113klis", "pied\u0113klis"], 1, "Pried\u0113klis atrodas pirms saknes."],
+      ["Kur\u0161 apgalvojums ir pareizs?", ["Katram v\u0101rdam ir pried\u0113klis", "Katram v\u0101rdam ir pied\u0113klis", "Ne visiem v\u0101rdiem ir pried\u0113klis"], 2, "Pried\u0113k\u013Ca un pied\u0113k\u013Ca var neb\u016Bt."],
+      ["Izv\u0113lies pareizi darin\u0101tu salikteni no v\u0101rdiem \u201Csaule\u201D un \u201Cpu\u0137e\u201D.", ["saulespu\u0137e", "saule pu\u0137e", "sau\u013Cpu\u0137e"], 0, "Saliktenis ir \u201Csaulespu\u0137e\u201D."]
+    ],
+    sazina: [
+      ["Kura ir mutv\u0101rdu sazi\u0146a?", ["Saruna kl\u0101tien\u0113", "V\u0113stules rakst\u012B\u0161ana", "Plak\u0101ta las\u012B\u0161ana"], 0, "Saruna kl\u0101tien\u0113 ir mutv\u0101rdu sazi\u0146a."],
+      ["Kura ir rakstveida sazi\u0146a?", ["Rokasspiediens", "\u012Aszi\u0146a", "Saruna pa telefonu"], 1, "\u012Aszi\u0146a ir rakstveida sazi\u0146a."],
+      ["Kas pal\u012Bdz saprast sarunas partneri?", ["P\u0101rtraukt vi\u0146u", "Neklaus\u012Bties", "Uzman\u012Bgi klaus\u012Bties"], 2, "Akt\u012Bva klaus\u012B\u0161an\u0101s pal\u012Bdz saprast teikto."],
+      ["K\u0101 piekl\u0101j\u012Bgi pajaut\u0101t, ja nedzird\u0113ji?", ["Vai, l\u016Bdzu, vari atk\u0101rtot?", "Run\u0101 norm\u0101li!", "T\u0101 nav mana probl\u0113ma!"], 0, "Piekl\u0101j\u012Bgs l\u016Bgums veicina labu sazi\u0146u."],
+      ["Kas ir neverb\u0101l\u0101 sazi\u0146a?", ["E-pasta teksts", "Sejas izteiksme", "Gr\u0101matas apraksts"], 1, "M\u012Bmika un \u017Eesti var nodot inform\u0101ciju bez v\u0101rdiem."],
+      ["Kur\u0161 ir piem\u0113rots sazi\u0146as veids steidzamai sarunai?", ["V\u0113stule pa pastu", "Plak\u0101ts", "T\u0101lru\u0146a zvans"], 2, "Steidzamai inform\u0101cijai parasti noder tie\u0161s zvans."]
+    ],
+    vardskiras: [
+      ["Kura v\u0101rd\u0161\u0137ira nosauc priek\u0161metus un dz\u012Bvas b\u016Btnes?", ["Lietv\u0101rds", "Darb\u012Bbas v\u0101rds", "\u012Apa\u0161\u012Bbas v\u0101rds"], 0, "Lietv\u0101rds atbild, piem\u0113ram, uz jaut\u0101jumu kas?"],
+      ["Kur\u0161 v\u0101rds ir darb\u012Bbas v\u0101rds?", ["skaists", "skrien", "koks"], 1, "Darb\u012Bbas v\u0101rds nosauc darb\u012Bbu vai st\u0101vokli."],
+      ["Kur\u0161 v\u0101rds ir \u012Bpa\u0161\u012Bbas v\u0101rds?", ["m\u0101ja", "las\u012Bt", "gudrs"], 2, "\u012Apa\u0161\u012Bbas v\u0101rds nosauc paz\u012Bmi."],
+      ["K\u0101da ir v\u0101rda \u201Cskr\u0113ja\u201D nenoteiksme?", ["skriet", "skr\u0113ju", "skrie\u0161ana"], 0, "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme."],
+      ["Kura ir lietv\u0101rda \u201Ckokiem\u201D pamatforma?", ["kokos", "koks", "koki"], 1, "Lietv\u0101rda pamatforma ir vienskait\u013Ca nominat\u012Bvs, ja tas lietojams."],
+      ["Kura ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cskaist\u0101kam\u201D pamatforma?", ["skaisti", "skaist\u0101k", "skaists"], 2, "\u012Apa\u0161\u012Bbas v\u0101rda pamatforma ir v\u012Brie\u0161u dzimtes vienskait\u013Ca nominat\u012Bvs."]
+    ],
+    galotnes: [
+      ["\u201CKa\u0137i redz\u0113ja suns.\u201D Kas kuru redz\u0113ja?", ["Suns redz\u0113ja ka\u0137i", "Ka\u0137is redz\u0113ja suni", "Abi viens otru neredz\u0113ja"], 0, "Suns (galotne -s) ir tas, kur\u0161 redz\u0113ja! Ka\u0137i (galotne -i) ir tas, kuru redz\u0113ja."],
+      ["\u201CP\u016B\u0137i no\u0137\u0113ra bru\u0146inieks.\u201D Kur\u0161 kuru no\u0137\u0113ra?", ["Bru\u0146inieks no\u0137\u0113ra p\u016B\u0137i", "P\u016B\u0137is no\u0137\u0113ra bru\u0146inieku", "P\u016B\u0137is aizmuka"], 0, "Galotne -s v\u0101rd\u0101 \u201Cbru\u0146inieks\u201D par\u0101da, ka vi\u0146\u0161 ir dar\u012Bt\u0101js!"],
+      ["\u201CZ\u0113ns iedeva gardu \u0101bol... br\u0101lim.\u201D Kura galotne vajadz\u012Bga?", ["-u (\u0101bolu)", "-s (\u0101bols)", "-am (\u0101bolam)", "-\u0101 (\u0101bol\u0101)"], 0, "Iedeva ko? \u0100bolu! Akuzat\u012Bva galotne ir -u."],
+      ["\u201CMeitene uzrakst\u012Bja garu v\u0113stul... draudzenei.\u201D Kura galotne pareiza?", ["-i (v\u0113stuli)", "-e (v\u0113stule)", "-\u0113 (v\u0113stul\u0113)", "-es (v\u0113stules)"], 0, "Uzrakst\u012Bja ko? V\u0113stuli! Galotne -i."],
+      ["\u201CVilcienu apsteidza lidma\u0161\u012Bna.\u201D Kas p\u0101rvietoj\u0101s \u0101tr\u0101k?", ["Lidma\u0161\u012Bna", "Vilciens", "Abi brauca vien\u0101di"], 0, "Lidma\u0161\u012Bna (galotne -a) ir dar\u012Bt\u0101ja \u2014 t\u0101 apsteidza vilcienu!"],
+      ["\u201CVakar m\u0113s visi kop\u0101 g\u0101j... uz pili.\u201D Kura galotne r\u0101da, ka dar\u012Bj\u0101m m\u0113s?", ["-\u0101m (g\u0101j\u0101m)", "-u (g\u0101ju)", "-\u0101t (g\u0101j\u0101t)", "-a (g\u0101ja)"], 0, "M\u0113s g\u0101j\u0101m! Galotne -\u0101m r\u0101da pirmo personu daudzskaitl\u012B."],
+      ["\u201CL\u0101cis mekl\u0113 saldu med... koka dobum\u0101.\u201D", ["-u (medu)", "-us (medus)", "-am (medum)", "-\u012B (med\u012B)"], 0, "Mekl\u0113 ko? Medu (galotne -u)!"],
+      ["\u201CZ\u0113ns ielika jauno gr\u0101mat... som...\u201D", ["-u som\u0101", "-a somai", "-\u0101 somu", "-i somas"], 0, "Ielika ko? Gr\u0101matu (kur?) som\u0101!"],
+      ["\u201CLapsu nobied\u0113ja suns.\u201D Kur\u0161 nobij\u0101s?", ["Lapsa", "Suns", "Abi nobij\u0101s"], 0, "Suns nobied\u0113ja (vi\u0146\u0161 bied\u0113ja), t\u0101tad nobij\u0101s lapsa!"],
+      ["\u201CB\u0113rni uzman\u012Bgi klaus\u012Bj\u0101s skolot\u0101j... st\u0101st\u012Bjum\u0101.\u201D", ["-as (skolot\u0101jas)", "-a (skolot\u0101ja)", "-ai (skolot\u0101jai)", "-u (skolot\u0101ju)"], 0, "Klaus\u012Bj\u0101s k\u0101 st\u0101st\u012Bjum\u0101? Skolot\u0101jas st\u0101st\u012Bjum\u0101!"],
+      ["\u201CZivis peld v\u0113saj\u0101 ezer...\u201D", ["-\u0101 (ezer\u0101)", "-s (ezers)", "-am (ezeram)", "-u (ezeru)"], 0, "Peld kur? Ezer\u0101! Lok\u0101lat\u012Bva galotne ir -\u0101."]
+    ]
+  };
+  BANK.morfemas.push(...[["Kura v\u0101rda sast\u0101vda\u013Ca atrodas pa\u0161\u0101s v\u0101rda beig\u0101s un lokot main\u0101s?", ["Galotne", "Sakne", "Pried\u0113klis", "Pied\u0113klis"], 0, "Galotne main\u0101s, v\u0101rdu lokot: m\u0101ja, m\u0101jas, m\u0101jai."], ["J\u0101nis strauji _______ no m\u0101jas pagalm\u0101.", ["izskr\u0113ja", "ieskr\u0113ja", "uzskr\u0113ja", "pieskr\u0113ja"], 0, "Pried\u0113klis iz- nor\u0101da kust\u012Bbu uz \u0101ru."], ["Skol\u0113ns uzman\u012Bgi _______ klas\u0113.", ["ieg\u0101ja", "aizg\u0101ja", "nog\u0101ja", "izg\u0101ja"], 0, "Ie- nor\u0101da kust\u012Bbu uz iek\u0161u."], ["V\u0101ver\u012Bte veikli _______ augst\u0101 priedes zar\u0101.", ["uzk\u0101pa", "nok\u0101pa", "aizk\u0101pa", "iek\u0101pa"], 0, "Uz- nor\u0101da kust\u012Bbu aug\u0161up."], ["Autobuss _______ pie pieturas.", ["piebrauca", "aizbrauca", "p\u0101rbrauca", "izbrauca"], 0, "Pie- nor\u0101da tuvo\u0161anos."], ["Skolot\u0101ja l\u016Bdza _______ k\u013C\u016Bdaino v\u0101rdu pareizi.", ["p\u0101rrakst\u012Bt", "aizrakst\u012Bt", "norakst\u012Bt", "ierakst\u012Bt"], 0, "P\u0101r- \u0161eit noz\u012Bm\u0113 darb\u012Bbu no jauna."], ["Vakar\u0101 t\u0113tis _______ no t\u0101l\u0101 komand\u0113juma.", ["atbrauca", "aizbrauca", "izbrauca", "uzbrauca"], 0, "At- nor\u0101da atgrie\u0161anos."], ["K\u0101 sauc v\u0101rda da\u013Cu, kas ir kop\u012Bga radniec\u012Bgiem v\u0101rdiem?", ["Sakne", "Galotne", "Pried\u0113klis", "Pied\u0113klis"], 0, "Sakne glab\u0101 radniec\u012Bgo v\u0101rdu kop\u012Bgo noz\u012Bmi."], ["K\u0101 sauc v\u0101rda da\u013Cu, kas atrodas PIRMS saknes?", ["Pried\u0113klis", "Pied\u0113klis", "Galotne", "Sakne"], 0, "Pried\u0113klis atrodas pirms saknes."], ["Kas ir SALIKTENIS?", ["V\u0101rds no div\u0101m vai vair\u0101k\u0101m sakn\u0113m", "Divi atsevi\u0161\u0137i v\u0101rdi", "V\u0101rds tikai ar pried\u0113kli", "V\u0101rds bez saknes"], 0, "Salikten\u012B apvienotas vismaz divas saknes."], ["Kas veido v\u0101rda IZSKA\u0145U?", ["Pied\u0113klis ar galotni vai tikai galotne", "Pried\u0113klis un sakne", "Tikai pried\u0113klis", "Patska\u0146i"], 0, "Izska\u0146a ir v\u0101rda beigu da\u013Ca aiz saknes."]]);
+  BANK.sazina.push(...[["Kas ir SAZI\u0145A?", ["Inform\u0101cijas, domu un j\u016Btu apmai\u0146a", "Tikai telefona zvans", "Gr\u0101matas las\u012B\u0161ana vienatn\u0113", "Klus\u0113\u0161ana"], 0, "Sazi\u0146\u0101 cilv\u0113ki nodod un sa\u0146em inform\u0101ciju."], ["K\u0101 sauc cilv\u0113ku, kur\u0161 NODO zi\u0146u?", ["S\u016Bt\u012Bt\u0101js", "Sa\u0146\u0113m\u0113js", "V\u0113rot\u0101js", "Tulks"], 0, "S\u016Bt\u012Bt\u0101js nodod zi\u0146u, sa\u0146\u0113m\u0113js to uztver."], ["K\u0101 sauc cilv\u0113ku, kur\u0161 uztver zi\u0146u?", ["Sa\u0146\u0113m\u0113js", "S\u016Bt\u012Bt\u0101js", "Zi\u0146nesis", "Autors"], 0, "Zi\u0146as uztv\u0113r\u0113js ir sa\u0146\u0113m\u0113js."], ["Roberts zvana mammai. Kas ir s\u016Bt\u012Bt\u0101js?", ["Roberts", "Mamma", "Telefons", "Abi tikai sa\u0146\u0113m\u0113ji"], 0, "Roberts pasaka zi\u0146u, mamma to uzklausa."], ["Kas sazi\u0146\u0101 ir ZI\u0145A?", ["Nodot\u0101 inform\u0101cija", "Tikai SMS", "Tuk\u0161a aploksne", "Baterijas uzl\u0101de"], 0, "Zi\u0146a ir inform\u0101cija, ko nodod citam."], ["Kura ir MUTV\u0100RDU sazi\u0146a?", ["Saruna starpbr\u012Bd\u012B", "Apsveikuma kart\u012Bte", "E-pasts", "Ce\u013Ca z\u012Bme"], 0, "Mutv\u0101rdu sazi\u0146\u0101 run\u0101 un klaus\u0101s."], ["Kura ir RAKSTVEIDA sazi\u0146a?", ["\u012Aszi\u0146a draugam", "Telefonsaruna", "Mutiska uzst\u0101\u0161an\u0101s", "Piemieg\u0161ana ar aci"], 0, "Rakstveida sazi\u0146\u0101 izmanto uzrakst\u012Btu tekstu."], ["K\u0101da priek\u0161roc\u012Bba ir rakstveida sazi\u0146ai?", ["Tekstu var p\u0101rlas\u012Bt v\u0113l\u0101k", "T\u0101 vienm\u0113r ir ska\u013C\u0101ka", "Nav j\u0101dom\u0101 par v\u0101rdiem", "To saprot visi dz\u012Bvnieki"], 0, "Rakst\u012Btais saglab\u0101jas un ir p\u0101rlas\u0101ms."], ["Kas ir NEVERB\u0100L\u0100 sazi\u0146a?", ["M\u012Bmika, \u017Eesti un poza", "Sve\u0161valoda", "Tikai dators", "\u010Cukst\u0113\u0161ana"], 0, "Neverb\u0101l\u0101 sazi\u0146a notiek bez v\u0101rdiem."], ["Kas ir M\u012AMIKA?", ["Sejas izteiksme", "Roku vicin\u0101\u0161ana", "Ska\u013Ca run\u0101\u0161ana", "Rakst\u012B\u0161ana"], 0, "M\u012Bmika ir sejas izteiksme."], ["Kas ir \u017DESTS?", ["Roku vai galvas kust\u012Bba ar noz\u012Bmi", "Kliedziens", "Rakst\u012Bts teikums", "Friz\u016Bra"], 0, "\u017Desti pal\u012Bdz nodot inform\u0101ciju."], ["Ko noz\u012Bm\u0113 pirksts pie l\u016Bp\u0101m?", ["L\u016Bgums klus\u0113t", "Aicin\u0101jums dzied\u0101t", "J\u0101dodas \u0113st", "J\u0101atver logs"], 0, "Tas ir \u017Eests, kas aicina iev\u0113rot klusumu."]]);
+  BANK.vardskiras.push(...[["K\u0101da ir v\u0101rda \u201Cskol\u0113niem\u201D pamatforma?", ["skol\u0113ns", "skol\u0101", "skol\u0113ni", "skolot"], 0, "Lietv\u0101rda pamatforma ir vienskait\u013Ca nominat\u012Bvs."], ["K\u0101da ir v\u0101rda \u201Clas\u012Bja\u201D pamatforma?", ["las\u012Bt", "las\u012Bjums", "lasa", "las\u012Bt\u0101js"], 0, "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme."], ["K\u0101da ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cza\u013Caj\u0101m\u201D pamatforma?", ["za\u013C\u0161", "za\u013Ca", "za\u013Cums", "za\u013Cot"], 0, "Pamatforma ir v\u012Brie\u0161u dzimtes vienskait\u013Ca nominat\u012Bvs."], ["Zem lielajiem OZOLIEM auga s\u0113nes. K\u0101da ir izcelt\u0101 v\u0101rda pamatforma?", ["ozols", "ozolains", "ozoli", "ozoli\u0146\u0161"], 0, "Ozoliem \u2192 ozols."], ["K\u0101da ir v\u0101rda \u201Cskr\u0113j\u0101m\u201D pamatforma?", ["skriet", "skr\u0113jiens", "skrienam", "\u0101trs"], 0, "Darb\u012Bbas v\u0101rda nenoteiksme ir skriet."], ["K\u0101da ir \u012Bpa\u0161\u012Bbas v\u0101rda \u201Cgudrajai\u201D pamatforma?", ["gudrs", "gudr\u012Bba", "gudri", "gudrot"], 0, "Gudrajai \u2192 gudrs."], ["K\u0101da ir v\u0101rda \u201Cpriec\u0101jamies\u201D pamatforma?", ["priec\u0101ties", "prieks", "priec\u012Bgs", "priec\u012Bgi"], 0, "Atgriezenisk\u0101 nenoteiksme ir priec\u0101ties."], ["K\u0101da ir v\u0101rda \u201Csnieg\u0101\u201D pamatforma?", ["sniegs", "sniegainais", "sniegot", "snieg\u0101"], 0, "Snieg\u0101 \u2192 sniegs; tas ir lietv\u0101rds."], ["K\u0101da ir lietv\u0101rda \u201Cm\u0101j\u0101m\u201D pamatforma?", ["m\u0101ja", "m\u0101jas", "m\u0101j\u012Bgs", "m\u0101jot"], 0, "M\u0101j\u0101m \u2192 m\u0101ja."], ["K\u0101du jaut\u0101jumu uzdod lietv\u0101rda pamatformai?", ["Kas?", "Ko dar\u012Bt?", "K\u0101ds?", "Kad?"], 0, "Lietv\u0101rda pamatforma atbild uz jaut\u0101jumu kas?."], ["K\u0101du jaut\u0101jumu uzdod darb\u012Bbas v\u0101rda nenoteiksmei?", ["Ko dar\u012Bt?", "Kas?", "K\u0101ds?", "Cik?"], 0, "Nenoteiksme atbild uz jaut\u0101jumu ko dar\u012Bt?."]]);
+  var EXTENDED = {
+    morfemas: [
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus radniec\u012Bgos v\u0101rdus v\u0101rdam \u201Cme\u017Es\u201D.", options: ["me\u017Ei\u0146\u0161", "me\u017Eains", "m\u0113ness", "me\u017Emala", "maiss"], answers: ["me\u017Ei\u0146\u0161", "me\u017Eains", "me\u017Emala"], explanation: "Radniec\u012Bgiem v\u0101rdiem ir kop\u012Bga sakne un saist\u012Bta noz\u012Bme." },
+      { kind: "multi", prompt: "Kuri no \u0161iem ir salikte\u0146i?", options: ["saulespu\u0137e", "skolas soma", "sniegav\u012Brs", "\u016Bdens pudele", "\u016Bdensroze"], answers: ["saulespu\u0137e", "sniegav\u012Brs", "\u016Bdensroze"], explanation: "Saliktenim ir vismaz divas saknes, un to raksta vien\u0101 v\u0101rd\u0101." },
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 pareizos apgalvojumus par v\u0101rda sast\u0101vu.", options: ["Katram v\u0101rdam ir sakne.", "Katram v\u0101rdam ir pried\u0113klis.", "Pied\u0113klis var atrasties aiz saknes.", "Visi radniec\u012Bgie v\u0101rdi noz\u012Bm\u0113 vienu un to pa\u0161u."], answers: ["Katram v\u0101rdam ir sakne.", "Pied\u0113klis var atrasties aiz saknes."], explanation: "Pried\u0113k\u013Ca un pied\u0113k\u013Ca var neb\u016Bt; radniec\u012Bgiem v\u0101rdiem ir saist\u012Bta, nevis vien\u0101da noz\u012Bme." },
+      { kind: "text", prompt: "Uzraksti salikteni, ko veido v\u0101rdi \u201Csaule\u201D un \u201Cpu\u0137e\u201D.", answers: ["saulespu\u0137e"], explanation: "Saule + pu\u0137e \u2192 saulespu\u0137e." },
+      { kind: "text", prompt: "K\u0101 sauc v\u0101rda da\u013Cu, kas atrodas pirms saknes?", answers: ["pried\u0113klis"], explanation: "Pirms saknes var atrasties pried\u0113klis." }
+    ],
+    sazina: [
+      { kind: "multi", prompt: "Kuri ir rakstveida sazi\u0146as piem\u0113ri?", options: ["E-pasts", "\u012Aszi\u0146a", "Telefonsaruna", "V\u0113stule", "Saruna kl\u0101tien\u0113"], answers: ["E-pasts", "\u012Aszi\u0146a", "V\u0113stule"], explanation: "Rakstveida sazi\u0146\u0101 izmanto rakst\u012Btu tekstu." },
+      { kind: "multi", prompt: "Kas pal\u012Bdz veidot piekl\u0101j\u012Bgu sarunu?", options: ["Uzklaus\u012Bt otru", "Nep\u0101rtraukt run\u0101t\u0101ju", "Izsmiet k\u013C\u016Bdas", "Uzdot preciz\u0113jo\u0161u jaut\u0101jumu"], answers: ["Uzklaus\u012Bt otru", "Nep\u0101rtraukt run\u0101t\u0101ju", "Uzdot preciz\u0113jo\u0161u jaut\u0101jumu"], explanation: "Piekl\u0101j\u012Bga sazi\u0146a prasa savstarp\u0113ju cie\u0146u." },
+      { kind: "text", prompt: "K\u0101 sauc cilv\u0113ku, kur\u0161 sa\u0146em zi\u0146u?", answers: ["sa\u0146\u0113m\u0113js"], explanation: "Zi\u0146as sa\u0146\u0113m\u0113js uztver s\u016Bt\u012Bt\u0101ja nodoto inform\u0101ciju." },
+      { kind: "text", prompt: "K\u0101 sauc sejas izteiksmi, kas pal\u012Bdz sazin\u0101ties bez v\u0101rdiem?", answers: ["m\u012Bmika"], explanation: "M\u012Bmika ir neverb\u0101l\u0101s sazi\u0146as l\u012Bdzeklis." }
+    ],
+    vardskiras: [
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus darb\u012Bbas v\u0101rdus.", options: ["skrien", "las\u012Bt", "skaists", "dom\u0101ja", "m\u0101ja"], answers: ["skrien", "las\u012Bt", "dom\u0101ja"], explanation: "Darb\u012Bbas v\u0101rdi nosauc darb\u012Bbu vai st\u0101vokli." },
+      { kind: "multi", prompt: "Atz\u012Bm\u0113 visus \u012Bpa\u0161\u012Bbas v\u0101rdus.", options: ["gudrs", "za\u013Ca", "\u0101tri", "skaists", "skola"], answers: ["gudrs", "za\u013Ca", "skaists"], explanation: "\u012Apa\u0161\u012Bbas v\u0101rdi nosauc paz\u012Bmi." },
+      { kind: "text", prompt: "Uzraksti darb\u012Bbas v\u0101rda \u201Cskr\u0113ja\u201D pamatformu.", answers: ["skriet"], explanation: "Darb\u012Bbas v\u0101rda pamatforma ir nenoteiksme." },
+      { kind: "text", prompt: "Uzraksti lietv\u0101rda \u201Ckokiem\u201D pamatformu.", answers: ["koks"], explanation: "Lietv\u0101rda pamatforma parasti ir vienskait\u013Ca nominat\u012Bvs." }
+    ],
+    galotnes: [
+      { kind: "text", prompt: 'Ieraksti pareizo galotni: "Suns grau\u017E gardu kaul__ (ko?)"', answers: ["u", "-u"], explanation: "Grau\u017E ko? Kaulu! Galotne ir -u." },
+      { kind: "text", prompt: 'Ieraksti pareizo darb\u012Bbas v\u0101rda galotni: "M\u0113s \u0161odien daudz las\u012Bj__"', answers: ["\u0101m", "am", "-\u0101m"], explanation: "M\u0113s las\u012Bj\u0101m! Galotne -\u0101m." },
+      { kind: "text", prompt: 'Ieraksti pareizo galotni: "Z\u0113ns uzk\u0101pa augst\u0101 kaln__ (kur?)"', answers: ["\u0101", "a", "-\u0101"], explanation: "Uzk\u0101pa kur? Kaln\u0101 (galotne -\u0101)." }
+    ]
+  };
+  var normalize = (s2) => String(s2).trim().toLocaleLowerCase("lv-LV").replace(/\s+/g, " ");
+  var shuffle5 = (a) => {
+    let b2 = [...a];
+    for (let i2 = b2.length - 1; i2 > 0; i2--) {
+      const j = Math.floor(Math.random() * (i2 + 1));
+      [b2[i2], b2[j]] = [b2[j], b2[i2]];
+    }
+    return b2;
+  };
+  function renderLatvianSchool(container, { canSubmit = false, currentUid = "", saveProgress = async () => {
+  }, askAI = null } = {}) {
+    const prefix = canSubmit && currentUid ? "majas-skola:" + currentUid + ":marks-lv:" : null;
+    const host = document.createElement("section");
+    host.className = "module learning-hub latvian-hub";
+    host.style.gridColumn = "1/-1";
+    host.innerHTML = '<div class="learning-heading"><span class="eyebrow">\u2726 MARKA VALODAS LABORATORIJA</span><h2>\u{1F4D5} V\u0101rdu piedz\u012Bvojums</h2><p>Atkl\u0101j v\u0101rdu nosl\u0113pumus, p\u0101rbaudi sevi un audz\u0113 prasmes! Izv\u0113lies t\u0113mu.</p></div>';
+    container.append(host);
+    const nav = document.createElement("div");
+    nav.className = "topic-grid";
+    host.append(nav);
+    const content = document.createElement("div");
+    host.append(content);
+    const historyKey = (topic) => prefix + "history-" + topic.id;
+    function readHistory(topic) {
+      if (!prefix) return [];
+      try {
+        const val = JSON.parse(localStorage.getItem(historyKey(topic)) || "[]");
+        return Array.isArray(val) ? val.slice(-30) : [];
+      } catch {
+        return [];
+      }
+    }
+    function saveHistory(topic, row) {
+      if (!prefix) return;
+      try {
+        localStorage.setItem(historyKey(topic), JSON.stringify([...readHistory(topic), row].slice(-30)));
+      } catch {
+      }
+    }
+    function skillOf(topic, q2) {
+      const p2 = q2.prompt.toLocaleLowerCase("lv-LV");
+      if (topic.id === "galotnes") {
+        if (/kurš kuru|kas kuru|apsteidza|nobiedēja/.test(p2)) return "Dar\u012Bt\u0101js un teikuma j\u0113ga";
+        if (/kura galotne|ieraksti pareizo galotni|rād|mēs/.test(p2)) return "Pareiz\u0101s galotnes izv\u0113le";
+        return "Galot\u0146u noz\u012Bme teikum\u0101";
+      }
+      if (topic.id === "sazina") {
+        if (/žest|mīmik|neverbāl|sejas/.test(p2)) return "Neverb\u0101l\u0101 sazi\u0146a";
+        if (/pieklāj|uzklaus|sarun|saprast/.test(p2)) return "Sarun\u0101\u0161an\u0101s prasmes";
+        return "Sazi\u0146as veidi un j\u0113dzieni";
+      }
+      if (topic.id === "vardskiras") {
+        if (/pamatform|nenoteiksm/.test(p2)) return "V\u0101rda pamatforma";
+        return "V\u0101rd\u0161\u0137iru atpaz\u012B\u0161ana";
+      }
+      if (/salikten|vārdu savienojum/.test(p2)) return "Salikte\u0146i";
+      if (/radniecīg|sakn/.test(p2)) return "Sakne un radniec\u012Bgie v\u0101rdi";
+      if (/priedēkl|ieskrēj|izskrēj|brauca|kāpa|pārrakst/.test(p2)) return "Pried\u0113k\u013Ci";
+      if (/izskaņ|piedēkl|galotn/.test(p2)) return "V\u0101rda sast\u0101vs";
+      return "V\u0101rda sast\u0101vs un v\u0101rddarin\u0101\u0161ana";
+    }
+    function aiButton(parent, label, payload) {
+      if (!canSubmit || typeof askAI !== "function") return;
+      const button2 = addButton(parent, label, async () => {
+        button2.disabled = true;
+        button2.textContent = "\u{1F916} Dom\u0101ju\u2026";
+        const output = document.createElement("p");
+        output.setAttribute("role", "status");
+        parent.append(output);
+        try {
+          output.textContent = await askAI(payload);
+        } catch (e2) {
+          output.textContent = "MI treneris pa\u0161laik nav pieejams. Turpin\u0101m parasto treni\u0146u.";
+          console.warn("[Marka skola] MI:", e2?.message || "unknown");
+        } finally {
+          button2.disabled = false;
+          button2.textContent = label;
+        }
+      });
+    }
+    const pending = /* @__PURE__ */ new Map();
+    function pendingKey(topic) {
+      return prefix + "errors-" + topic.id;
+    }
+    function loadPending(topic) {
+      if (pending.has(topic.id)) return pending.get(topic.id);
+      if (!canSubmit) return [];
+      try {
+        const raw = JSON.parse(localStorage.getItem(pendingKey(topic)) || "[]");
+        const valid = Array.isArray(raw) ? raw.filter((prompt) => typeof prompt === "string").slice(0, 30) : [];
+        const all = [...BANK[topic.id].map((q2) => q2[0]), ...(EXTENDED[topic.id] || []).map((q2) => q2.prompt)];
+        const found = valid.filter((prompt) => all.includes(prompt)).map((prompt) => ({ prompt }));
+        pending.set(topic.id, found);
+        return found;
+      } catch {
+        return [];
+      }
+    }
+    function remember(topic, missed) {
+      if (!canSubmit) return;
+      const questions = missed.slice(0, 30);
+      pending.set(topic.id, questions);
+      try {
+        if (questions.length) localStorage.setItem(pendingKey(topic), JSON.stringify(questions.map((q2) => q2.prompt)));
+        else localStorage.removeItem(pendingKey(topic));
+      } catch {
+      }
+    }
+    function addButton(parent, title, onClick) {
+      const button2 = document.createElement("button");
+      button2.type = "button";
+      button2.textContent = title;
+      button2.style.margin = "8px";
+      button2.onclick = onClick;
+      parent.append(button2);
+      return button2;
+    }
+    for (const topic of TOPICS) {
+      const b2 = document.createElement("button");
+      b2.type = "button";
+      b2.className = "topic-tile";
+      b2.innerHTML = '<span class="topic-emoji">' + topic.icon + "</span><strong>" + topic.name + "</strong><small>Atv\u0113rt trena\u017Eieri \u2192</small>";
+      b2.onclick = () => choose(topic);
+      nav.append(b2);
+    }
+    function choose(topic) {
+      content.replaceChildren();
+      const h = document.createElement("h3");
+      h.textContent = "\u2726 " + topic.name;
+      content.append(h);
+      const past = readHistory(topic);
+      if (past.length) {
+        const best = Math.max(...past.map((p2) => p2.percent || 0));
+        const last = past[past.length - 1];
+        const summary = document.createElement("p");
+        summary.textContent = "\u{1F4C8} Mans progress \xB7 P\u0113d\u0113jais: " + last.percent + "% \xB7 Lab\u0101kais: " + best + "% \xB7 M\u0113\u0123in\u0101jumi: " + past.length;
+        content.append(summary);
+        const recent = past.slice(-5).map((p2) => p2.percent + "%").join(" \u2192 ");
+        const line = document.createElement("small");
+        line.textContent = "P\u0113d\u0113jie rezult\u0101ti: " + recent;
+        content.append(line);
+      }
+      const missed = loadPending(topic);
+      if (missed.length) {
+        const note = document.createElement("p");
+        note.textContent = "\u{1F409} V\u0113l vari nostiprin\u0101t " + missed.length + " jaut\u0101jumus, kuros k\u013C\u016Bd\u012Bjies.";
+        content.append(note);
+        addButton(content, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(topic, "errors", missed));
+      }
+      for (const [key, label] of [["learn", "\u{1F4D6} M\u0101cos"], ["practice", "\u{1F3AF} Tren\u0113jos"], ["exam", "\u{1F4DD} P\u0101rbaudu sevi"]]) {
+        const b2 = document.createElement("button");
+        b2.type = "button";
+        b2.textContent = label;
+        b2.className = "action-button";
+        b2.style.margin = "5px";
+        b2.onclick = () => start2(topic, key);
+        content.append(b2);
+      }
+    }
+    function start2(topic, mode, previousMisses = []) {
+      const base = BANK[topic.id].map((q2) => ({ kind: "single", prompt: q2[0], options: q2[1].map((label, i2) => ({ label, correct: i2 === q2[2] })), explanation: q2[3] }));
+      const extras = EXTENDED[topic.id] || [];
+      const all = [...base, ...extras];
+      const targetedSkills = new Set(previousMisses.map((q2) => skillOf(topic, q2)));
+      const fresh = all.filter((q2) => !previousMisses.some((old) => old.prompt === q2.prompt));
+      const targeted = fresh.filter((q2) => targetedSkills.has(skillOf(topic, q2)));
+      const source = mode === "errors" ? [...shuffle5(targeted), ...shuffle5(fresh.filter((q2) => !targeted.includes(q2)))] : shuffle5(all);
+      const wanted = mode === "errors" ? Math.min(10, Math.max(4, previousMisses.length * 2)) : mode === "exam" ? 20 : mode === "practice" ? 12 : 8;
+      let items = source.slice(0, Math.min(wanted, source.length)).map((q2) => ({ ...q2, options: shuffle5(q2.options || []) }));
+      let index = 0, correct = 0, streak = 0, maxStreak = 0;
+      const results = [];
+      const missed = [];
+      const skillStats = {};
+      render();
+      function render() {
+        content.replaceChildren();
+        if (index === items.length) {
+          void finish();
+          return;
+        }
+        const progress = document.createElement("div");
+        progress.className = "progress-track";
+        const fill = document.createElement("div");
+        fill.className = "progress-fill";
+        fill.style.width = Math.round(index / items.length * 100) + "%";
+        progress.append(fill);
+        content.append(progress);
+        const streakTag = document.createElement("p");
+        streakTag.className = "streak-label";
+        streakTag.textContent = "\u{1F525} " + streak + " pareizas p\u0113c k\u0101rtas \xB7 Rekords: " + maxStreak;
+        content.append(streakTag);
+        const q2 = items[index], h = document.createElement("h3");
+        h.className = "latvian-question";
+        h.textContent = index + 1 + "/" + items.length + " \xB7 " + q2.prompt;
+        content.append(h);
+        if (topic.id === "galotnes") {
+          const guard = document.createElement("div");
+          guard.className = "anti-guess-indicator";
+          guard.textContent = "\u{1F50E} Detekt\u012Bva likums: izlasi teikumu l\u012Bdz p\u0113d\u0113jam burtam pirms atbildi!";
+          content.append(guard);
+        }
+        const form = document.createElement("form");
+        form.className = "latvian-question-form";
+        content.append(form);
+        const feedback = document.createElement("p");
+        feedback.setAttribute("role", "status");
+        let input;
+        if (q2.kind === "text") {
+          input = document.createElement("input");
+          input.type = "text";
+          input.required = true;
+          input.autocomplete = "off";
+          input.maxLength = 100;
+          input.style.cssText = "display:block;max-width:400px;width:100%;padding:12px;font:inherit;margin:12px 0;border:1px solid #aebdd0;border-radius:9px";
+          form.append(input);
+        } else {
+          if (q2.kind === "multi") {
+            const hint = document.createElement("p");
+            hint.textContent = "Iesp\u0113jamas vair\u0101kas pareiz\u0101s atbildes.";
+            form.append(hint);
+          }
+          q2.options.forEach((o2, i2) => {
+            const label = document.createElement("label");
+            label.style.cssText = "display:block;padding:10px;cursor:pointer";
+            const control = document.createElement("input");
+            control.type = q2.kind === "multi" ? "checkbox" : "radio";
+            control.name = "choice";
+            control.value = String(i2);
+            label.append(control, document.createTextNode(" " + (typeof o2 === "string" ? o2 : o2.label)));
+            form.append(label);
+          });
+        }
+        if (mode === "learn") {
+          const hint = document.createElement("button");
+          hint.type = "button";
+          hint.textContent = "\u{1F4A1} Pal\u012Bdz\u012Bba";
+          hint.onclick = () => {
+            feedback.textContent = "Izlasi uzdevumu v\u0113lreiz. Sal\u012Bdzini variantu noz\u012Bmi un atceries t\u0113mas pamatprincipu.";
+          };
+          form.append(hint);
+        }
+        const btn = document.createElement("button");
+        btn.type = "submit";
+        btn.textContent = "P\u0101rbaud\u012Bt";
+        btn.style.margin = "8px";
+        form.append(btn);
+        content.append(feedback);
+        form.onsubmit = (e2) => {
+          e2.preventDefault();
+          let good = false;
+          if (q2.kind === "text") {
+            good = q2.answers.some((a) => normalize(a) === normalize(input.value));
+          } else if (q2.kind === "multi") {
+            const selected = [...form.querySelectorAll("input:checked")].map((el) => q2.options[Number(el.value)]);
+            if (selected.length === 0) {
+              feedback.textContent = "Izv\u0113lies vismaz vienu atbildi.";
+              return;
+            }
+            good = selected.length === q2.answers.length && selected.every((x2) => q2.answers.includes(x2));
+          } else {
+            const selection = form.querySelector("input:checked");
+            if (!selection) {
+              feedback.textContent = "Izv\u0113lies atbildi.";
+              return;
+            }
+            good = q2.options[Number(selection.value)].correct;
+          }
+          correct += Number(good);
+          streak = good ? streak + 1 : 0;
+          maxStreak = Math.max(maxStreak, streak);
+          results.push(good);
+          if (!good) missed.push(q2);
+          const skill = skillOf(topic, q2);
+          const stats = skillStats[skill] || (skillStats[skill] = { correct: 0, total: 0 });
+          stats.total++;
+          stats.correct += Number(good);
+          if (!good && mode !== "exam") {
+            aiButton(content, "\u{1F916} Pal\u012Bdzi saprast", { mode: "hint", skill, question: q2.prompt, studentAnswer: q2.kind === "text" ? input.value : q2.kind === "multi" ? [...form.querySelectorAll("input:checked")].map((el) => q2.options[Number(el.value)]).join(", ") : String(q2.options[Number(form.querySelector("input:checked")?.value)]?.label || ""), explanation: q2.explanation, attempt: 1 });
+          }
+          form.querySelectorAll("input,button").forEach((el) => el.disabled = true);
+          feedback.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F504} V\u0113l ne. " + q2.explanation;
+          const next = document.createElement("button");
+          next.className = "action-button";
+          next.type = "button";
+          next.textContent = index + 1 === items.length ? "Rezult\u0101ts" : "N\u0101kamais \u2192";
+          next.onclick = () => {
+            index++;
+            render();
+          };
+          content.append(next);
+        };
+      }
+      async function finish() {
+        const pct = Math.round(correct / items.length * 100);
+        const h = document.createElement("h3");
+        h.textContent = topic.name + ": " + pct + "% (" + correct + "/" + items.length + ")";
+        content.append(h);
+        const breakdown = Object.entries(skillStats).map(([skill, stat]) => ({ skill, percent: Math.round(100 * stat.correct / stat.total), correct: stat.correct, total: stat.total })).sort((a, b2) => a.percent - b2.percent);
+        if (breakdown.length) {
+          const heading = document.createElement("h4");
+          heading.textContent = "Prasmju p\u0101rskats";
+          content.append(heading);
+          for (const skill of breakdown) {
+            const line = document.createElement("p");
+            line.textContent = (skill.percent >= 80 ? "\u{1F7E2} " : skill.percent >= 60 ? "\u{1F7E1} " : "\u{1F7E0} ") + skill.skill + ": " + skill.percent + "% (" + skill.correct + "/" + skill.total + ")";
+            content.append(line);
+          }
+          if (breakdown[0].percent < 80) {
+            const suggestion = document.createElement("p");
+            suggestion.textContent = "Ieteikums: v\u0113l patren\u0113 \u201C" + breakdown[0].skill + "\u201D.";
+            content.append(suggestion);
+          }
+        }
+        const policy = calculatePracticePoints({ correct, total: items.length, maxStreak, mode });
+        const bestKey = prefix + "best-" + topic.id;
+        let bestBefore = 0;
+        if (prefix) try {
+          bestBefore = Number(localStorage.getItem(bestKey)) || 0;
+        } catch {
+        }
+        const award = previewImprovement(bestBefore, policy.potential);
+        const points = document.createElement("div");
+        points.className = "soft-notice";
+        points.textContent = policy.eligible ? "\u{1F3C5} Punktu potenci\u0101ls " + policy.potential + "/20 \xB7 Uzlabojums +" + award.earned + " treni\u0146a BP \xB7 S\u0113rijas bonuss " + policy.streakBonus : "\u{1F331} M\u0101c\u012Bbu re\u017E\u012Bm\u0101 balvu punktus neieg\u016Bst.";
+        content.append(points);
+        const note = document.createElement("p");
+        note.className = "points-disclaimer";
+        note.textContent = "Treni\u0146a BP pa\u0161laik ir informat\u012Bvi un netiek pieskait\u012Bti balvu makam, l\u012Bdz ieviesta dro\u0161a servera p\u0101rbaude.";
+        content.append(note);
+        const practiceRow = { date: (/* @__PURE__ */ new Date()).toISOString(), mode, percent: pct, correct, total: items.length, skills: breakdown, maxStreak, pointsPotential: policy.potential, pointsPreview: award.earned };
+        if (breakdown.length) aiButton(content, "\u{1F916} MI trenera ieteikums", { mode: "result", skill: breakdown[0].skill, percent: pct });
+        if (mode !== "errors") remember(topic, missed);
+        else if (missed.length) remember(topic, missed);
+        else remember(topic, []);
+        if (missed.length) {
+          const callout = document.createElement("div");
+          callout.style.cssText = "border:1px solid #b7cfe3;border-radius:12px;padding:14px;margin:14px 0;background:#f3f8fd";
+          const title = document.createElement("strong");
+          title.textContent = "\u{1F409} V\u0113l viens neliels izaicin\u0101jums?";
+          callout.append(title);
+          const desc = document.createElement("p");
+          desc.textContent = "Tev bija " + missed.length + " nepareizas atbildes. Pam\u0113\u0123ini l\u012Bdz\u012Bgus uzdevumus ar citiem piem\u0113riem!";
+          callout.append(desc);
+          addButton(callout, "\u{1F3AF} Tren\u0113t manas k\u013C\u016Bdas", () => start2(topic, "errors", missed));
+          addButton(callout, "V\u0113l\u0101k", () => choose(topic));
+          content.append(callout);
+        } else if (mode === "errors") {
+          const done = document.createElement("p");
+          done.textContent = "\u{1F389} Labi! \u0160aj\u0101 k\u013C\u016Bdu treni\u0146\u0101 visi uzdevumi izpild\u012Bti pareizi.";
+          content.append(done);
+        }
+        const status = document.createElement("p");
+        content.append(status);
+        if (canSubmit) {
+          try {
+            const id = await saveProgress({ studentRole: "marks", activityType: topic.name + " \xB7 " + mode, subject: "Latvie\u0161u valoda", score: pct, notes: JSON.stringify({ topicId: topic.id, mode, correct, total: items.length, skills: breakdown }) });
+            if (!id) throw Error("Nav apstiprin\u0101ta saglab\u0101\u0161ana");
+            saveHistory(topic, practiceRow);
+            if (prefix) try {
+              localStorage.setItem(bestKey, String(award.best));
+            } catch {
+            }
+            ;
+            status.textContent = "\u2705 Rezult\u0101ts saglab\u0101ts Firebase.";
+          } catch {
+            status.textContent = "\u26A0\uFE0F Rezult\u0101tu neizdev\u0101s saglab\u0101t.";
+          }
+        } else status.textContent = "Vec\u0101ka priek\u0161skat\u012Bjums: rezult\u0101ts nav saglab\u0101ts.";
+        const again = document.createElement("button");
+        again.type = "button";
+        again.textContent = "Tren\u0113ties v\u0113lreiz";
+        again.onclick = () => start2(topic, mode);
+        content.append(again);
+        const back = document.createElement("button");
+        back.type = "button";
+        back.textContent = "Atpaka\u013C uz re\u017E\u012Bmiem";
+        back.style.margin = "8px";
+        back.onclick = () => choose(topic);
+        content.append(back);
+      }
+    }
+  }
 
   // src/main.js
   var state = { user: null, role: null, view: null, ready: false };
+  var appBackAction = null;
+  var backNavigationInstalled = false;
+  function installBackNavigation() {
+    if (backNavigationInstalled) return;
+    backNavigationInstalled = true;
+    history.pushState({ levelUp: true }, "", location.href);
+    window.addEventListener("popstate", () => {
+      if (!state.user || !state.role || $2("school").hidden) return;
+      history.pushState({ levelUp: true }, "", location.href);
+      if (typeof appBackAction === "function") appBackAction();
+    });
+  }
   var $2 = (id) => document.getElementById(id);
   var schools = { marks: ["\u{1F409} Marka skola", "M\u0101c\u012Bbu sp\u0113les un progress"], samanta: ["\u{1F3A8} Samantas skola", "Uzdevumi un sasniegumi"], vecaks: ["\u{1F4CB} Vec\u0101ka panelis", "Abu b\u0113rnu m\u0101c\u012Bbu p\u0101rskats"] };
   function message(s2) {
@@ -34992,6 +35457,10 @@ This typically indicates that your device does not have a healthy Internet conne
       alert("\u0160\u012B vide nav pieejama \u0161im kontam.");
       return;
     }
+    installBackNavigation();
+    appBackAction = () => {
+      void showSchool(role);
+    };
     state.view = role;
     $2("welcome").hidden = true;
     $2("school").hidden = false;
@@ -35001,6 +35470,7 @@ This typically indicates that your device does not have a healthy Internet conne
     const area = $2("modules");
     area.replaceChildren();
     let tasks = [], progress = [];
+    let refreshChildDashboard = null;
     applyPersonalTheme(role);
     if (role === "marks" || role === "samanta") {
       const hero = document.createElement("section");
@@ -35014,11 +35484,11 @@ This typically indicates that your device does not have a healthy Internet conne
       overlay.className = "world-hero-content";
       const k2 = document.createElement("span");
       k2.className = "world-kicker";
-      k2.textContent = role === "marks" ? "\u{1F409} TAVA PIEDZ\u012AVOJUMU PASAULE" : "\u{1F338} TAVA M\u0100C\u012ABU PASAULE";
+      k2.textContent = role === "marks" ? "LEVEL UP! \xB7 DRAGON REALM" : "\u{1F338} TAVA M\u0100C\u012ABU PASAULE";
       const title = document.createElement("h2");
-      title.textContent = role === "marks" ? "Laipni l\u016Bgts P\u016B\u0137u sal\u0101!" : "Laipni l\u016Bgta Saulainaj\u0101 d\u0101rz\u0101!";
+      title.textContent = role === "marks" ? "P\u016B\u0137u eksped\u012Bcija" : "Laipni l\u016Bgta Saulainaj\u0101 d\u0101rz\u0101!";
       const desc = document.createElement("p");
-      desc.textContent = role === "marks" ? "Katrs atrisin\u0101ts uzdevums ir v\u0113l viens solis tav\u0101 piedz\u012Bvojum\u0101." : "Te m\u0101c\u012Bties var sav\u0101 ritm\u0101 \u2014 ar att\u0113liem, klaus\u012B\u0161anos un maziem sasniegumiem.";
+      desc.textContent = role === "marks" ? "Zin\u0101\u0161anas dod sp\u0113ku. Katra misija ir solis tuv\u0101k n\u0101kamajam l\u012Bmenim." : "Te m\u0101c\u012Bties var sav\u0101 ritm\u0101 \u2014 ar att\u0113liem, klaus\u012B\u0161anos un maziem sasniegumiem.";
       overlay.append(k2, title, desc);
       hero.append(art, overlay);
       area.append(hero);
@@ -35026,25 +35496,112 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     if (role === "marks" || role === "samanta") {
       let renderSubjects = function() {
+        appBackAction = () => {
+          void showSchool(role);
+        };
         subjectRoot.replaceChildren();
         const head = document.createElement("div");
         head.className = "subject-intro";
         const eyebrow = document.createElement("span");
         eyebrow.className = "eyebrow";
-        eyebrow.textContent = "IZV\u0112LIES M\u0100C\u012ABU PRIEK\u0160METU";
+        eyebrow.textContent = role === "marks" ? "TAVS MISIJU PANELIS" : "IZV\u0112LIES M\u0100C\u012ABU PRIEK\u0160METU";
         const title = document.createElement("h2");
-        title.textContent = "Ko \u0161odien m\u0101c\u012Bsimies?";
+        title.textContent = role === "marks" ? "\u0160odienas misijas" : "Ko \u0161odien m\u0101c\u012Bsimies?";
         const caption = document.createElement("p");
-        caption.textContent = "Izv\u0113lies savu m\u0101c\u012Bbu priek\u0161metu. Pieejam\u0101s t\u0113mas atv\u0113rsies n\u0101kamaj\u0101 sol\u012B.";
+        caption.textContent = role === "marks" ? "Tr\u012Bs prasmes, tr\u012Bs virzieni. Izv\u0113lies izaicin\u0101jumu \u2014 par \u012Bstu progresu, nevis klik\u0161\u0137iem." : "Izv\u0113lies savu m\u0101c\u012Bbu priek\u0161metu. Pieejam\u0101s t\u0113mas atv\u0113rsies n\u0101kamaj\u0101 sol\u012B.";
         head.append(eyebrow, title, caption);
         subjectRoot.append(head);
+        if (role === "marks") {
+          const status = document.createElement("div");
+          status.className = "levelup-marks-status";
+          status.textContent = "\u2694\uFE0F MARKS  \xB7  Prasmju eksped\u012Bcija  \xB7  BP maks v\u0113l nav aktiviz\u0113ts";
+          subjectRoot.append(status);
+        }
+        const diagnosticBox = document.createElement("div");
+        diagnosticBox.className = "card";
+        diagnosticBox.style.cssText = "margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff";
+        const diagnosticDone = progress.some((p2) => p2.activityType === DIAGNOSTIC_VERSION && p2.studentRole === role && (state.role === ROLES.PARENT || p2.studentUid === state.user.uid));
+        const dxTitle = document.createElement("h3");
+        dxTitle.textContent = diagnosticDone ? "\u2705 Pirm\u0101 eksped\u012Bcija izpild\u012Bta" : "\u{1F31F} Tava pirm\u0101 eksped\u012Bcija";
+        const dxDesc = document.createElement("p");
+        dxDesc.textContent = diagnosticDone ? "S\u0101kuma rezult\u0101ts jau ir v\u0113stur\u0113. Vari apskat\u012Bt un atk\u0101rtot k\u0101 treni\u0146u." : "12 \u012Bsi uzdevumi: matem\u0101tika, las\u012B\u0161ana un ang\u013Cu valoda. S\u0101c bez steigas! P\u0113c misijas \u2014 neliels \u0123imenes p\u0101rsteigums.";
+        const dxButton = document.createElement("button");
+        dxButton.className = "action-button";
+        dxButton.type = "button";
+        dxButton.textContent = diagnosticDone ? "Atk\u0101rtot k\u0101 treni\u0146u \u2192" : "S\u0101kt pirmo misiju \u2192";
+        dxButton.onclick = () => {
+          appBackAction = () => renderSubjects();
+          subjectRoot.replaceChildren();
+          const diagContainer = document.createElement("div");
+          subjectRoot.append(diagContainer);
+          renderFirstDiagnostic(diagContainer, {
+            role,
+            alreadyCompleted: diagnosticDone,
+            canSubmit: state.role === role,
+            saveProgress: async (data) => {
+              const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+              if (!saved) throw Error("Firebase neapstiprin\u0101ja saglab\u0101\u0161anu");
+              return saved;
+            },
+            onBack: () => {
+              void showSchool(role);
+            }
+          });
+        };
+        diagnosticBox.append(dxTitle, dxDesc, dxButton);
+        subjectRoot.append(diagnosticBox);
+        const todayStr = new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(/* @__PURE__ */ new Date());
+        const dayOfStamp = (s2) => {
+          if (!s2) return null;
+          const m2 = typeof s2.toMillis === "function" ? s2.toMillis() : typeof s2.seconds === "number" ? s2.seconds * 1e3 : typeof s2 === "string" ? Date.parse(s2) : s2 instanceof Date ? s2.getTime() : null;
+          return Number.isFinite(m2) ? new Intl.DateTimeFormat("en-CA", { timeZone: "Europe/Riga", year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date(m2)) : null;
+        };
+        const isDoneToday = (pattern) => progress.some((p2) => p2.studentRole === role && dayOfStamp(p2.recordedAt) === todayStr && pattern.test((p2.subject || "") + " " + (p2.activityType || "")));
+        const crystals = {
+          latviesu: isDoneToday(/latvie|lasīš|vārdu|galotn/i),
+          matematika: isDoneToday(/matemāt|reizrēķ|reizin|dalīš|ātruma/i),
+          anglu: isDoneToday(/angļu|english/i)
+        };
+        const collectedCount = Number(crystals.latviesu) + Number(crystals.matematika) + Number(crystals.anglu);
+        const expBar = document.createElement("section");
+        expBar.className = "crystal-expedition-bar";
+        expBar.innerHTML = `
+    <div class="crystal-expedition-header">
+      <span class="crystal-expedition-title">\u{1F48E} Dienas 3 krist\u0101lu eksped\u012Bcija (${collectedCount}/3)</span>
+      <span class="crystal-expedition-hint">${collectedCount === 3 ? "\u{1F389} Visi 3 krist\u0101li sav\u0101kti!" : "Pabeidz vismaz 1 treni\u0146u katr\u0101 priek\u0161met\u0101"}</span>
+    </div>
+    <div class="crystal-slots">
+      <div class="crystal-slot ${crystals.latviesu ? "collected" : ""}">
+        <span class="crystal-icon">\u{1F4D5}</span>
+        <div class="crystal-info">
+          <strong>Valodas krist\u0101ls</strong>
+          <span>${crystals.latviesu ? "\u2728 Ieg\u016Bts \u0161odien" : "Nepabeigts"}</span>
+        </div>
+      </div>
+      <div class="crystal-slot ${crystals.matematika ? "collected" : ""}">
+        <span class="crystal-icon">\u{1F9EE}</span>
+        <div class="crystal-info">
+          <strong>Apr\u0113\u0137ina krist\u0101ls</strong>
+          <span>${crystals.matematika ? "\u2728 Ieg\u016Bts \u0161odien" : "Nepabeigts"}</span>
+        </div>
+      </div>
+      <div class="crystal-slot ${crystals.anglu ? "collected" : ""}">
+        <span class="crystal-icon">\u{1F30E}</span>
+        <div class="crystal-info">
+          <strong>Pasaules krist\u0101ls</strong>
+          <span>${crystals.anglu ? "\u2728 Ieg\u016Bts \u0161odien" : "Nepabeigts"}</span>
+        </div>
+      </div>
+    </div>
+    ${collectedCount === 3 ? '<div class="crystal-chest-banner">\u{1F451} Dienas zelta l\u0101de ir atsl\u0113gta! Izcils prasmju l\u012Bdzsvars \u0161odien!</div>' : collectedCount > 0 ? '<div class="crystal-chest-banner" style="background:linear-gradient(120deg,#f0f9ff,#e0f2fe);border-color:#bae6fd;color:#0369a1">\u{1F9ED} Ieteikums: neaizkav\u0113jies vien\u0101 priek\u0161met\u0101 \u2014 dodies p\u0113c n\u0101kamajiem krist\u0101liem!</div>' : ""}`;
+        subjectRoot.append(expBar);
         const tiles = document.createElement("div");
-        tiles.className = "subject-grid";
+        tiles.className = role === "marks" ? "subject-grid levelup-marks-missions" : "subject-grid";
         for (const subject of available) {
-          const button = document.createElement("button");
-          button.type = "button";
-          button.className = "subject-card subject-" + subject.kind;
-          button.disabled = !subject.active;
+          const button2 = document.createElement("button");
+          button2.type = "button";
+          button2.className = "subject-card subject-" + subject.kind;
+          button2.disabled = !subject.active;
           const symbol = document.createElement("span");
           symbol.className = "subject-symbol";
           symbol.textContent = subject.icon;
@@ -35055,18 +35612,26 @@ This typically indicates that your device does not have a healthy Internet conne
           desc.textContent = subject.description;
           const state2 = document.createElement("span");
           state2.className = "subject-status";
-          state2.textContent = subject.active ? "Atv\u0113rt priek\u0161metu \u2192" : "V\u0113l nav pieejams";
-          button.append(symbol, name4, desc, state2);
-          if (subject.active) button.onclick = () => openSubject(subject.id);
-          tiles.append(button);
+          const crystalWon = crystals[subject.id];
+          state2.textContent = crystalWon ? "\u2728 Krist\u0101ls kabat\u0101 \u2192" : "Dodies p\u0113c krist\u0101la \u2192";
+          button2.append(symbol, name4, desc, state2);
+          if (subject.active) button2.onclick = () => openSubject(subject.id);
+          tiles.append(button2);
+        }
+        if (role === "marks") {
+          const missionsNote = document.createElement("p");
+          missionsNote.className = "levelup-marks-note";
+          missionsNote.textContent = "\u{1F9ED} Dienas likums: kad viens priek\u0161mets pabeigts, rot\u0113 uz n\u0101kamo, lai ieg\u016Btu visus 3 krist\u0101lus!";
+          subjectRoot.append(missionsNote);
         }
         const shopTile = document.createElement("button");
         shopTile.type = "button";
         shopTile.className = "subject-card";
         shopTile.style.cssText = "background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px";
         const points = calculateChildPoints(role, progress);
-        shopTile.innerHTML = `<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">\u{1F381}</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un m\u0113r\u0137i</strong><span style="color:#6553a9;font-weight:700">Tev ir ${points.balance} BP! Izv\u0113lies \u0123imenes balvu.</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atv\u0113rt veikalu \u2192</span>`;
+        shopTile.innerHTML = `<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">\u{1F381}</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un m\u0113r\u0137i</strong><span style="color:#6553a9;font-weight:700">\u{1F3AC} Kino vakars: ${points.balance}/250 BP \xB7 \u0160odien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atv\u0113rt veikalu \u2192</span>`;
         shopTile.onclick = () => {
+          appBackAction = () => renderSubjects();
           subjectRoot.replaceChildren();
           const nav = document.createElement("div");
           nav.className = "subject-backbar";
@@ -35102,6 +35667,7 @@ This typically indicates that your device does not have a healthy Internet conne
         { id: "anglu", icon: "\u{1F30E}", name: "Ang\u013Cu valoda", description: "V\u0101rdi, kr\u0101sas, dz\u012Bvnieki un audio izruna", active: true, kind: "english" }
       ];
       const openSubject = (id) => {
+        appBackAction = () => renderSubjects();
         subjectRoot.replaceChildren();
         const nav = document.createElement("div");
         nav.className = "subject-backbar";
@@ -35109,54 +35675,96 @@ This typically indicates that your device does not have a healthy Internet conne
         back.type = "button";
         back.className = "subject-back";
         back.textContent = "\u2190 Visi priek\u0161meti";
-        back.onclick = renderSubjects;
+        back.onclick = () => {
+          const hero2 = area.querySelector(".world-hero");
+          if (hero2) hero2.hidden = false;
+          const picker2 = area.querySelector(".theme-picker");
+          if (picker2) picker2.hidden = false;
+          renderSubjects();
+        };
         nav.append(back);
         subjectRoot.append(nav);
         const trainer = document.createElement("div");
         trainer.className = "subject-trainer";
         subjectRoot.append(trainer);
-        if (id === "latviesu" && role === "marks") {
-          renderLatvianSchool(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
-            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
-            if (!saved) throw new Error("Firestore neapstiprin\u0101ja saglab\u0101\u0161anu");
-            return saved;
-          }, askAI: async (payload) => {
-            const token = await state.user.getIdToken();
-            const response = await fetch("/api/marka-ai", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token }, body: JSON.stringify(payload) });
-            const data = await response.json();
-            if (!response.ok) throw new Error(data.error || "MI treneris nav pieejams");
-            return data.reply;
-          } });
-        } else if (id === "matematika" && role === "marks") {
-          renderMarksMath(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
-            const id2 = await recordProgress({ ...data, currentUid: state.user.uid });
-            if (!id2) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
-            return id2;
-          } });
-        } else if (id === "matematika" && role === "samanta") {
-          renderSamantaMath(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
-            const id2 = await recordProgress({ ...data, currentUid: state.user.uid });
-            if (!id2) throw Error("Firestore saglab\u0101\u0161ana nav apstiprin\u0101ta");
-            return id2;
-          } });
-        } else if (id === "anglu" && role === "marks") {
-          renderMarksEnglish(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
-            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
-            if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
-            return saved;
-          } });
-        } else if (id === "anglu" && role === "samanta") {
-          renderSamantaEnglish(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
-            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
-            if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
-            return saved;
-          } });
-        } else if (id === "latviesu" && role === "samanta") {
-          renderSamantaLatvian(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
-            const saved = await recordProgress({ ...data, currentUid: state.user.uid });
-            if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
-            return saved;
-          } });
+        try {
+          if (id === "latviesu" && role === "marks") {
+            renderLatvianSchool(trainer, { canSubmit: state.role === ROLES.MARKS, currentUid: state.role === ROLES.MARKS ? state.user.uid : "", saveProgress: async (data) => {
+              const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+              if (!saved) throw new Error("Firestore neapstiprin\u0101ja saglab\u0101\u0161anu");
+              return saved;
+            }, askAI: async (payload) => {
+              const token = await state.user.getIdToken();
+              const response = await fetch("/api/marka-ai", { method: "POST", headers: { "Content-Type": "application/json", "Authorization": "Bearer " + token }, body: JSON.stringify(payload) });
+              const data = await response.json();
+              if (!response.ok) throw new Error(data.error || "MI treneris nav pieejams");
+              return data.reply;
+            } });
+          } else if (id === "matematika" && role === "marks") {
+            renderMarksMath(trainer, {
+              canSubmit: state.role === ROLES.MARKS,
+              startVerifiedSession: async (topic, mode) => {
+                const token = await state.user.getIdToken();
+                const response = await fetch("/api/math/session", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token }, body: JSON.stringify({ topic, mode }) });
+                const data = await response.json();
+                if (!response.ok) throw Error(data.error || "Servera sesija nav pieejama");
+                return data;
+              },
+              gradeVerifiedSession: async (token, answers) => {
+                const idToken = await state.user.getIdToken();
+                const response = await fetch("/api/math/grade", { method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + idToken }, body: JSON.stringify({ token, answers }) });
+                const data = await response.json();
+                if (!response.ok) throw Error(data.error || "Servera p\u0101rbaude nav pieejama");
+                return data;
+              },
+              saveProgress: async (data) => {
+                const id2 = await recordProgress({ ...data, currentUid: state.user.uid });
+                if (!id2) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+                return id2;
+              }
+            });
+          } else if (id === "matematika" && role === "samanta") {
+            renderSamantaMath(trainer, { canSubmit: state.role === ROLES.SAMANTA, currentUid: state.role === ROLES.SAMANTA ? state.user.uid : "", saveProgress: async (data) => {
+              const id2 = await recordProgress({ ...data, currentUid: state.user.uid });
+              if (!id2) throw Error("Firestore saglab\u0101\u0161ana nav apstiprin\u0101ta");
+              return id2;
+            } });
+          } else if (id === "anglu" && role === "marks") {
+            renderMarksEnglish(trainer, { canSubmit: state.role === ROLES.MARKS, saveProgress: async (data) => {
+              const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+              if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+              return saved;
+            } });
+          } else if (id === "anglu" && role === "samanta") {
+            renderSamantaEnglish(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
+              const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+              if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+              return saved;
+            } });
+          } else if (id === "latviesu" && role === "samanta") {
+            renderSamantaLatvian(trainer, { canSubmit: state.role === ROLES.SAMANTA, saveProgress: async (data) => {
+              const saved = await recordProgress({ ...data, currentUid: state.user.uid });
+              if (!saved) throw Error("Firebase saglab\u0101\u0161ana nav apstiprin\u0101ta");
+              return saved;
+            } });
+          }
+        } catch (error) {
+          console.error("[LEVEL UP] Priek\u0161meta atv\u0113r\u0161ana neizdev\u0101s:", { role, subject: id, error });
+          trainer.replaceChildren();
+          const message2 = document.createElement("section");
+          message2.className = "module learning-hub";
+          message2.setAttribute("role", "alert");
+          const title = document.createElement("h2");
+          title.textContent = "Neizdev\u0101s atv\u0113rt priek\u0161metu";
+          const detail = document.createElement("p");
+          detail.textContent = "Rad\u0101s tehniska k\u013C\u016Bda. Atgriezies pie priek\u0161metiem vai atver lietotni no jauna.";
+          const retry = document.createElement("button");
+          retry.type = "button";
+          retry.className = "action-button";
+          retry.textContent = "M\u0113\u0123in\u0101t v\u0113lreiz";
+          retry.onclick = () => openSubject(id);
+          message2.append(title, detail, retry);
+          trainer.append(message2);
         }
         const hero = area.querySelector(".world-hero");
         if (hero) hero.hidden = true;
@@ -35164,6 +35772,7 @@ This typically indicates that your device does not have a healthy Internet conne
         if (picker) picker.hidden = true;
         subjectRoot.scrollIntoView({ behavior: "smooth", block: "start" });
       };
+      refreshChildDashboard = renderSubjects;
       renderSubjects();
     }
     const loadErrors = [];
@@ -35183,6 +35792,7 @@ This typically indicates that your device does not have a healthy Internet conne
       loadErrors.push("rezult\u0101tus");
       console.warn("[M\u0101jas skola] Progresa iel\u0101des k\u013C\u016Bdas kods:", err?.code || "unknown");
     }
+    if (refreshChildDashboard) refreshChildDashboard();
     if (loadErrors.length) {
       const notice = document.createElement("div");
       notice.className = "module";
@@ -35206,6 +35816,27 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     if (role === ROLES.PARENT) {
       render7DayAnalytics(area, progress);
+      const familyPoints = document.createElement("section");
+      familyPoints.className = "module";
+      familyPoints.style.gridColumn = "1/-1";
+      const fpHeading = document.createElement("h2");
+      fpHeading.textContent = "\u{1F3AC} \u0160odienas ce\u013C\u0161 uz kino vakaru";
+      familyPoints.append(fpHeading);
+      for (const [childRole, label] of [["marks", "Marks"], ["samanta", "Samanta"]]) {
+        const points = calculateChildPoints(childRole, progress);
+        const line = document.createElement("p");
+        line.textContent = label + ": \u0161odien +" + points.todayEarned + " BP \xB7 kop\u0101 " + points.balance + "/250 BP \xB7 v\u0113l " + points.remaining + " BP";
+        familyPoints.append(line);
+        const meter = document.createElement("progress");
+        meter.max = 250;
+        meter.value = Math.min(250, points.balance);
+        meter.style.cssText = "display:block;width:100%;height:18px;margin-bottom:16px";
+        familyPoints.append(meter);
+      }
+      const bpWarning = document.createElement("p");
+      bpWarning.textContent = "Apr\u0113\u0137ins no Firebase saglab\u0101tajiem rezult\u0101tiem. Provizoriski motiv\u0101cijas punkti; nav norakst\u0101ma BP maka. Iepriek\u0161\u0113jie darbi netiek izdz\u0113sti.";
+      familyPoints.append(bpWarning);
+      area.append(familyPoints);
       renderParentRewardManager(area);
       const panel = document.createElement("section");
       panel.className = "module";
@@ -35248,6 +35879,51 @@ This typically indicates that your device does not have a healthy Internet conne
         }
       });
       area.append(panel);
+      const resetPanel = document.createElement("section");
+      resetPanel.className = "module";
+      resetPanel.style.gridColumn = "1/-1";
+      const resetTitle = document.createElement("h2");
+      resetTitle.textContent = "B\u0113rnu progresa atiestat\u012B\u0161ana";
+      resetPanel.append(resetTitle);
+      const resetInfo = document.createElement("p");
+      resetInfo.textContent = "Dz\u0113\u0161 tikai izv\u0113l\u0113t\u0101 b\u0113rna Firebase m\u0101c\u012Bbu rezult\u0101tus. Konti, uzdevumi un Datorika HUB netiek skarti. Dz\u0113\u0161anu nevar atsaukt. Telefon\u0101 saglab\u0101t\u0101 lok\u0101l\u0101 treni\u0146u statistika var palikt.";
+      resetPanel.append(resetInfo);
+      const resetStatus = document.createElement("p");
+      resetStatus.setAttribute("role", "status");
+      resetPanel.append(resetStatus);
+      for (const [childRole, childName, childUid] of [[ROLES.MARKS, "Marks", "w4nbeq1UguRFrvdwVSFOkk46zXA2"], [ROLES.SAMANTA, "Samanta", "txTRitErw8c4NRK87v1JFrFkoPa2"]]) {
+        const button2 = document.createElement("button");
+        button2.type = "button";
+        button2.textContent = "Atiestat\u012Bt: " + childName;
+        button2.style.margin = "6px";
+        resetPanel.append(button2);
+        button2.addEventListener("click", async () => {
+          button2.disabled = true;
+          resetStatus.textContent = "P\u0101rbaudu " + childName + " rezult\u0101tus\u2026";
+          try {
+            const all = await getProgressHistory({ role: ROLES.PARENT, userUid: state.user.uid });
+            const matching = all.filter((p2) => p2.studentUid === childUid && p2.studentRole === childRole);
+            if (!matching.length) {
+              resetStatus.textContent = childName + ": Firebase rezult\u0101tu nav. Lok\u0101l\u0101 statistika telefon\u0101 netiek dz\u0113sta.";
+              return;
+            }
+            const answer = window.prompt("Neatgriezeniski dz\u0113st " + matching.length + " " + childName + " rezult\u0101tus? Lai apstiprin\u0101tu, ieraksti prec\u012Bzi: DZ\u0112ST " + childName.toUpperCase());
+            if (answer !== "DZ\u0112ST " + childName.toUpperCase()) {
+              resetStatus.textContent = "Atiestat\u012B\u0161ana atcelta.";
+              return;
+            }
+            resetStatus.textContent = "Dz\u0113\u0161u tikai " + childName + " rezult\u0101tus\u2026";
+            const deleted = await resetChildProgress(childRole, matching.length);
+            resetStatus.textContent = childName + ": izdz\u0113sti " + deleted + " Firebase rezult\u0101ti. Lok\u0101l\u0101s statistikas not\u012Br\u012B\u0161ana v\u0113l nav veikta.";
+            await showSchool(ROLES.PARENT);
+          } catch (e2) {
+            resetStatus.textContent = "Atiestat\u012B\u0161ana neizdev\u0101s vai bija da\u013C\u0113ja: " + (e2?.message || "P\u0101rbaudi Firestore at\u013Caujas.");
+          } finally {
+            button2.disabled = false;
+          }
+        });
+      }
+      area.append(resetPanel);
     }
     if (role === ROLES.PARENT) {
       const form = document.createElement("form");
@@ -35347,7 +36023,11 @@ This typically indicates that your device does not have a healthy Internet conne
         void showSchool(state.view || state.role);
       } else showWelcome();
     });
-    $2("back").addEventListener("click", showWelcome);
+    $2("back").addEventListener("click", () => {
+      if (state.user && state.role) {
+        void showSchool(state.view || state.role);
+      } else showWelcome();
+    });
     try {
       const fb = await initFirebase();
       state.ready = Boolean(fb.isConfigured);
@@ -35519,12 +36199,12 @@ This typically indicates that your device does not have a healthy Internet conne
 @firebase/component/dist/esm/index.esm.js:
 @firebase/app/dist/esm/index.esm.js:
 @firebase/app/dist/esm/index.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
   (**
    * @license
    * Copyright 2019 Google LLC
@@ -35543,6 +36223,23 @@ This typically indicates that your device does not have a healthy Internet conne
    *)
 
 @firebase/util/dist/index.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/common-D9UYuXJO.esm.js:
+@firebase/firestore/dist/index.esm.js:
+@firebase/firestore/dist/index.esm.js:
+@firebase/firestore/dist/index.esm.js:
+@firebase/firestore/dist/index.esm.js:
+@firebase/firestore/dist/index.esm.js:
 firebase/app/dist/esm/index.esm.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
@@ -35576,23 +36273,6 @@ firebase/app/dist/esm/index.esm.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
 @firebase/auth/dist/esm/index-LY22yodV.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/common-D9UYuXJO.esm.js:
-@firebase/firestore/dist/index.esm.js:
-@firebase/firestore/dist/index.esm.js:
-@firebase/firestore/dist/index.esm.js:
-@firebase/firestore/dist/index.esm.js:
-@firebase/firestore/dist/index.esm.js:
   (**
    * @license
    * Copyright 2020 Google LLC
@@ -35698,378 +36378,6 @@ firebase/app/dist/esm/index.esm.js:
   (**
    * @license
    * Copyright 2019 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-@firebase/firestore/dist/index.esm.js:
-  (**
-   * @license
-   * Copyright 2021 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2019 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2022 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2023 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2022 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2019 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2019 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2025 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2019 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2020 Google LLC.
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2021 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2019 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-
-@firebase/auth/dist/esm/index-LY22yodV.js:
-  (**
-   * @license
-   * Copyright 2020 Google LLC
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2020 Google LLC.
-   *
-   * Licensed under the Apache License, Version 2.0 (the "License");
-   * you may not use this file except in compliance with the License.
-   * You may obtain a copy of the License at
-   *
-   *   http://www.apache.org/licenses/LICENSE-2.0
-   *
-   * Unless required by applicable law or agreed to in writing, software
-   * distributed under the License is distributed on an "AS IS" BASIS,
-   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-   * See the License for the specific language governing permissions and
-   * limitations under the License.
-   *)
-  (**
-   * @license
-   * Copyright 2021 Google LLC
    *
    * Licensed under the Apache License, Version 2.0 (the "License");
    * you may not use this file except in compliance with the License.
@@ -37027,6 +37335,378 @@ re2js/build/index.js:
   (**
    * @license
    * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/firestore/dist/index.esm.js:
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2023 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2022 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2025 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2020 Google LLC.
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2021 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2019 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+
+@firebase/auth/dist/esm/index-LY22yodV.js:
+  (**
+   * @license
+   * Copyright 2020 Google LLC
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2020 Google LLC.
+   *
+   * Licensed under the Apache License, Version 2.0 (the "License");
+   * you may not use this file except in compliance with the License.
+   * You may obtain a copy of the License at
+   *
+   *   http://www.apache.org/licenses/LICENSE-2.0
+   *
+   * Unless required by applicable law or agreed to in writing, software
+   * distributed under the License is distributed on an "AS IS" BASIS,
+   * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   * See the License for the specific language governing permissions and
+   * limitations under the License.
+   *)
+  (**
+   * @license
+   * Copyright 2021 Google LLC
    *
    * Licensed under the Apache License, Version 2.0 (the "License");
    * you may not use this file except in compliance with the License.

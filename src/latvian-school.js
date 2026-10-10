@@ -2,6 +2,7 @@ import {calculatePracticePoints,previewImprovement} from './points-policy.js';
 // Marka skola: latviešu valodas trenažieri. Sākotnējā integrācijas versija.
 const TOPICS=[
   {id:'morfemas',name:'Vārda sastāvs un vārddarināšana',icon:'🔎'},
+  {id:'galotnes',name:'🎯 Galotņu detektīvs & Lamatas',icon:'🕵️'},
   {id:'sazina',name:'Saziņa un saziņas veidi',icon:'💬'},
   {id:'vardskiras',name:'Vārdšķiras un vārda pamatforma',icon:'📚'}
 ];
@@ -30,6 +31,19 @@ const BANK={
   ['Kāda ir vārda “skrēja” nenoteiksme?',['skriet','skrēju','skriešana'],0,'Darbības vārda pamatforma ir nenoteiksme.'],
   ['Kura ir lietvārda “kokiem” pamatforma?',['kokos','koks','koki'],1,'Lietvārda pamatforma ir vienskaitļa nominatīvs, ja tas lietojams.'],
   ['Kura ir īpašības vārda “skaistākam” pamatforma?',['skaisti','skaistāk','skaists'],2,'Īpašības vārda pamatforma ir vīriešu dzimtes vienskaitļa nominatīvs.']
+ ],
+ galotnes:[
+  ['“Kaķi redzēja suns.” Kas kuru redzēja?',['Suns redzēja kaķi','Kaķis redzēja suni','Abi viens otru neredzēja'],0,'Suns (galotne -s) ir tas, kurš redzēja! Kaķi (galotne -i) ir tas, kuru redzēja.'],
+  ['“Pūķi noķēra bruņinieks.” Kurš kuru noķēra?',['Bruņinieks noķēra pūķi','Pūķis noķēra bruņinieku','Pūķis aizmuka'],0,'Galotne -s vārdā “bruņinieks” parāda, ka viņš ir darītājs!'],
+  ['“Zēns iedeva gardu ābol... brālim.” Kura galotne vajadzīga?',['-u (ābolu)','-s (ābols)','-am (ābolam)','-ā (ābolā)'],0,'Iedeva ko? Ābolu! Akuzatīva galotne ir -u.'],
+  ['“Meitene uzrakstīja garu vēstul... draudzenei.” Kura galotne pareiza?',['-i (vēstuli)','-e (vēstule)','-ē (vēstulē)','-es (vēstules)'],0,'Uzrakstīja ko? Vēstuli! Galotne -i.'],
+  ['“Vilcienu apsteidza lidmašīna.” Kas pārvietojās ātrāk?',['Lidmašīna','Vilciens','Abi brauca vienādi'],0,'Lidmašīna (galotne -a) ir darītāja — tā apsteidza vilcienu!'],
+  ['“Vakar mēs visi kopā gāj... uz pili.” Kura galotne rāda, ka darījām mēs?',['-ām (gājām)','-u (gāju)','-āt (gājāt)','-a (gāja)'],0,'Mēs gājām! Galotne -ām rāda pirmo personu daudzskaitlī.'],
+  ['“Lācis meklē saldu med... koka dobumā.”',['-u (medu)','-us (medus)','-am (medum)','-ī (medī)'],0,'Meklē ko? Medu (galotne -u)!'],
+  ['“Zēns ielika jauno grāmat... som...”', ['-u somā','-a somai','-ā somu','-i somas'],0,'Ielika ko? Grāmatu (kur?) somā!'],
+  ['“Lapsu nobiedēja suns.” Kurš nobijās?',['Lapsa','Suns','Abi nobijās'],0,'Suns nobiedēja (viņš biedēja), tātad nobijās lapsa!'],
+  ['“Bērni uzmanīgi klausījās skolotāj... stāstījumā.”', ['-as (skolotājas)','-a (skolotāja)','-ai (skolotājai)','-u (skolotāju)'],0,'Klausījās kā stāstījumā? Skolotājas stāstījumā!'],
+  ['“Zivis peld vēsajā ezer...”', ['-ā (ezerā)','-s (ezers)','-am (ezeram)','-u (ezeru)'],0,'Peld kur? Ezerā! Lokālatīva galotne ir -ā.']
  ]
 };
 // Pārnesti un pielāgoti atlasīti sākotnējā trenažiera jautājumi.
@@ -56,6 +70,11 @@ const EXTENDED={
   {kind:'multi',prompt:'Atzīmē visus īpašības vārdus.',options:['gudrs','zaļa','ātri','skaists','skola'],answers:['gudrs','zaļa','skaists'],explanation:'Īpašības vārdi nosauc pazīmi.'},
   {kind:'text',prompt:'Uzraksti darbības vārda “skrēja” pamatformu.',answers:['skriet'],explanation:'Darbības vārda pamatforma ir nenoteiksme.'},
   {kind:'text',prompt:'Uzraksti lietvārda “kokiem” pamatformu.',answers:['koks'],explanation:'Lietvārda pamatforma parasti ir vienskaitļa nominatīvs.'}
+ ],
+ galotnes:[
+  {kind:'text',prompt:'Ieraksti pareizo galotni: "Suns grauž gardu kaul__ (ko?)"',answers:['u','-u'],explanation:'Grauž ko? Kaulu! Galotne ir -u.'},
+  {kind:'text',prompt:'Ieraksti pareizo darbības vārda galotni: "Mēs šodien daudz lasīj__"',answers:['ām','am','-ām'],explanation:'Mēs lasījām! Galotne -ām.'},
+  {kind:'text',prompt:'Ieraksti pareizo galotni: "Zēns uzkāpa augstā kaln__ (kur?)"',answers:['ā','a','-ā'],explanation:'Uzkāpa kur? Kalnā (galotne -ā).'}
  ]
 };
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
@@ -72,6 +91,11 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
  function saveHistory(topic,row){if(!prefix)return;try{localStorage.setItem(historyKey(topic),JSON.stringify([...readHistory(topic),row].slice(-30)));}catch{}}
  function skillOf(topic,q){
   const p=q.prompt.toLocaleLowerCase('lv-LV');
+  if(topic.id==='galotnes'){
+    if(/kurš kuru|kas kuru|apsteidza|nobiedēja/.test(p))return 'Darītājs un teikuma jēga';
+    if(/kura galotne|ieraksti pareizo galotni|rād|mēs/.test(p))return 'Pareizās galotnes izvēle';
+    return 'Galotņu nozīme teikumā';
+  }
   if(topic.id==='sazina'){
     if(/žest|mīmik|neverbāl|sejas/.test(p))return 'Neverbālā saziņa';
     if(/pieklāj|uzklaus|sarun|saprast/.test(p))return 'Sarunāšanās prasmes';
@@ -155,6 +179,11 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
    const progress=document.createElement('div');progress.className='progress-track';const fill=document.createElement('div');fill.className='progress-fill';fill.style.width=Math.round(index/items.length*100)+'%';progress.append(fill);content.append(progress);
    const streakTag=document.createElement('p');streakTag.className='streak-label';streakTag.textContent='🔥 '+streak+' pareizas pēc kārtas · Rekords: '+maxStreak;content.append(streakTag);
    const q=items[index],h=document.createElement('h3');h.className='latvian-question';h.textContent=(index+1)+'/'+items.length+' · '+q.prompt;content.append(h);
+   if(topic.id==='galotnes'){
+    const guard=document.createElement('div');guard.className='anti-guess-indicator';
+    guard.textContent='🔎 Detektīva likums: izlasi teikumu līdz pēdējam burtam pirms atbildi!';
+    content.append(guard);
+   }
    const form=document.createElement('form');form.className='latvian-question-form';content.append(form);
    const feedback=document.createElement('p');feedback.setAttribute('role','status');
    let input;
@@ -162,7 +191,9 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
     input=document.createElement('input');input.type='text';input.required=true;input.autocomplete='off';input.maxLength=100;input.style.cssText='display:block;max-width:400px;width:100%;padding:12px;font:inherit;margin:12px 0;border:1px solid #aebdd0;border-radius:9px';form.append(input);
    }else{
     if(q.kind==='multi'){const hint=document.createElement('p');hint.textContent='Iespējamas vairākas pareizās atbildes.';form.append(hint);}
-    q.options.forEach((o,i)=>{const label=document.createElement('label');label.style.cssText='display:block;padding:10px;cursor:pointer';const control=document.createElement('input');control.type=q.kind==='multi'?'checkbox':'radio';control.name='choice';control.value=String(i);label.append(control,document.createTextNode(' '+(typeof o==='string'?o:o.label)));form.append(label);});
+    const optGrid=document.createElement('div');optGrid.className='latvian-options-grid';
+    q.options.forEach((o,i)=>{const label=document.createElement('label');label.className='latvian-option-label';const control=document.createElement('input');control.type=q.kind==='multi'?'checkbox':'radio';control.name='choice';control.value=String(i);label.append(control,document.createTextNode(' '+(typeof o==='string'?o:o.label)));optGrid.append(label);});
+    form.append(optGrid);
    }
    if(mode==='learn'){const hint=document.createElement('button');hint.type='button';hint.textContent='💡 Palīdzība';hint.onclick=()=>{feedback.textContent='Izlasi uzdevumu vēlreiz. Salīdzini variantu nozīmi un atceries tēmas pamatprincipu.';};form.append(hint);}
    const btn=document.createElement('button');btn.type='submit';btn.textContent='Pārbaudīt';btn.style.margin='8px';form.append(btn);content.append(feedback);

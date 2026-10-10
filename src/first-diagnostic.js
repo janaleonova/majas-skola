@@ -66,10 +66,13 @@ export function renderFirstDiagnostic(container,{role,canSubmit=false,alreadyCom
    root.append(E('p','Vispirms pamēģini izlasīt pati. Ja vajag, vari noklausīties.'));
    const speak=button('🔊 Noklausīties',()=>{if('speechSynthesis'in window){speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(x.prompt);u.lang='lv-LV';u.rate=0.8;speechSynthesis.speak(u);}});root.append(speak);
   }
+  const choicesWrap=E('div');choicesWrap.className='diagnostic-choices';
   for(let i=0;i<x.choices.length;i++){
    const choice=button(x.choices[i],()=>{if(busy)return;times.push(Math.round(performance.now()-shownAt));answers.push(i);position++;if(position<questions.length)question();else void finish();});
-   choice.style.cssText='display:block;width:100%;margin:12px 0;padding:16px;text-align:left;font-size:1.15rem';root.append(choice);
+   choice.className='action-button diagnostic-choice';
+   choicesWrap.append(choice);
   }
+  root.append(choicesWrap);
   root.append(E('p','Strādā savā tempā. Šeit nav sacensību.'));
  }
  async function finish(){

@@ -211,6 +211,51 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
       onBack:()=>{void showSchool(role);}});
    };
    diagnosticBox.append(dxTitle,dxDesc,dxButton);subjectRoot.append(diagnosticBox);
+   const todayStr=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+   const dayOfStamp=s=>{if(!s)return null;const m=typeof s.toMillis==='function'?s.toMillis():typeof s.seconds==='number'?s.seconds*1000:typeof s==='string'?Date.parse(s):s instanceof Date?s.getTime():null;return Number.isFinite(m)?new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(m)):null;};
+   const isDoneToday=pattern=>progress.some(p=>p.studentRole===role&&dayOfStamp(p.recordedAt)===todayStr&&pattern.test((p.subject||'')+' '+(p.activityType||'')));
+   const crystals={
+     latviesu:isDoneToday(/latvie|lasīš|vārdu|galotn/i),
+     matematika:isDoneToday(/matemāt|reizrēķ|reizin|dalīš|ātruma/i),
+     anglu:isDoneToday(/angļu|english/i)
+   };
+   const collectedCount=Number(crystals.latviesu)+Number(crystals.matematika)+Number(crystals.anglu);
+   const expBar=document.createElement('section');expBar.className='crystal-expedition-bar';
+   expBar.innerHTML=`
+    <div class="crystal-expedition-header">
+      <span class="crystal-expedition-title">💎 Dienas 3 kristālu ekspedīcija (${collectedCount}/3)</span>
+      <span class="crystal-expedition-hint">${collectedCount===3?'🎉 Visi 3 kristāli savākti!':'Pabeidz vismaz 1 treniņu katrā priekšmetā'}</span>
+    </div>
+    <div class="crystal-slots">
+      <div class="crystal-slot ${crystals.latviesu?'collected':''}">
+        <span class="crystal-icon">📕</span>
+        <div class="crystal-info">
+          <strong>Valodas kristāls</strong>
+          <span>${crystals.latviesu?'✨ Iegūts šodien':'Nepabeigts'}</span>
+        </div>
+      </div>
+      <div class="crystal-slot ${crystals.matematika?'collected':''}">
+        <span class="crystal-icon">🧮</span>
+        <div class="crystal-info">
+          <strong>Aprēķina kristāls</strong>
+          <span>${crystals.matematika?'✨ Iegūts šodien':'Nepabeigts'}</span>
+        </div>
+      </div>
+      <div class="crystal-slot ${crystals.anglu?'collected':''}">
+        <span class="crystal-icon">🌎</span>
+        <div class="crystal-info">
+          <strong>Pasaules kristāls</strong>
+          <span>${crystals.anglu?'✨ Iegūts šodien':'Nepabeigts'}</span>
+        </div>
+      </div>
+    </div>
+    ${collectedCount===3
+      ?'<div class="crystal-chest-banner">👑 Dienas zelta lāde ir atslēgta! Izcils prasmju līdzsvars šodien!</div>'
+      :(collectedCount>0
+        ?'<div class="crystal-chest-banner" style="background:linear-gradient(120deg,#f0f9ff,#e0f2fe);border-color:#bae6fd;color:#0369a1">🧭 Ieteikums: neaizkavējies vienā priekšmetā — dodies pēc nākamajiem kristāliem!</div>'
+        :'')
+    }`;
+   subjectRoot.append(expBar);
    const tiles=document.createElement('div');tiles.className=role==='marks'?'subject-grid levelup-marks-missions':'subject-grid';
    for(const subject of available){
     const button=document.createElement('button');button.type='button';button.className='subject-card subject-'+subject.kind;
@@ -218,17 +263,18 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
     const symbol=document.createElement('span');symbol.className='subject-symbol';symbol.textContent=subject.icon;
     const name=document.createElement('strong');name.textContent=subject.name;
     const desc=document.createElement('span');desc.className='subject-description';desc.textContent=subject.description;
-    const state=document.createElement('span');state.className='subject-status';state.textContent=subject.active?'Atvērt priekšmetu →':'Vēl nav pieejams';
+    const state=document.createElement('span');state.className='subject-status';
+    const crystalWon=crystals[subject.id];
+    state.textContent=crystalWon?'✨ Kristāls kabatā →':'Dodies pēc kristāla →';
     button.append(symbol,name,desc,state);
     if(subject.active)button.onclick=()=>openSubject(subject.id);
     tiles.append(button);
    }
-   if(role==='marks'){const missionsNote=document.createElement('p');missionsNote.className='levelup-marks-note';missionsNote.textContent='Katru priekšmetu vari atvērt savā tempā. Dienas rotācijas un līmeņu automatizācija vēl tiek izstrādāta.';subjectRoot.append(missionsNote);}
+   if(role==='marks'){const missionsNote=document.createElement('p');missionsNote.className='levelup-marks-note';missionsNote.textContent='🧭 Dienas likums: kad viens priekšmets pabeigts, rotē uz nākamo, lai iegūtu visus 3 kristālus!';subjectRoot.append(missionsNote);}
    const shopTile=document.createElement('button');
-   shopTile.type='button';shopTile.className='subject-card';
-   shopTile.style.cssText='background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px';
+   shopTile.type='button';shopTile.className='subject-card shop-summary-card';
    const points=calculateChildPoints(role,progress);
-   shopTile.innerHTML=`<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">🎁</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un mērķi</strong><span style="color:#6553a9;font-weight:700">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atvērt veikalu →</span>`;
+   shopTile.innerHTML=`<div class="shop-summary-left"><span class="shop-summary-icon">🎁</span><div class="shop-summary-text"><strong class="shop-summary-title">Balvu veikals un mērķi</strong><span class="shop-summary-desc">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status shop-summary-btn">Atvērt veikalu →</span>`;
    shopTile.onclick=()=>{
     area.classList.add('learning-active');
     appBackAction=()=>renderSubjects();
