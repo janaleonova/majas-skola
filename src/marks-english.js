@@ -36,12 +36,14 @@ export function renderMarksEnglish(root,{canSubmit=false,saveProgress=async()=>{
    if(checked||!inp.value.trim())return;
    checked=true;
    const good=isCorrectEnglishAnswer(q,inp.value);
-   correct+=Number(good);if(!good)misses.push({question:q.q,answer:q.a});
-   streak=good?streak+1:0;best=Math.max(best,streak);
    inp.readOnly=true;submit.disabled=true;
    status.textContent=mode==='exam'?'Atbilde iesniegta.':good?'🎉 Pareizi! Lieliski!':'🔍 Pareizā atbilde: '+q.a;
-   const next=button(index+1===items.length?'Skatīt rezultātu →':'Nākamais jautājums →',()=>{
-    if(advanced)return;advanced=true;index++;step();
+   const fix=button('✏️ Labot atbildi',()=>{if(advanced)return;checked=false;inp.readOnly=false;submit.disabled=false;status.textContent='Vari izlabot un vēlreiz pārbaudīt.';fix.remove();next.remove();});
+   const next=button(index+1===items.length?'Apstiprināt un skatīt rezultātu →':'Apstiprināt un turpināt →',()=>{
+    if(advanced)return;advanced=true;
+    correct+=Number(good);if(!good)misses.push({question:q.q,answer:q.a});
+    streak=good?streak+1:0;best=Math.max(best,streak);
+    index++;step();
    });
    next.style.marginTop='12px';
   });
