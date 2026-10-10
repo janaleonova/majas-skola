@@ -1,3 +1,4 @@
+import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
 import {renderMarksMath} from './marks-math.js';
 import {renderMarksEnglish} from './marks-english.js';
 import {renderSamantaLatvian} from './samanta-latvian.js';
@@ -168,6 +169,18 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
    const title=document.createElement('h2');title.textContent='Ko šodien mācīsimies?';
    const caption=document.createElement('p');caption.textContent='Izvēlies savu mācību priekšmetu. Pieejamās tēmas atvērsies nākamajā solī.';
    head.append(eyebrow,title,caption);subjectRoot.append(head);
+   const diagnosticBox=document.createElement('div');diagnosticBox.className='card';diagnosticBox.style.cssText='margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff';
+   const diagnosticDone=progress.some(p=>p.activityType===DIAGNOSTIC_VERSION && p.studentRole===role && (state.role===ROLES.PARENT || p.studentUid===state.user.uid));
+   const dxTitle=document.createElement('h3');dxTitle.textContent=diagnosticDone?'✅ Pirmā ekspedīcija izpildīta':'🌟 Tava pirmā ekspedīcija';
+   const dxDesc=document.createElement('p');dxDesc.textContent=diagnosticDone?'Sākuma rezultāts jau ir vēsturē. Vari apskatīt un atkārtot kā treniņu.':'12 īsi uzdevumi: matemātika, lasīšana un angļu valoda. Sāc bez steigas! Pēc misijas — neliels ģimenes pārsteigums.';
+   const dxButton=document.createElement('button');dxButton.className='action-button';dxButton.type='button';dxButton.textContent=diagnosticDone?'Atkārtot kā treniņu →':'Sākt pirmo misiju →';
+   dxButton.onclick=()=>{
+    subjectRoot.replaceChildren();const diagContainer=document.createElement('div');subjectRoot.append(diagContainer);
+    renderFirstDiagnostic(diagContainer,{role,alreadyCompleted:diagnosticDone,canSubmit:state.role===role,
+      saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;},
+      onBack:()=>{void showSchool(role);}});
+   };
+   diagnosticBox.append(dxTitle,dxDesc,dxButton);subjectRoot.append(diagnosticBox);
    const tiles=document.createElement('div');tiles.className='subject-grid';
    for(const subject of available){
     const button=document.createElement('button');button.type='button';button.className='subject-card subject-'+subject.kind;
