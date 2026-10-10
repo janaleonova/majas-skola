@@ -167,7 +167,6 @@ async function showSchool(role){if(!state.user || !state.role){showLogin();retur
     const label=(button.textContent||'').trim();
     if(!/^(?:←|⬅|Atpakaļ|Visas tēmas|Uz tēmām|Uz sākumu)/i.test(label))return;
     if(!confirmLeaveLearning()){event.preventDefault();event.stopImmediatePropagation();return;}
-    activeLearning=false;
    },true);
    try{
    if(id==='latviesu'&&role==='marks'){
