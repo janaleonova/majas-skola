@@ -12,6 +12,7 @@ import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLo
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,resetChildProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
 let stopPresence=null;
+let stopParentPresence=null;
 let currentActivity='Sākumekrāns';
 let appBackAction=null;
 let activeLearning=false;
@@ -129,7 +130,7 @@ function render7DayAnalytics(container,allProgress){
  };
  section.append(copyBtn);container.append(section);
 }
-async function showSchool(role){currentActivity='Sākumekrāns';if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
+async function showSchool(role){if(stopParentPresence){stopParentPresence();stopParentPresence=null;}currentActivity='Sākumekrāns';if(!state.user || !state.role){showLogin();return}if(state.role!==ROLES.PARENT && state.role!==role){alert('Šī vide nav pieejama šim kontam.');return}
  installBackNavigation();appBackAction=()=>{void showSchool(role);};
  state.view=role;$('welcome').hidden=true;$('school').hidden=false;$('home').hidden=false;
  $('school-title').textContent=schools[role][0];$('school-intro').textContent=schools[role][1];
@@ -164,6 +165,7 @@ async function showSchool(role){currentActivity='Sākumekrāns';if(!state.user |
    const nav=document.createElement('div');nav.className='subject-backbar';
    const back=document.createElement('button');back.type='button';back.className='subject-back';back.textContent='← Visi priekšmeti';back.onclick=()=>leaveLearning(renderSubjects);nav.append(back);subjectRoot.append(nav);
    const trainer=document.createElement('div');trainer.className='subject-trainer';subjectRoot.append(trainer);
+   trainer.addEventListener('click',event=>{const target=event.target.closest('button');if(!target)return;if(target.classList.contains('topic-tile')){const name=target.querySelector('strong')?.textContent||target.textContent;currentActivity=((({latviesu:'Latviešu valoda',matematika:'Matemātika',anglu:'Angļu valoda'})[id]||'Priekšmets')+' · '+name).slice(0,100);}else if(/^(?:🌱 Mācos|🎯 Trenējos|🏆 Pārbaudu|⚡ Ātruma)/.test(target.textContent.trim()))currentActivity=(currentActivity+' · '+target.textContent.trim()).slice(0,100);},true);
    // In-module back buttons can discard a partly completed attempt too.
    trainer.addEventListener('click',event=>{
     const button=event.target.closest('button');
@@ -336,7 +338,7 @@ async function showSchool(role){currentActivity='Sākumekrāns';if(!state.user |
  for(const child of ['marks','samanta','vecaks']){const b=document.createElement('button');b.textContent=schools[child][0];b.style.margin='5px';b.addEventListener('click',()=>showSchool(child));nav.append(b)}area.append(nav)}
  if(role===ROLES.PARENT){
   render7DayAnalytics(area,progress);
-  renderParentPresence(area);
+  stopParentPresence=renderParentPresence(area);
   const familyPoints=document.createElement('section');familyPoints.className='module';familyPoints.style.gridColumn='1/-1';
   const fpHeading=document.createElement('h2');fpHeading.textContent='🎬 Šodienas ceļš uz kino vakaru';familyPoints.append(fpHeading);
   for(const [childRole,label] of [['marks','Marks'],['samanta','Samanta']]){
