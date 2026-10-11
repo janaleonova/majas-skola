@@ -84,7 +84,8 @@ function render7DayAnalytics(container,allProgress){
  const sAvg=sRecent.length?Math.round(sRecent.reduce((acc,p)=>acc+(Number(p.score)||0),0)/sRecent.length):null;
 
  const grid=document.createElement('div');
- grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0';
+ grid.className='analytics-7day-grid';
+ grid.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin:16px 0';
 
  const mCard=document.createElement('div');
  mCard.style.cssText='background:#f6f7ff;border:2px solid #dedbf8;border-radius:20px;padding:20px';

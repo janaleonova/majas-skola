@@ -105,6 +105,8 @@
         });
         root.append(speak);
       }
+      const choicesWrap = E("div");
+      choicesWrap.className = "diagnostic-choices";
       for (let i2 = 0; i2 < x2.choices.length; i2++) {
         const choice = button2(x2.choices[i2], () => {
           if (busy) return;
@@ -114,9 +116,10 @@
           if (position < questions.length) question();
           else void finish();
         });
-        choice.style.cssText = "display:block;width:100%;margin:12px 0;padding:16px;text-align:left;font-size:1.15rem";
-        root.append(choice);
+        choice.className = "action-button diagnostic-choice";
+        choicesWrap.append(choice);
       }
+      root.append(choicesWrap);
       root.append(E("p", "Str\u0101d\u0101 sav\u0101 temp\u0101. \u0160eit nav sacens\u012Bbu."));
     }
     async function finish() {
@@ -151,6 +154,11 @@
 
   // src/touch-numpad.js
   function attachTouchNumpad(container, inputElement, { onSubmit, onInput } = {}) {
+    inputElement.readOnly = true;
+    inputElement.setAttribute("aria-label", "Atbilde \u2014 izmanto ekr\u0101na ciparn\u012Bcu");
+    inputElement.setAttribute("enterkeyhint", "done");
+    inputElement.setAttribute("inputmode", "none");
+    const pad = document.createElement("div");
     pad.className = "touch-numpad";
     pad.setAttribute("role", "group");
     pad.setAttribute("aria-label", "Ekr\u0101na ciparn\u012Bca skait\u013Cu ievadei");
@@ -586,50 +594,77 @@
       step();
     }
     function step() {
-      if (index === items.length) {
+      if (index >= items.length) {
         void finish();
         return;
       }
       host.replaceChildren();
-      let q2 = items[index];
+      const q2 = items[index];
       host.append(el("h2", "Jaut\u0101jums " + (index + 1) + " / " + items.length));
-      let bar = el("div");
+      const bar = el("div");
       bar.className = "progress-track";
-      let fill = el("div");
+      const fill = el("div");
       fill.className = "progress-fill";
       fill.style.width = 100 * index / items.length + "%";
       bar.append(fill);
-      host.append(bar, el("p", "\u{1F525} " + streak + " p\u0113c k\u0101rtas \xB7 Rekords: " + best), el("h3", q2.q));
-      let form = el("form");
+      host.append(bar);
+      host.append(el("p", "\u{1F525} " + streak + " p\u0113c k\u0101rtas \xB7 Rekords: " + best), el("h3", q2.q));
+      const hint = el("p", "Raksti sav\u0101 temp\u0101. Tastat\u016Bras Enter neatbild jaut\u0101juma viet\u0101.");
+      host.append(hint);
+      const form = el("form");
       form.className = "latvian-question-form";
-      let inp = el("input");
+      const inp = el("input");
       inp.type = "text";
       inp.required = true;
       inp.autocomplete = "off";
+      inp.enterKeyHint = "done";
       inp.setAttribute("aria-label", "Tava atbilde");
       form.append(inp);
-      let submit = el("button", "P\u0101rbaud\u012Bt");
+      const submit = el("button", "P\u0101rbaud\u012Bt atbildi");
       submit.type = "submit";
+      submit.className = "action-button";
       form.append(submit);
       host.append(form);
-      let status = el("p");
+      const status = el("p");
       status.setAttribute("role", "status");
       host.append(status);
       if (mode === "learn") button2("\u{1F4A1} Pal\u012Bdz\u012Bba", () => status.textContent = q2.hint);
-      form.onsubmit = (e2) => {
-        e2.preventDefault();
-        let good = isCorrectEnglishAnswer(q2, inp.value);
-        correct += Number(good);
-        if (!good) misses.push({ question: q2.q, answer: q2.a });
-        streak = good ? streak + 1 : 0;
-        best = Math.max(best, streak);
-        inp.disabled = submit.disabled = true;
-        status.textContent = mode === "exam" ? "Atbilde saglab\u0101ta." : good ? "\u2705 Pareizi!" : "\u{1F50D} Pareiz\u0101 atbilde: " + q2.a;
-        button2("N\u0101kamais \u2192", () => {
+      inp.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          inp.blur();
+        }
+      });
+      let checked = false, advanced = false;
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        if (checked || !inp.value.trim()) return;
+        checked = true;
+        const good = isCorrectEnglishAnswer(q2, inp.value);
+        inp.readOnly = true;
+        submit.disabled = true;
+        status.textContent = mode === "exam" ? "Atbilde iesniegta." : good ? "\u{1F389} Pareizi! Lieliski!" : "\u{1F50D} Pareiz\u0101 atbilde: " + q2.a;
+        const fix = button2("\u270F\uFE0F Labot atbildi", () => {
+          if (advanced) return;
+          checked = false;
+          inp.readOnly = false;
+          submit.disabled = false;
+          status.textContent = "Vari izlabot un v\u0113lreiz p\u0101rbaud\u012Bt.";
+          fix.remove();
+          next.remove();
+        });
+        const next = button2(index + 1 === items.length ? "Apstiprin\u0101t un skat\u012Bt rezult\u0101tu \u2192" : "Apstiprin\u0101t un turpin\u0101t \u2192", () => {
+          if (advanced) return;
+          advanced = true;
+          correct += Number(good);
+          if (!good) misses.push({ question: q2.q, answer: q2.a });
+          streak = good ? streak + 1 : 0;
+          best = Math.max(best, streak);
           index++;
           step();
         });
-      };
+        next.style.marginTop = "12px";
+      });
     }
     async function finish() {
       let percent = Math.round(correct / items.length * 100);
@@ -34334,7 +34369,7 @@ This typically indicates that your device does not have a healthy Internet conne
         const existing = await getRequests(studentRole);
         for (const reward of rewards) {
           const card = make("div");
-          card.className = "card";
+          card.className = "card reward-coupon-card";
           card.append(make("h3", reward.icon + " " + reward.title), make("p", "Pl\u0101not\u0101 cena: " + reward.cost + " BP (punktu t\u0113r\u0113\u0161ana v\u0113l nav iesl\u0113gta)."));
           const own = existing.find((c2) => c2.rewardId === reward.id && c2.status === "pending");
           const b2 = button(card, own ? "\u23F3 Gaida vec\u0101ka atbildi" : "\u{1F48C} Pieteikt v\u0113lmi", async () => {
@@ -35125,16 +35160,19 @@ This typically indicates that your device does not have a healthy Internet conne
             hint.textContent = "Iesp\u0113jamas vair\u0101kas pareiz\u0101s atbildes.";
             form.append(hint);
           }
+          const optGrid = document.createElement("div");
+          optGrid.className = "latvian-options-grid";
           q2.options.forEach((o2, i2) => {
             const label = document.createElement("label");
-            label.style.cssText = "display:block;padding:10px;cursor:pointer";
+            label.className = "latvian-option-label";
             const control = document.createElement("input");
             control.type = q2.kind === "multi" ? "checkbox" : "radio";
             control.name = "choice";
             control.value = String(i2);
             label.append(control, document.createTextNode(" " + (typeof o2 === "string" ? o2 : o2.label)));
-            form.append(label);
+            optGrid.append(label);
           });
+          form.append(optGrid);
         }
         if (mode === "learn") {
           const hint = document.createElement("button");
@@ -35290,6 +35328,20 @@ This typically indicates that your device does not have a healthy Internet conne
   // src/main.js
   var state = { user: null, role: null, view: null, ready: false };
   var appBackAction = null;
+  var activeLearning = false;
+  function confirmLeaveLearning() {
+    return !activeLearning || window.confirm("Aktivit\u0101te v\u0113l nav pabeigta. Ja tagad iziesi, \u0161\u012B m\u0113\u0123in\u0101juma nesaglab\u0101t\u0101s atbildes pazud\u012Bs. Vai tie\u0161\u0101m iziet?");
+  }
+  function leaveLearning(action) {
+    if (!confirmLeaveLearning()) return;
+    activeLearning = false;
+    action();
+  }
+  window.addEventListener("beforeunload", (event) => {
+    if (!activeLearning) return;
+    event.preventDefault();
+    event.returnValue = "";
+  });
   var backNavigationInstalled = false;
   function installBackNavigation() {
     if (backNavigationInstalled) return;
@@ -35298,7 +35350,7 @@ This typically indicates that your device does not have a healthy Internet conne
     window.addEventListener("popstate", () => {
       if (!state.user || !state.role || $2("school").hidden) return;
       history.pushState({ levelUp: true }, "", location.href);
-      if (typeof appBackAction === "function") appBackAction();
+      if (typeof appBackAction === "function") leaveLearning(appBackAction);
     });
   }
   var $2 = (id) => document.getElementById(id);
@@ -35335,6 +35387,8 @@ This typically indicates that your device does not have a healthy Internet conne
       const out = document.createElement("button");
       out.textContent = "Iziet";
       out.addEventListener("click", async () => {
+        if (!confirmLeaveLearning()) return;
+        activeLearning = false;
         await signOut(auth);
         showWelcome();
       });
@@ -35400,7 +35454,8 @@ This typically indicates that your device does not have a healthy Internet conne
     const mAvg = mRecent.length ? Math.round(mRecent.reduce((acc, p2) => acc + (Number(p2.score) || 0), 0) / mRecent.length) : null;
     const sAvg = sRecent.length ? Math.round(sRecent.reduce((acc, p2) => acc + (Number(p2.score) || 0), 0) / sRecent.length) : null;
     const grid = document.createElement("div");
-    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:16px 0";
+    grid.className = "analytics-7day-grid";
+    grid.style.cssText = "display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr));gap:16px;margin:16px 0";
     const mCard = document.createElement("div");
     mCard.style.cssText = "background:#f6f7ff;border:2px solid #dedbf8;border-radius:20px;padding:20px";
     mCard.innerHTML = `<h3 style="margin-top:0">\u{1F409} Marks (7 dienas)</h3>
@@ -35496,6 +35551,8 @@ This typically indicates that your device does not have a healthy Internet conne
     }
     if (role === "marks" || role === "samanta") {
       let renderSubjects = function() {
+        activeLearning = false;
+        area.classList.remove("learning-active");
         appBackAction = () => {
           void showSchool(role);
         };
@@ -35530,6 +35587,8 @@ This typically indicates that your device does not have a healthy Internet conne
         dxButton.type = "button";
         dxButton.textContent = diagnosticDone ? "Atk\u0101rtot k\u0101 treni\u0146u \u2192" : "S\u0101kt pirmo misiju \u2192";
         dxButton.onclick = () => {
+          activeLearning = true;
+          area.classList.add("learning-active");
           appBackAction = () => renderSubjects();
           subjectRoot.replaceChildren();
           const diagContainer = document.createElement("div");
@@ -35543,9 +35602,9 @@ This typically indicates that your device does not have a healthy Internet conne
               if (!saved) throw Error("Firebase neapstiprin\u0101ja saglab\u0101\u0161anu");
               return saved;
             },
-            onBack: () => {
+            onBack: () => leaveLearning(() => {
               void showSchool(role);
-            }
+            })
           });
         };
         diagnosticBox.append(dxTitle, dxDesc, dxButton);
@@ -35626,11 +35685,12 @@ This typically indicates that your device does not have a healthy Internet conne
         }
         const shopTile = document.createElement("button");
         shopTile.type = "button";
-        shopTile.className = "subject-card";
-        shopTile.style.cssText = "background:linear-gradient(145deg,#efeaff,#fbf7ff);border-color:#beb0f8;grid-column:1/-1;min-height:115px;display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:16px;padding:20px 24px";
+        shopTile.className = "subject-card shop-summary-card";
         const points = calculateChildPoints(role, progress);
-        shopTile.innerHTML = `<div style="display:flex;align-items:center;gap:16px;text-align:left"><span style="font-size:2.8rem">\u{1F381}</span><div><strong style="font-size:1.35rem;display:block">Balvu veikals un m\u0113r\u0137i</strong><span style="color:#6553a9;font-weight:700">\u{1F3AC} Kino vakars: ${points.balance}/250 BP \xB7 \u0160odien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status" style="margin:0;white-space:nowrap">Atv\u0113rt veikalu \u2192</span>`;
+        shopTile.innerHTML = `<div class="shop-summary-left"><span class="shop-summary-icon">\u{1F381}</span><div class="shop-summary-text"><strong class="shop-summary-title">Balvu veikals un m\u0113r\u0137i</strong><span class="shop-summary-desc">\u{1F3AC} Kino vakars: ${points.balance}/250 BP \xB7 \u0160odien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status shop-summary-btn">Atv\u0113rt veikalu \u2192</span>`;
         shopTile.onclick = () => {
+          activeLearning = false;
+          area.classList.add("learning-active");
           appBackAction = () => renderSubjects();
           subjectRoot.replaceChildren();
           const nav = document.createElement("div");
@@ -35667,6 +35727,8 @@ This typically indicates that your device does not have a healthy Internet conne
         { id: "anglu", icon: "\u{1F30E}", name: "Ang\u013Cu valoda", description: "V\u0101rdi, kr\u0101sas, dz\u012Bvnieki un audio izruna", active: true, kind: "english" }
       ];
       const openSubject = (id) => {
+        activeLearning = true;
+        area.classList.add("learning-active");
         appBackAction = () => renderSubjects();
         subjectRoot.replaceChildren();
         const nav = document.createElement("div");
@@ -35675,18 +35737,23 @@ This typically indicates that your device does not have a healthy Internet conne
         back.type = "button";
         back.className = "subject-back";
         back.textContent = "\u2190 Visi priek\u0161meti";
-        back.onclick = () => {
-          const hero2 = area.querySelector(".world-hero");
-          if (hero2) hero2.hidden = false;
-          const picker2 = area.querySelector(".theme-picker");
-          if (picker2) picker2.hidden = false;
-          renderSubjects();
-        };
+        back.onclick = () => leaveLearning(renderSubjects);
         nav.append(back);
         subjectRoot.append(nav);
         const trainer = document.createElement("div");
         trainer.className = "subject-trainer";
         subjectRoot.append(trainer);
+        trainer.addEventListener("click", (event) => {
+          const button2 = event.target.closest("button");
+          if (!button2 || !trainer.contains(button2)) return;
+          const label = (button2.textContent || "").trim();
+          if (!/^(?:←|⬅|Atpakaļ|Visas tēmas|Uz tēmām|Uz sākumu)/i.test(label)) return;
+          if (!confirmLeaveLearning()) {
+            event.preventDefault();
+            event.stopImmediatePropagation();
+            return;
+          }
+        }, true);
         try {
           if (id === "latviesu" && role === "marks") {
             renderLatvianSchool(trainer, { canSubmit: state.role === ROLES.MARKS, currentUid: state.role === ROLES.MARKS ? state.user.uid : "", saveProgress: async (data) => {
@@ -36018,16 +36085,16 @@ This typically indicates that your device does not have a healthy Internet conne
   }
   async function start() {
     $2("login-form").addEventListener("submit", login);
-    $2("home").addEventListener("click", () => {
+    $2("home").addEventListener("click", () => leaveLearning(() => {
       if (state.user && state.role) {
         void showSchool(state.view || state.role);
       } else showWelcome();
-    });
-    $2("back").addEventListener("click", () => {
+    }));
+    $2("back").addEventListener("click", () => leaveLearning(() => {
       if (state.user && state.role) {
         void showSchool(state.view || state.role);
       } else showWelcome();
-    });
+    }));
     try {
       const fb = await initFirebase();
       state.ready = Boolean(fb.isConfigured);
