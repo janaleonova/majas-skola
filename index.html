@@ -812,6 +812,13 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
  #school .dragon-split .split-symbols button{min-height:43px!important;padding:6px!important;flex:1}
  #school .dragon-split .answer-feedback{font-size:1rem!important;line-height:1.45!important;white-space:normal!important}
 }
+
+/* Persistent child companion shortcut, visible even after closing its speech bubble. */
+.levelup-guide-launcher{position:fixed;bottom:max(18px,env(safe-area-inset-bottom));right:max(14px,env(safe-area-inset-right));z-index:501;min-height:53px;padding:10px 18px;background:linear-gradient(125deg,#5145cc,#148c9e);color:white;border:2px solid #d8d2ff;border-radius:999px;box-shadow:0 8px 24px #17275950;font-size:16px;font-weight:900;cursor:pointer}
+.levelup-guide-launcher[hidden]{display:none!important}
+.levelup-guide-launcher:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
+.levelup-guide-bubble:not([hidden])~.levelup-guide-launcher{bottom:80px}
+@media(orientation:landscape) and (max-height:500px){.levelup-guide-launcher{bottom:8px;min-height:42px;font-size:14px;padding:7px 13px}.levelup-guide-bubble{bottom:60px}}
 </style>
 </head>
 <body>
