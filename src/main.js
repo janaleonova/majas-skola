@@ -181,7 +181,7 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    if(id==='latviesu'&&role==='marks'){
     renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,currentUid:state.role===ROLES.MARKS?state.user.uid:'',saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
    }else if(id==='kristali'&&role==='marks'){
-    renderDragonSplitMath(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;}});
+    renderDragonSplitMath(trainer,{canSubmit:state.role===ROLES.MARKS,alreadyEarnedBonus:progress.some(p=>p.studentRole==='marks'&&p.activityType==='Kristālu kalve · skaitļa sadalīšana'&&Number(p.score)>=85),saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;}});
    }else if(id==='matematika'&&role==='marks'){
     renderMarksMath(trainer,{canSubmit:state.role===ROLES.MARKS,
      startVerifiedSession:async(topic,mode)=>{const token=await state.user.getIdToken();const response=await fetch('/api/math/session',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({topic,mode})});const data=await response.json();if(!response.ok)throw Error(data.error||'Servera sesija nav pieejama');return data;},
@@ -223,6 +223,14 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    const caption=document.createElement('p');caption.textContent=role==='marks'?'Trīs prasmes, trīs virzieni. Izvēlies izaicinājumu — par īstu progresu, nevis klikšķiem.':'Izvēlies savu mācību priekšmetu. Pieejamās tēmas atvērsies nākamajā solī.';
    head.append(eyebrow,title,caption);subjectRoot.append(head);
    if(role==='marks'){const status=document.createElement('div');status.className='levelup-marks-status';status.textContent='⚔️ MARKS  ·  Prasmju ekspedīcija  ·  BP maks vēl nav aktivizēts';subjectRoot.append(status);}
+   if(role==='marks'){
+    const masteryDone=progress.some(p=>p.studentRole==='marks'&&p.activityType==='Kristālu kalve · skaitļa sadalīšana'&&Number(p.score)>=85);
+    const featured=document.createElement('section');featured.className='module featured-new-mission';featured.style.cssText='grid-column:1/-1;border:2px solid #b198ff;border-radius:20px;padding:clamp(16px,3vw,24px);background:linear-gradient(130deg,#f2edff,#ffffff);color:#252047;margin:12px 0';
+    const h=document.createElement('h2');h.textContent=masteryDone?'💎 Kristālu kalve — apgūta tēma!':'🔥 JAUNĀ TĒMA · Kristālu kalve';featured.append(h);
+    const text=document.createElement('p');text.textContent='Reizini divciparu skaitļus, sadalot desmitos un vienos. Tavs mērķis — 85% pareizi ar pirmo mēģinājumu. Pirmais apstiprinātais sasniegums: +10 provizoriskie BP vienu reizi.';featured.append(text);
+    const b=document.createElement('button');b.type='button';b.className='action-button';b.textContent=masteryDone?'⚔️ Trenēties vēlreiz →':'🚀 Sākt jauno misiju →';b.onclick=()=>openSubject('kristali');featured.append(b);
+    subjectRoot.append(featured);
+   }
    const diagnosticBox=document.createElement('div');diagnosticBox.className='card';diagnosticBox.style.cssText='margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff';
    const diagnosticDone=progress.some(p=>p.activityType===DIAGNOSTIC_VERSION && p.studentRole===role && (state.role===ROLES.PARENT || p.studentUid===state.user.uid));
    const dxTitle=document.createElement('h3');dxTitle.textContent=diagnosticDone?'✅ Pirmā ekspedīcija izpildīta':'🌟 Tava pirmā ekspedīcija';
