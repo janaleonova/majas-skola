@@ -65,9 +65,13 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    'Aprēķini katras daļas reizinājumu un saskaiti.',
    'Ja kļūdīsies, varēsi labot.'
   ]);
-  const form=el('form');host.append(form);
-  const inputs=row();const a=field(inputs,q.t+' × '+q.k),b=field(inputs,q.u+' × '+q.k);
-  const result=field(form,'Kāds ir gala rezultāts?');
+  const form=el('form','','split-solution-form');host.append(form);
+  const multi=el('section','','split-solution-section');multi.append(el('h3','1. Aprēķini abas daļas'));form.append(multi);
+  const inputs=el('div','','split-solution-row');multi.append(inputs);
+  const a=field(inputs,q.t+' × '+q.k+' = ?'),b=field(inputs,q.u+' × '+q.k+' = ?');
+  const add=el('section','','split-solution-section');add.append(el('h3','2. Saskaiti rezultātus'));form.append(add);
+  add.append(el('p','Abi reizinājumi kopā veido atbildi.','split-sum-hint'));
+  const result=field(add,'Gala rezultāts: '+q.n+' × '+q.k+' = ?');
   const status=el('p','','answer-feedback');status.setAttribute('role','status');form.append(status);
   const check=el('button','Pārbaudīt manu risinājumu','action-button');check.type='submit';form.append(check);
   form.addEventListener('submit',e=>{
