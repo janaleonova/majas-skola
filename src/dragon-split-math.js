@@ -35,11 +35,15 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    'Tagad tev pašam jāaprēķina abas daļas un jāsaskaita rezultāti.',
    'Neuzmini atbildi no variantiem — izrēķini!'
   ]);
-  const form=el('form');host.append(form);
-  const inputs=row();
+  const form=el('form','','split-solution-form');host.append(form);
+  const mult=el('section','','split-solution-section');form.append(mult);
+  mult.append(el('h3','1. Aprēķini abas daļas'));
+  const inputs=el('div','','split-solution-row');mult.append(inputs);
   const big=field(inputs,'30 × 4 = ?');
   const small=field(inputs,'2 × 4 = ?');
-  const sum=field(form,'Cik sanāk kopā?');
+  const addition=el('section','','split-solution-section');form.append(addition);
+  addition.append(el('h3','2. Saskaiti abus reizinājumus'));
+  const sum=field(addition,'Cik sanāk kopā?');
   const status=el('p','','answer-feedback');status.setAttribute('role','status');form.append(status);
   const check=el('button','Pārbaudīt manu aprēķinu','action-button');check.type='submit';form.append(check);
   form.addEventListener('submit',event=>{
