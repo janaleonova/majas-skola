@@ -5,12 +5,12 @@ const sample=(n,k)=>({n,k,t:Math.floor(n/10)*10,u:n%10});
 const bank=()=>{const out=[];for(let n=12;n<=79;n++)if(n%10!==0)for(let k=2;k<=6;k++)out.push(sample(n,k));return out;};
 
 const parseExpression=(value,operator)=>{
- const text=String(value).trim().replace(/\\s+/g,'').replace(/[×xX*]/g,'×').replace(/[−–]/g,'-');
- const regex=operator==='+'?/^(\\d+)\\+(\\d+)=(\\d+)$/:/^(\\d+)×(\\d+)=(\\d+)$/;
+ const text=String(value).trim().replace(/\s+/g,'').replace(/[×xX*]/g,'×').replace(/[−–]/g,'-');
+ const regex=operator==='+'?/^(\d+)\+(\d+)=(\d+)$/:/^(\d+)×(\d+)=(\d+)$/;
  const match=text.match(regex);
  return match?match.slice(1).map(Number):null;
 };
-const parseSplit=(value)=>{const match=String(value).replace(/\\s+/g,'').match(/^(\\d+)=(\\d+)\\+(\\d+)$/);return match?match.slice(1).map(Number):null;};
+const parseSplit=(value)=>{const match=String(value).replace(/\s+/g,'').match(/^(\d+)=(\d+)\+(\d+)$/);return match?match.slice(1).map(Number):null;};
 const TOTAL=30; // Five independently completed fields in each of six problems.
 
 export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
