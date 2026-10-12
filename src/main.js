@@ -302,6 +302,10 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    const message=document.createElement('p');message.style.cssText='font-size:1.06rem;line-height:1.5;font-weight:650';
    message.textContent=nextSubject?'Tev šodien jau ir '+collectedCount+' no 3 kristāliem. Pamēģini tagad '+subjectLabels[nextSubject]+' — apgūsi citu prasmi un būsi tuvāk pilnai ekspedīcijai.':'🎉 Visi trīs priekšmeti šodien izmēģināti! Vari izvēlēties, ko vēlies nostiprināt.';
    coach.append(message);
+   const assistantButton=document.createElement('button');assistantButton.type='button';assistantButton.className='action-button';
+   assistantButton.textContent=role==='marks'?'🐉 Atvērt pūķa palīgu':'🧚‍♀️ Atvērt fejas palīgu';
+   assistantButton.onclick=()=>{if(guideController?.open)guideController.open();else message.textContent='Palīgs vēl tiek ielādēts. Atver profilu vēlreiz.';};
+   coach.append(assistantButton);
    if(nextSubject){
     const choose=document.createElement('button');choose.type='button';choose.className='action-button';choose.textContent='➡️ Doties uz '+subjectLabels[nextSubject];
     choose.onclick=()=>openSubject(nextSubject);coach.append(choose);
@@ -466,8 +470,8 @@ async function start(){
          if(profile?.approved && ['marks','samanta','vecaks'].includes(profile.role)){
            state.role=profile.role;await showSchool(profile.role);
            if(profile.role==='marks'||profile.role==='samanta'){
-             stopPresence=startChildPresence({role:profile.role,activity:()=>currentActivity,onError:error=>console.warn('[LEVEL UP] Aktivitātes sinhronizācija:',error.code||error.message)});
              guideController=installChildGuide({role:profile.role,getSubject:()=>currentActivity});
+             try{stopPresence=startChildPresence({role:profile.role,activity:()=>currentActivity,onError:error=>console.warn('[LEVEL UP] Aktivitātes sinhronizācija:',error.code||error.message)});}catch(error){console.warn('[LEVEL UP] Aktivitātes uzskaite nav pieejama:',error);}
            }
          }else{await signOut(auth);showWelcome();}
        }catch(e){await signOut(auth);showWelcome();}
