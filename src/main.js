@@ -1,3 +1,4 @@
+import {installChildGuide} from './child-guide.js';
 import {renderDragonSplitMath} from './dragon-split-math.js';
 import {startChildPresence,renderParentPresence} from './activity-presence.js';
 import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
@@ -12,6 +13,7 @@ import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,resetChildProgress,ROLES} from './firebase/homeSchoolService.js';
 const state={user:null,role:null,view:null,ready:false};
+let guideController=null;
 let stopPresence=null;
 let stopParentPresence=null;
 let currentActivity='Sākumekrāns';
@@ -456,13 +458,17 @@ async function start(){
  try{
    const fb=await initFirebase();state.ready=Boolean(fb.isConfigured);
    if(state.ready)onAuthStateChanged(auth,async user=>{
+     if(guideController){guideController.stop();guideController=null;}
      if(stopPresence){stopPresence();stopPresence=null;}
      state.user=user;state.role=null;
      if(user){
        try{const profile=await getUserProfile(user.uid);
          if(profile?.approved && ['marks','samanta','vecaks'].includes(profile.role)){
            state.role=profile.role;await showSchool(profile.role);
-           if(profile.role==='marks'||profile.role==='samanta')stopPresence=startChildPresence({role:profile.role,activity:()=>currentActivity,onError:error=>console.warn('[LEVEL UP] Aktivitātes sinhronizācija:',error.code||error.message)});
+           if(profile.role==='marks'||profile.role==='samanta'){
+             stopPresence=startChildPresence({role:profile.role,activity:()=>currentActivity,onError:error=>console.warn('[LEVEL UP] Aktivitātes sinhronizācija:',error.code||error.message)});
+             guideController=installChildGuide({role:profile.role,getSubject:()=>currentActivity});
+           }
          }else{await signOut(auth);showWelcome();}
        }catch(e){await signOut(auth);showWelcome();}
      }else showWelcome();
