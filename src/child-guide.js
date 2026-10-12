@@ -3,7 +3,7 @@ export function installChildGuide({role,getSubject=()=>'',getCrystals=()=>0}){
  if(!['marks','samanta'].includes(role))return ()=>{};
  const fairy=role==='samanta';
  const guide=document.createElement('aside');guide.className='levelup-guide-bubble';guide.setAttribute('aria-live','polite');
- guide.innerHTML='<span class="guide-character" aria-hidden="true">'+(fairy?'🧚‍♀️':'🐉')+'</span><div class="guide-copy"><strong>'+(fairy?'Dārza feja':'Kristālu pūķis')+'</strong><p></p><div class="guide-actions"></div></div><button class="guide-close" type="button" aria-label="Aizvērt padomu">×</button>';
+ guide.hidden=true;guide.innerHTML='<span class="guide-character" aria-hidden="true">'+(fairy?'🧚‍♀️':'🐉')+'</span><div class="guide-copy"><strong>'+(fairy?'Dārza feja':'Kristālu pūķis')+'</strong><p></p><div class="guide-actions"></div></div><button class="guide-close" type="button" aria-label="Aizvērt padomu">×</button>';
  document.body.append(guide);
  const body=guide.querySelector('p'),actions=guide.querySelector('.guide-actions');
  let lastAction=Date.now(),lastMessage=0,lastSubject='',closedUntil=0,disposed=false;
