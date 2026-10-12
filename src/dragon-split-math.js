@@ -28,27 +28,33 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   btn(host,'🧩 Sapratu — meklēšu pūķa kļūdu →',mistake);
  }
  function mistake(){
-  view='mistake';host.replaceChildren();title('2/4 · Salabo pūķa kļūdu');
+  view='mistake';host.replaceChildren();title('2/4 · Palīdzi pūķim izlabot aprēķinu');
   math('32 × 4 = ?');
-  panel('🐉 Pūķis aprēķināja šādi:',[
+  panel('🐉 Pūķis zina pirmo soli',[
    '32 = 30 + 2',
-   '30 × 4 = 120',
-   '2 × 4 = 6',
-   '120 + 6 = 126'
+   'Tagad tev pašam jāaprēķina abas daļas un jāsaskaita rezultāti.',
+   'Neuzmini atbildi no variantiem — izrēķini!'
   ]);
-  host.append(el('p','Kurā rindā pūķis kļūdījās? Izvēlies vienu atbildi.'));
-  const status=el('p','','answer-feedback');status.setAttribute('role','status');
-  const options=el('div','','button-cluster');host.append(options,status);
-  let solved=false;
-  for(const [label,right] of [['32 = 30 + 2',false],['30 × 4 = 120',false],['2 × 4 = 6',true],['120 + 6 = 126',false]]){
-   btn(options,label,()=>{
-    if(solved)return;
-    if(!right){status.textContent='Paskaties vēlreiz. Pārbaudi katru reizināšanu!';status.className='answer-feedback answer-feedback-error';return;}
-    solved=true;status.textContent='🎉 Pareizi! 2 × 4 ir 8, nevis 6. Tātad 120 + 8 = 128.';status.className='answer-feedback answer-feedback-good';
-    options.querySelectorAll('button').forEach(b=>b.disabled=true);
-    btn(host,'🤝 Tagad risināsim kopā →',guided);
-   },'action-button');
-  }
+  const form=el('form');host.append(form);
+  const inputs=row();
+  const big=field(inputs,'30 × 4 = ?');
+  const small=field(inputs,'2 × 4 = ?');
+  const sum=field(form,'Cik sanāk kopā?');
+  const status=el('p','','answer-feedback');status.setAttribute('role','status');form.append(status);
+  const check=el('button','Pārbaudīt manu aprēķinu','action-button');check.type='submit';form.append(check);
+  form.addEventListener('submit',event=>{
+   event.preventDefault();
+   if(!big.value||!small.value||!sum.value){status.textContent='Aizpildi visus trīs laukus.';return;}
+   if(Number(big.value)===120&&Number(small.value)===8&&Number(sum.value)===128){
+    status.className='answer-feedback answer-feedback-good';
+    status.textContent='🎉 Pareizi! 30 × 4 = 120, 2 × 4 = 8, un kopā 128.';
+    check.disabled=true;for(const i of [big,small,sum])i.readOnly=true;
+    btn(host,'🤝 Tagad pamēģināsim citu piemēru →',guided);
+   }else{
+    status.className='answer-feedback answer-feedback-error';
+    status.textContent='Vēl kaut kas nesakrīt. Pārbaudi abus reizinājumus un pēc tam to summu. Vari labot.';
+   }
+  });
  }
  function guided(){
   view='guided';host.replaceChildren();title('3/4 · Trenējamies ar atbalstu');
