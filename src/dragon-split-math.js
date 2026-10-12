@@ -186,10 +186,12 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    locked=true;check.disabled=true;[split,multA,multB,addition].forEach(input=>input.readOnly=true);
    const splitCorrect=sp.valid&&sp.result===q.n&&unorderedPair(sp.terms,[q.t,q.u]);
    const checkProduct=(expr,part)=>expr.valid&&expr.result===part*q.k&&unorderedPair(expr.terms,[part,q.k]);
+   const firstT=checkProduct(ma,q.t),firstU=checkProduct(ma,q.u),secondT=checkProduct(mb,q.t),secondU=checkProduct(mb,q.u);
+   const pairOK=(firstT&&secondU)||(firstU&&secondT);
    const checks=[
     {label:'1. Skaitļa sadalījums',ok:splitCorrect,element:split,expected:q.n+' = '+q.t+' + '+q.u},
-    {label:'2. Pirmās daļas reizināšana',ok:checkProduct(ma,q.t),element:multA,expected:q.t+' × '+q.k+' = '+q.t*q.k},
-    {label:'3. Otrās daļas reizināšana',ok:checkProduct(mb,q.u),element:multB,expected:q.u+' × '+q.k+' = '+q.u*q.k},
+    {label:'2. Pirmās daļas reizināšana',ok:pairOK,element:multA,expected:q.t+' × '+q.k+' = '+q.t*q.k},
+    {label:'3. Otrās daļas reizināšana',ok:pairOK,element:multB,expected:q.u+' × '+q.k+' = '+q.u*q.k},
     {label:'4. Saskaitīšana',ok:ad.valid&&ad.result===q.n*q.k&&unorderedPair(ad.terms,[q.t*q.k,q.u*q.k]),element:addition,expected:q.t*q.k+' + '+q.u*q.k+' = '+q.n*q.k}
    ];
    const points=checks.filter(c=>c.ok).length;earned+=points;errorAttempts+=4-points;
