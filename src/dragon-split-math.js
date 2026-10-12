@@ -91,7 +91,7 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   math(q.n+' × '+q.k+' = ?');
   const progress=el('div','','progress-track');const fill=el('div','','progress-fill');fill.style.width=(idx/6*100)+'%';progress.append(fill);host.append(progress);
   panel('1. Sadali skaitli divās daļās',[
-   'Izvēlies, kā ērtāk sadalīt '+q.n+'.',
+   'Sadali '+q.n+' desmitu daļā un vienu daļā.',
    '2. Sareizini katru daļu ar '+q.k+'. 3. Saskaiti iegūtos rezultātus.',
    'Risini patstāvīgi. Atbildes atklāsim tikai pēc pārbaudes.'
   ]);
@@ -109,9 +109,9 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    if(!vals.every(Number.isInteger)||vals.some(v=>v<0||v>999)){status.textContent='Ievadi tikai veselus pozitīvus skaitļus.';return;}
    locked=true;check.disabled=true;inputs.forEach(x=>x.readOnly=true);
    // Each entry earns a point only when its reasoning and numeric value are correct.
-   const ok=[vals[0]+vals[1]===q.n,vals[0]+vals[1]===q.n,
-    vals[2]===vals[0]*q.k && vals[0]+vals[1]===q.n,
-    vals[3]===vals[1]*q.k && vals[0]+vals[1]===q.n,
+   const ok=[vals[0]===q.t,vals[1]===q.u,
+    vals[2]===q.t*q.k,
+    vals[3]===q.u*q.k,
     vals[4]===q.n*q.k && vals[2]+vals[3]===vals[4]];
    const points=ok.filter(Boolean).length;earned+=points;errorAttempts+=5-points;
    status.className='answer-feedback '+(points===5?'answer-feedback-good':'answer-feedback-error');
