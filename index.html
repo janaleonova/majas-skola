@@ -740,6 +740,19 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
  #school .subject-trainer .dragon-split .question-stage .split-next{grid-column:1/-1!important}
  #school .subject-trainer .dragon-split .question-stage .answer-feedback{grid-column:1!important}
 }
+
+/* Crystal Forge reading order: split, multiply, then add. */
+#school .dragon-split .split-solution-form{display:flex;flex-direction:column;gap:15px;width:100%;max-width:100%}
+#school .dragon-split .split-solution-section{display:block;min-width:0;background:#f5f7ff;border:1px solid #d6dcff;border-radius:16px;padding:14px 16px}
+#school .dragon-split .split-solution-section h3{font-size:clamp(1.1rem,2.4vw,1.35rem)!important;color:#1e3064!important;margin:0 0 9px!important}
+#school .dragon-split .split-solution-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;min-width:0}
+#school .dragon-split .split-final-row{grid-template-columns:minmax(0,1fr)}
+#school .dragon-split .split-math-line{font-weight:900;color:#2b407e;font-size:clamp(1.2rem,3vw,1.5rem);display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px;padding:8px 0 12px}
+#school .dragon-split .split-solution-section .split-answer-field{min-width:0}
+#school .dragon-split .split-solution-section .split-answer-field span{color:#213665;font-size:clamp(1rem,2vw,1.12rem);font-weight:800}
+#school .dragon-split .split-solution-section .big-number-input{width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box}
+#school .dragon-split .split-sum-hint{font-size:1rem!important;color:#293b64!important;line-height:1.4!important;margin:8px 0!important}
+@media(max-width:390px){#school .dragon-split .split-solution-row{gap:7px}#school .dragon-split .split-solution-section{padding:11px}}
 </style>
 </head>
 <body>
