@@ -784,6 +784,17 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
  #school .dragon-split .split-solution-form{display:flex;flex-direction:column}
  #school .dragon-split .split-symbols button{flex:1;min-width:56px}
 }
+
+/* Nonintrusive child companions: appear only when guidance could help. */
+.levelup-guide-bubble{position:fixed;right:max(12px,env(safe-area-inset-right));bottom:max(16px,env(safe-area-inset-bottom));z-index:500;max-width:min(360px,calc(100vw - 24px));display:flex;align-items:flex-start;gap:11px;background:#fffdfd;color:#213254;border:2px solid #acb2f5;border-radius:19px;padding:13px 11px;box-shadow:0 10px 35px #16254b3d;font-size:15px}
+.levelup-guide-bubble[hidden]{display:none!important}
+.levelup-guide-bubble .guide-character{flex:none;font-size:35px;line-height:1}
+.levelup-guide-bubble .guide-copy{flex:1;min-width:0}
+.levelup-guide-bubble .guide-copy strong{display:block;font-size:16px;font-weight:900}
+.levelup-guide-bubble .guide-copy p{margin:4px 0;font-size:15px;line-height:1.45;font-weight:650;color:#213254}
+.levelup-guide-bubble .guide-close{background:#e8edfc;color:#213254;border:none;border-radius:10px;min-width:32px;min-height:32px;font-size:23px;cursor:pointer}
+.levelup-guide-bubble .guide-actions button{background:#4d54c9;color:#fff;border:none;border-radius:10px;padding:8px 12px;font-size:14px;font-weight:750;min-height:38px;margin-top:6px}
+@media (orientation:landscape) and (max-height:500px){.levelup-guide-bubble{bottom:8px;max-width:320px;padding:9px}.levelup-guide-bubble .guide-character{font-size:27px}}
 </style>
 </head>
 <body>
