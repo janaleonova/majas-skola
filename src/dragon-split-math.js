@@ -4,13 +4,25 @@ const shuffled=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.flo
 const sample=(n,k)=>({n,k,t:Math.floor(n/10)*10,u:n%10});
 const bank=()=>{const out=[];for(let n=12;n<=79;n++)if(n%10!==0)for(let k=2;k<=6;k++)out.push(sample(n,k));return out;};
 
-const parseExpression=(value,operator)=>{
- const text=String(value).trim().replace(/\s+/g,'').replace(/[×xX*·⋅]/g,'×').replace(/[＝]/g,'=').replace(/[−–]/g,'-');
- const regex=operator==='+'?/^(\d+)\+(\d+)=(\d+)$/:/^(\d+)×(\d+)=(\d+)$/;
- const match=text.match(regex);
- return match?match.slice(1).map(Number):null;
+const parseEquation=(raw,operation)=>{
+ const text=String(raw).replace(/\s+/g,'').replace(/[×xX*·⋅]/g,'×').replace(/＝/g,'=');
+ const sides=text.split('=');
+ if(sides.length!==2)return null;
+ const evaluate=part=>{
+  if(/^\d+$/.test(part))return {value:Number(part),terms:null};
+  const regex=operation==='+'?/^(\d+)\+(\d+)$/:/^(\d+)×(\d+)$/;
+  const match=part.match(regex);
+  if(!match)return null;
+  const terms=[Number(match[1]),Number(match[2])];
+  return {value:operation==='+'?terms[0]+terms[1]:terms[0]*terms[1],terms};
+ };
+ const left=evaluate(sides[0]),right=evaluate(sides[1]);
+ if(!left||!right||Boolean(left.terms)===Boolean(right.terms))return null;
+ const expr=left.terms?left:right.terms?right:null;
+ const number=left.terms?right.value:left.value;
+ return {terms:expr.terms,result:number,valid:expr.value===number};
 };
-const parseSplit=(value)=>{const match=String(value).replace(/\s+/g,'').match(/^(\d+)=(\d+)\+(\d+)$/);return match?match.slice(1).map(Number):null;};
+const unorderedPair=(actual,expected)=>actual[0]===expected[0]&&actual[1]===expected[1]||actual[0]===expected[1]&&actual[1]===expected[0];
 const TOTAL=30; // Five independently completed fields in each of six problems.
 
 export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
@@ -164,20 +176,22 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   form.addEventListener('submit',event=>{
    event.preventDefault();if(locked)return;
    if([split,multA,multB,addition].some(x=>!x.value.trim())){feedback.textContent='Aizpildi visas četras pilnās izteiksmes.';return;}
-   const sp=parseSplit(split.value),ma=parseExpression(multA.value,'×'),mb=parseExpression(multB.value,'×'),ad=parseExpression(addition.value,'+');
+   const sp=parseEquation(split.value,'+'),ma=parseEquation(multA.value,'×'),mb=parseEquation(multB.value,'×'),ad=parseEquation(addition.value,'+');
    const malformed=[[sp,split,'1. Sadalīšana'],[ma,multA,'2. Pirmais reizinājums'],[mb,multB,'3. Otrais reizinājums'],[ad,addition,'4. Saskaitīšana']].find(([parsed])=>!parsed);
    if(malformed){
     const [,input,name]=malformed;
-    feedback.textContent='⚠️ Nevaru nolasīt: '+name+'. Pārējās atbildes nav novērtētas. Izmanto ciparus un zīmes +, ×, =; piemēram, 5 × 6 = 30. Vari labot.';
+    feedback.textContent='⚠️ Nevaru nolasīt: '+name+'. Pārējās atbildes nav novērtētas. Izmanto ciparus un zīmes +, × vai *, =. Pieņemu abas vienādības puses un saskaitāmo secību. Vari labot.';
     input.focus({preventScroll:true});input.scrollIntoView({block:'center',behavior:'smooth'});return;
    }
    locked=true;check.disabled=true;[split,multA,multB,addition].forEach(input=>input.readOnly=true);
+   const splitCorrect=sp.valid&&sp.result===q.n&&unorderedPair(sp.terms,[q.t,q.u]);
+   const checkProduct=(expr,part)=>expr.valid&&expr.result===part*q.k&&unorderedPair(expr.terms,[part,q.k]);
    const checks=[
-    sp[0]===q.n&&sp[1]===q.t,
-    sp[0]===q.n&&sp[2]===q.u,
-    ma[0]===q.t&&ma[1]===q.k&&ma[2]===q.t*q.k,
-    mb[0]===q.u&&mb[1]===q.k&&mb[2]===q.u*q.k,
-    ad[0]===q.t*q.k&&ad[1]===q.u*q.k&&ad[2]===q.n*q.k
+    splitCorrect,
+    splitCorrect,
+    checkProduct(ma,q.t),
+    checkProduct(mb,q.u),
+    ad.valid&&ad.result===q.n*q.k&&unorderedPair(ad.terms,[q.t*q.k,q.u*q.k])
    ];
    const points=checks.filter(Boolean).length;earned+=points;errorAttempts+=5-points;
    feedback.className='answer-feedback '+(points===5?'answer-feedback-good':'answer-feedback-error');
