@@ -12,11 +12,11 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
  const host=el('section','','module learning-hub dragon-split');root.append(host);
  let tasks=[],index=0,phase=0,firstTry=0,errors=0,attempts=0,finished=false,busy=false;
  const stages=[
-  {name:'Atver lādi',prompt:'Cik ir desmiti?',answer:(n,k)=>Math.floor(n/10)*10,tip:(n)=>n+' = '+(Math.floor(n/10)*10)+' + '+(n%10)},
-  {name:'Atrodi dārgakmeņus',prompt:'Cik ir vieni?',answer:(n)=>n%10,tip:(n)=>n+' sadali desmitos un vienos.'},
-  {name:'Uzlādē lielo kristālu',prompt:'Cik ir desmiti × reizinātājs?',answer:(n,k)=>Math.floor(n/10)*10*k,tip:(n,k)=>(Math.floor(n/10)*10)+' × '+k},
-  {name:'Uzlādē mazo kristālu',prompt:'Cik ir vieni × reizinātājs?',answer:(n,k)=>(n%10)*k,tip:(n,k)=>(n%10)+' × '+k},
-  {name:'Apvieno kristālus',prompt:'Kāds ir gala rezultāts?',answer:(n,k)=>n*k,tip:(n,k)=>(Math.floor(n/10)*10*k)+' + '+((n%10)*k)}
+  {name:'Atver lādi',prompt:'Sadali skaitli! Kāds ir desmitu skaitlis? Piemēram, 43 → 40.',answer:(n,k)=>Math.floor(n/10)*10,tip:(n)=>n+' = '+(Math.floor(n/10)*10)+' + '+(n%10)},
+  {name:'Atrodi dārgakmeņus',prompt:'Cik vienu paliek pāri? Piemēram, 43 → 3.',answer:(n)=>n%10,tip:(n)=>n+' sadali desmitos un vienos.'},
+  {name:'Uzlādē lielo kristālu',prompt:'Sareizini desmitus ar skaitli blakus × zīmei.',answer:(n,k)=>Math.floor(n/10)*10*k,tip:(n,k)=>(Math.floor(n/10)*10)+' × '+k},
+  {name:'Uzlādē mazo kristālu',prompt:'Tagad sareizini vienus ar to pašu skaitli.',answer:(n,k)=>(n%10)*k,tip:(n,k)=>(n%10)+' × '+k},
+  {name:'Apvieno kristālus',prompt:'Saskaiti abas iegūtās daļas. Cik sanāk kopā?',answer:(n,k)=>n*k,tip:(n,k)=>(Math.floor(n/10)*10*k)+' + '+((n%10)*k)}
  ];
  let previousExamples=new Set();
  const newExamples=()=>{const pool=[];for(let n=12;n<=79;n++){if(n%10===0)continue;for(let k=2;k<=6;k++)pool.push([n,k]);}const fresh=shuffle(pool.filter(([n,k])=>!previousExamples.has(n+'x'+k))).slice(0,6);previousExamples=new Set(fresh.map(([n,k])=>n+'x'+k));return fresh;};
@@ -36,8 +36,8 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   host.append(el('h2','🐉 Kristālu kalve · Lāde '+(index+1)+' / '+tasks.length));
   const bar=el('div','','progress-track');const fill=el('div','','progress-fill');fill.style.width=String(Math.round((index*stages.length+phase)/(tasks.length*stages.length)*100))+'%';bar.append(fill);host.append(bar);
   const equation=el('div',n+' × '+k+' = ?','math-expression');equation.style.textAlign='center';host.append(equation);
-  const map=el('p',phase>=2?'🔷 '+tens+' × '+k+'  +  💎 '+ones+' × '+k:'🔷 '+n+' = □ + □');map.style.cssText='text-align:center;font-weight:800;font-size:clamp(1rem,3vw,1.3rem)';host.append(map);
-  host.append(el('h3',stage.name+' · '+(phase+1)+'/5'),el('p',stage.prompt));
+  const map=el('p',phase>=2?'🔷 '+tens+' × '+k+'  +  💎 '+ones+' × '+k:phase===1?'🔷 '+n+' = '+tens+' + □':'🔷 '+n+' = □ + □');map.style.cssText='text-align:center;font-weight:800;font-size:clamp(1rem,3vw,1.3rem)';host.append(map);
+  const instruction=el('div','','split-instruction');instruction.append(el('strong','SOLIS '+(phase+1)+' / 5 · '+stage.name),el('p',stage.prompt));host.append(instruction);
   const card=el('div','','question-stage');const form=el('form','','math-answer-form');
   const input=el('input','','big-number-input');input.type='number';input.min='0';input.max='999';input.step='1';input.required=true;input.autocomplete='off';input.setAttribute('aria-label',stage.prompt);
   const submit=el('button','Pārbaudīt','action-button');submit.type='submit';form.append(input,submit);card.append(form);
@@ -55,10 +55,18 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
     input.value='';return;
    }
    if(attempts===1)firstTry++;
-   answered=true;input.disabled=submit.disabled=true;keypad.querySelectorAll('button').forEach(b=>b.disabled=true);hint.disabled=true;
+   answered=true;input.disabled=submit.disabled=true;keypad.hidden=true;hint.hidden=true;
    message.className='answer-feedback answer-feedback-good';message.textContent=phase===4?'💎 Lāde atvērta! Kristāls atrasts!':'✨ Pareizi! Kristāls kļūst spožāks!';
-   const next=el('button',phase===4?'💎 Nākamā lāde →':'Turpināt kalšanu →','action-button');next.type='button';
-   next.onclick=()=>{if(!answered||busy)return;answered=false;if(phase===4){index++;phase=0;}else phase++;drawTask();};host.append(next);
+   const next=el('button',phase===4?'💎 Atvērt nākamo lādi →':'➡️ Pāriet uz '+(phase+2)+'. soli','action-button split-next');next.type='button';
+   next.addEventListener('click',event=>{
+    event.preventDefault();
+    if(!answered||!next.isConnected)return;
+    next.disabled=true;
+    if(phase===4){index++;phase=0;}else phase++;
+    drawTask();
+    host.scrollIntoView({block:'start',behavior:'instant'});
+   });
+   card.append(next);
   };
  };
  const finish=()=>{
