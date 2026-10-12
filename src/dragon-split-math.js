@@ -12,8 +12,8 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
  const host=el('section','','module learning-hub dragon-split');root.append(host);
  let tasks=[],index=0,phase=0,firstTry=0,errors=0,attempts=0,finished=false,busy=false;
  const stages=[
-  {name:'Atver lādi',prompt:'Sadali skaitli! Kāds ir desmitu skaitlis? Piemēram, 43 → 40.',answer:(n,k)=>Math.floor(n/10)*10,tip:(n)=>n+' = '+(Math.floor(n/10)*10)+' + '+(n%10)},
-  {name:'Atrodi dārgakmeņus',prompt:'Cik vienu paliek pāri? Piemēram, 43 → 3.',answer:(n)=>n%10,tip:(n)=>n+' sadali desmitos un vienos.'},
+  {name:'Atver lādi',prompt:'Sadali skaitli desmitos un vienos. Kādu skaitli veido visi desmiti kopā? (Piemēram, 4 desmiti = 40.)',answer:(n,k)=>Math.floor(n/10)*10,tip:(n)=>n+' = '+(Math.floor(n/10)*10)+' + '+(n%10)},
+  {name:'Atrodi dārgakmeņus',prompt:'Cik atsevišķu vienu ir skaitlī? (Piemēram, 43 ir 3 vieni.)',answer:(n)=>n%10,tip:(n)=>n+' sadali desmitos un vienos.'},
   {name:'Uzlādē lielo kristālu',prompt:'Sareizini desmitus ar skaitli blakus × zīmei.',answer:(n,k)=>Math.floor(n/10)*10*k,tip:(n,k)=>(Math.floor(n/10)*10)+' × '+k},
   {name:'Uzlādē mazo kristālu',prompt:'Tagad sareizini vienus ar to pašu skaitli.',answer:(n,k)=>(n%10)*k,tip:(n,k)=>(n%10)+' × '+k},
   {name:'Apvieno kristālus',prompt:'Saskaiti abas iegūtās daļas. Cik sanāk kopā?',answer:(n,k)=>n*k,tip:(n,k)=>(Math.floor(n/10)*10*k)+' + '+((n%10)*k)}
