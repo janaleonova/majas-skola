@@ -23,7 +23,7 @@ const parseEquation=(raw,operation)=>{
  return {terms:expr.terms,result:number,valid:expr.value===number};
 };
 const unorderedPair=(actual,expected)=>actual[0]===expected[0]&&actual[1]===expected[1]||actual[0]===expected[1]&&actual[1]===expected[0];
-const TOTAL=30; // Five independently completed fields in each of six problems.
+const TOTAL=24; // Four independently completed answers in each of six problems.
 
 export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
  const host=el('section','','module learning-hub dragon-split');root.append(host);
@@ -110,10 +110,10 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
  }
  function ready(){
   view='ready';host.replaceChildren();title('4/4 · Kristālu meistarības pārbaudījums');
-  panel('💎 6 lādes, katrā 5 atbildes',[
+  panel('💎 6 lādes, katrā 4 atbildes',[
    'Šoreiz sadalījumu un starprezultātus izvēlies pats.',
    'Vispirms aizpildi VISUS laukus. Tikai tad pārbaudi.',
-   'Pārbaudījumā 26 no 30 pareizām atbildēm sasniedz vismaz 85%.',
+   'Pārbaudījumā 21 no 24 pareizām atbildēm sasniedz vismaz 85%.',
    alreadyEarnedBonus?'Bonuss jau iegūts; vari uzlabot prasmes.':'Pirmais apstiprinātais rezultāts vismaz 85% dod +10 provizoriskus BP.'
   ]);
   btn(host,'⚔️ Sākt 6 lāžu pārbaudījumu',()=>{idx=earned=errorAttempts=0;submitted=false;challenge();});
@@ -187,20 +187,27 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    const splitCorrect=sp.valid&&sp.result===q.n&&unorderedPair(sp.terms,[q.t,q.u]);
    const checkProduct=(expr,part)=>expr.valid&&expr.result===part*q.k&&unorderedPair(expr.terms,[part,q.k]);
    const checks=[
-    splitCorrect,
-    splitCorrect,
-    checkProduct(ma,q.t),
-    checkProduct(mb,q.u),
-    ad.valid&&ad.result===q.n*q.k&&unorderedPair(ad.terms,[q.t*q.k,q.u*q.k])
+    {label:'1. Skaitļa sadalījums',ok:splitCorrect,element:split,expected:q.n+' = '+q.t+' + '+q.u},
+    {label:'2. Pirmās daļas reizināšana',ok:checkProduct(ma,q.t),element:multA,expected:q.t+' × '+q.k+' = '+q.t*q.k},
+    {label:'3. Otrās daļas reizināšana',ok:checkProduct(mb,q.u),element:multB,expected:q.u+' × '+q.k+' = '+q.u*q.k},
+    {label:'4. Saskaitīšana',ok:ad.valid&&ad.result===q.n*q.k&&unorderedPair(ad.terms,[q.t*q.k,q.u*q.k]),element:addition,expected:q.t*q.k+' + '+q.u*q.k+' = '+q.n*q.k}
    ];
-   const points=checks.filter(Boolean).length;earned+=points;errorAttempts+=5-points;
-   feedback.className='answer-feedback '+(points===5?'answer-feedback-good':'answer-feedback-error');
-   feedback.textContent=points===5?'🎉 Viss pieraksts ir pareizs! Kristāls iegūts!':'Pareizi '+points+' no 5 pārbaudāmajām daļām. Pārskati: '+q.n+' = '+q.t+' + '+q.u+'; '+q.t+' × '+q.k+' = '+q.t*q.k+'; '+q.u+' × '+q.k+' = '+q.u*q.k+'; '+q.t*q.k+' + '+q.u*q.k+' = '+q.n*q.k+'.';
+   const points=checks.filter(c=>c.ok).length;earned+=points;errorAttempts+=4-points;
+   feedback.className='answer-feedback '+(points===4?'answer-feedback-good':'answer-feedback-error');
+   feedback.replaceChildren();
+   feedback.append(el('strong',points===4?'🎉 Visas 4 atbildes pareizas!':'Pareizi '+points+' no 4. Lūk, kas tika ieskaitīts:'));
+   const review=el('div','','split-check-review');
+   for(const item of checks){
+    const line=el('div',(item.ok?'✅ ':'❌ ')+item.label+': '+(item.ok?'Pareizi':'Jāpārbauda. Piemērs: '+item.expected),'split-check-line '+(item.ok?'split-check-ok':'split-check-error'));
+    item.element.classList.toggle('split-field-error',!item.ok);
+    review.append(line);
+   }
+   feedback.append(review);
    btn(host,idx===5?'🏆 Skatīt rezultātu →':'💎 Nākamā lāde →',()=>{if(!locked)return;locked=false;idx++;challenge();});
   });
  }
  function results(){
-  view='results';host.replaceChildren();const percent=Math.round(earned/TOTAL*100),qualified=percent>=85;
+  view='results';host.replaceChildren();const percent=Math.round(earned/TOTAL*100),qualified=earned>=21;
   title('🏆 Misija pabeigta');
   host.append(el('div',percent+'%','result-hero'));
   host.append(el('p','Pareizas atbildes: '+earned+' no '+TOTAL+'.'));
