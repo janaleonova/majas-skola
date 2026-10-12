@@ -3,6 +3,14 @@ const el=(tag,text='',cls='')=>{const n=document.createElement(tag);n.textConten
 const shuffled=a=>{const b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
 const sample=(n,k)=>({n,k,t:Math.floor(n/10)*10,u:n%10});
 const bank=()=>{const out=[];for(let n=12;n<=79;n++)if(n%10!==0)for(let k=2;k<=6;k++)out.push(sample(n,k));return out;};
+
+const parseExpression=(value,operator)=>{
+ const text=String(value).trim().replace(/\\s+/g,'').replace(/[×xX*]/g,'×').replace(/[−–]/g,'-');
+ const regex=operator==='+'?/^(\\d+)\\+(\\d+)=(\\d+)$/:/^(\\d+)×(\\d+)=(\\d+)$/;
+ const match=text.match(regex);
+ return match?match.slice(1).map(Number):null;
+};
+const parseSplit=(value)=>{const match=String(value).replace(/\\s+/g,'').match(/^(\\d+)=(\\d+)\\+(\\d+)$/);return match?match.slice(1).map(Number):null;};
 const TOTAL=30; // Five independently completed fields in each of six problems.
 
 export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
@@ -104,45 +112,71 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   const q=examples[idx+2];host.replaceChildren();title('💎 Patstāvīgā lāde '+(idx+1)+' no 6');
   math(q.n+' × '+q.k+' = ?');
   const progress=el('div','','progress-track');const fill=el('div','','progress-fill');fill.style.width=(idx/6*100)+'%';progress.append(fill);host.append(progress);
-  panel('1. Sadali skaitli divās daļās',[
-   'Sadali '+q.n+' desmitu daļā un vienu daļā.',
-   '2. Sareizini katru daļu ar '+q.k+'. 3. Saskaiti iegūtos rezultātus.',
-   'Risini patstāvīgi. Atbildes atklāsim tikai pēc pārbaudes.'
-  ]);
   const form=el('form','','split-solution-form');host.append(form);
-  const section=(heading)=>{const block=el('section','','split-solution-section');block.append(el('h3',heading));form.append(block);return block;};
-  const firstSection=section('1. Sadali '+q.n+' desmitos un vienos');
-  const first=el('div','','split-solution-row');firstSection.append(first);
-  const a=field(first,'Desmitu daļas vērtība'),b=field(first,'Vienu daļas vērtība');
-  a.placeholder='Piem., 40';b.placeholder='Piem., 5';
-  const secondSection=section('2. Sareizini abas daļas ar '+q.k);
-  const second=el('div','','split-solution-row');secondSection.append(second);
-  const c=field(second,'Pirmās daļas reizinājums'),d=field(second,'Otrās daļas reizinājums');
-  const thirdSection=section('3. Saskaiti abus reizinājumus');
-  const resultRow=el('div','','split-solution-row split-final-row');thirdSection.append(resultRow);
-  const e=field(resultRow,'Gala rezultāts');
-  const sumLabel=el('p','Pirmā reizinājuma rezultāts + otrā reizinājuma rezultāts = gala atbilde','split-sum-hint');thirdSection.insertBefore(sumLabel,resultRow);
-  const tokens=(parent,parts)=>{const line=el('div','','split-math-line');for(const item of parts){const span=el('span',item);line.append(span);}parent.insertBefore(line,parent.querySelector('.split-solution-row'));};
-  tokens(firstSection,[q.n+' = ','□',' + ','□']);
-  tokens(secondSection,['(1. daļa × '+q.k+')',' + ','(2. daļa × '+q.k+')']);
-  tokens(thirdSection,['□',' + ','□',' = ','?']);
-  const status=el('p','','answer-feedback');status.setAttribute('role','status');form.append(status);
+  const fieldExpr=(heading,label,hint)=>{
+   const block=el('section','','split-solution-section');form.append(block);
+   block.append(el('h3',heading));
+   const wrap=el('label','','split-expression-field');wrap.append(el('span',label));
+   const input=el('input','','split-expression-input');input.type='text';input.autocomplete='off';input.spellcheck=false;input.setAttribute('aria-label',label);input.placeholder='Ieraksti visu izteiksmi';wrap.append(input);block.append(wrap);
+   let hints=0;
+   btn(block,'💡 Pavediens',()=>{
+    hints++;
+    const texts=typeof hint==='function'?hint(hints):hint;
+    feedback.textContent=Array.isArray(texts)?texts[Math.min(hints-1,texts.length-1)]:texts;
+    feedback.className='answer-feedback';
+   },'quiet-button');
+   return input;
+  };
+  const feedback=el('p','','answer-feedback');feedback.setAttribute('role','status');
+  const split=fieldExpr('1. Sadali skaitli '+q.n,'Pilns sadalījuma pieraksts',[
+   'Padomā, cik pilnu desmitu un atsevišķu vienu ir skaitlī '+q.n+'.',
+   'Pieraksta veids: skaitlis = desmitu daļa + vienu daļa.',
+   'Šeit desmitu daļu veido '+Math.floor(q.n/10)+' desmiti.'
+  ]);
+  const multA=fieldExpr('2. Sareizini pirmo daļu','Uzraksti pirmo reizināšanas izteiksmi',[
+   'Paņem desmitu daļu un sareizini ar '+q.k+'.',
+   'Lieto zīmi ×. Piemēram, 20 × 3 = 60.'
+  ]);
+  const multB=fieldExpr('3. Sareizini otro daļu','Uzraksti otro reizināšanas izteiksmi',[
+   'Paņem vienu daļu un sareizini ar '+q.k+'.',
+   'Lieto zīmi ×. Piemēram, 4 × 3 = 12.'
+  ]);
+  const addition=fieldExpr('4. Saskaiti reizinājumus','Uzraksti visu saskaitīšanas izteiksmi',[
+   'Saskaiti abu reizināšanu rezultātus.',
+   'Lieto pierakstu: pirmais rezultāts + otrais rezultāts = kopā.'
+  ]);
+  form.append(feedback);
+  // Math symbols can be inserted with one touch without changing the phone keyboard.
+  for(const input of [split,multA,multB,addition]){
+   const row=el('div','','split-symbols');input.parentElement.append(row);
+   for(const symbol of ['×','+','=']){
+    btn(row,symbol,()=>{
+     if(input.readOnly)return;
+     const from=input.selectionStart??input.value.length,to=input.selectionEnd??from;
+     input.setRangeText(symbol,from,to,'end');input.dispatchEvent(new Event('input',{bubbles:true}));
+     input.focus({preventScroll:true});
+    },'quiet-button');
+   }
+   input.addEventListener('keydown',event=>{if(event.key==='Enter'){event.preventDefault();input.blur();}});
+  }
   const check=el('button','🔍 Pārbaudīt visu risinājumu','action-button');check.type='submit';form.append(check);
   let locked=false;
-  form.addEventListener('submit',ev=>{
-   ev.preventDefault();if(locked)return;
-   const inputs=[a,b,c,d,e];if(inputs.some(x=>x.value.trim()==='')){status.textContent='Pirms pārbaudes aizpildi visus piecus laukus.';return;}
-   const vals=inputs.map(x=>Number(x.value));
-   if(!vals.every(Number.isInteger)||vals.some(v=>v<0||v>999)){status.textContent='Ievadi tikai veselus pozitīvus skaitļus.';return;}
-   locked=true;check.disabled=true;inputs.forEach(x=>x.readOnly=true);
-   // Each entry earns a point only when its reasoning and numeric value are correct.
-   const ok=[vals[0]===q.t,vals[1]===q.u,
-    vals[2]===q.t*q.k,
-    vals[3]===q.u*q.k,
-    vals[4]===q.n*q.k && vals[2]+vals[3]===vals[4]];
-   const points=ok.filter(Boolean).length;earned+=points;errorAttempts+=5-points;
-   status.className='answer-feedback '+(points===5?'answer-feedback-good':'answer-feedback-error');
-   status.textContent=points===5?'🎉 Viss pareizi! Kristāls atrasts!':'Pareizas '+points+' no 5 daļām. Piemēram, '+q.n+' = '+q.t+' + '+q.u+'; '+q.t+' × '+q.k+' = '+q.t*q.k+' un '+q.u+' × '+q.k+' = '+q.u*q.k+'; rezultāts '+q.n*q.k+'.';
+  form.addEventListener('submit',event=>{
+   event.preventDefault();if(locked)return;
+   if([split,multA,multB,addition].some(x=>!x.value.trim())){feedback.textContent='Aizpildi visas četras pilnās izteiksmes.';return;}
+   const sp=parseSplit(split.value),ma=parseExpression(multA.value,'×'),mb=parseExpression(multB.value,'×'),ad=parseExpression(addition.value,'+');
+   if(!sp||!ma||!mb||!ad){feedback.textContent='Pārbaudi pierakstu. Raksti, piemēram: 24 = 20 + 4, 20 × 3 = 60 un 60 + 12 = 72.';return;}
+   locked=true;check.disabled=true;[split,multA,multB,addition].forEach(input=>input.readOnly=true);
+   const checks=[
+    sp[0]===q.n&&sp[1]===q.t,
+    sp[0]===q.n&&sp[2]===q.u,
+    ma[0]===q.t&&ma[1]===q.k&&ma[2]===q.t*q.k,
+    mb[0]===q.u&&mb[1]===q.k&&mb[2]===q.u*q.k,
+    ad[0]===q.t*q.k&&ad[1]===q.u*q.k&&ad[2]===q.n*q.k
+   ];
+   const points=checks.filter(Boolean).length;earned+=points;errorAttempts+=5-points;
+   feedback.className='answer-feedback '+(points===5?'answer-feedback-good':'answer-feedback-error');
+   feedback.textContent=points===5?'🎉 Viss pieraksts ir pareizs! Kristāls iegūts!':'Pareizi '+points+' no 5 pārbaudāmajām daļām. Pārskati: '+q.n+' = '+q.t+' + '+q.u+'; '+q.t+' × '+q.k+' = '+q.t*q.k+'; '+q.u+' × '+q.k+' = '+q.u*q.k+'; '+q.t*q.k+' + '+q.u*q.k+' = '+q.n*q.k+'.';
    btn(host,idx===5?'🏆 Skatīt rezultātu →':'💎 Nākamā lāde →',()=>{if(!locked)return;locked=false;idx++;challenge();});
   });
  }
