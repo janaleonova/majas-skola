@@ -292,6 +292,24 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
         :'')
     }`;
    subjectRoot.append(expBar);
+   // Mission guide: transparent rule-based recommendations; no pretending that AI is online.
+   const nextSubject=Object.entries(crystals).find(([,earned])=>!earned)?.[0]||null;
+   const subjectLabels={latviesu:'📕 Latviešu valoda',matematika:'🧮 Matemātika',anglu:'🌎 Angļu valoda'};
+   const coach=document.createElement('section');coach.className='module levelup-coach';coach.style.cssText='grid-column:1/-1;background:#f6f4ff;color:#21325b;border:2px solid #d8d0ff;border-radius:18px;padding:17px;margin:12px 0';
+   const heading=document.createElement('h3');heading.textContent=role==='marks'?'🐉 Tavs misiju ceļvedis':'🌸 Tavs mācību ceļvedis';coach.append(heading);
+   const message=document.createElement('p');message.style.cssText='font-size:1.06rem;line-height:1.5;font-weight:650';
+   message.textContent=nextSubject?'Tev šodien jau ir '+collectedCount+' no 3 kristāliem. Pamēģini tagad '+subjectLabels[nextSubject]+' — apgūsi citu prasmi un būsi tuvāk pilnai ekspedīcijai.':'🎉 Visi trīs priekšmeti šodien izmēģināti! Vari izvēlēties, ko vēlies nostiprināt.';
+   coach.append(message);
+   if(nextSubject){
+    const choose=document.createElement('button');choose.type='button';choose.className='action-button';choose.textContent='➡️ Doties uz '+subjectLabels[nextSubject];
+    choose.onclick=()=>openSubject(nextSubject);coach.append(choose);
+   }
+   const details=document.createElement('details');details.style.marginTop='12px';
+   const summary=document.createElement('summary');summary.textContent='💎 Kā rodas mani BP?';summary.style.cssText='cursor:pointer;font-weight:800;font-size:1.05rem';details.append(summary);
+   const pointsHelp=document.createElement('p');pointsHelp.textContent='Pašlaik punkti ir provizoriski. Par katras tēmas LABĀKĀ rezultāta sasniegšanu: 40–59% = 4 BP, 60–74% = 8 BP, 75–89% = 12 BP, 90–100% = 16 BP. Ja uzlabo rezultātu, ieskaita tikai starpību. Par atkārtotu 100% tajā pašā tēmā nav jaunu BP. Marka Kristālu kalvei par pirmo apstiprināto rezultātu no 85% papildus ir vienreizējs +10 BP. Dienas kristāli motivē izmēģināt visus trīs priekšmetus, bet pagaidām paši nepievieno tērējamus BP.';pointsHelp.style.cssText='font-size:1rem;line-height:1.5;margin-top:10px';details.append(pointsHelp);
+   coach.append(details);
+   const disclosure=document.createElement('p');disclosure.textContent='Ceļvedis šobrīd izmanto tavu saglabāto progresu un noteikumus. Sarunājošu MI palīgu pieslēgsim atsevišķi, ar drošiem bērnu datu ierobežojumiem.';disclosure.style.cssText='font-size:.87rem;opacity:.8;margin:12px 0 0';coach.append(disclosure);
+   subjectRoot.append(coach);
    const tiles=document.createElement('div');tiles.className=role==='marks'?'subject-grid levelup-marks-missions':'subject-grid';
    for(const subject of available){
     const button=document.createElement('button');button.type='button';button.className='subject-card subject-'+subject.kind;
