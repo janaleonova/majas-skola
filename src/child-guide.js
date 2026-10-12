@@ -29,5 +29,5 @@ export function installChildGuide({role,getSubject=()=>'',getCrystals=()=>0}){
  document.addEventListener('visibilitychange',onVisibility);
  const showWelcome=()=>{launcher.hidden=!active();say(fairy?'Sveika! Izvēlies, kuru kristālu šodien audzēsim.':'Sveiks! Kurš kristāls būs tavs nākamais izaicinājums?');};
  setTimeout(showWelcome,900);
- return {announce:message=>say(message),stop:()=>{disposed=true;clearInterval(timer);guide.remove();launcher.remove();document.removeEventListener('visibilitychange',onVisibility);for(const event of ['pointerdown','keydown','touchstart'])document.removeEventListener(event,userAction);}};
+ return {open:()=>launcher.click(),announce:message=>say(message),stop:()=>{disposed=true;clearInterval(timer);guide.remove();launcher.remove();document.removeEventListener('visibilitychange',onVisibility);for(const event of ['pointerdown','keydown','touchstart'])document.removeEventListener(event,userAction);}};
 }
