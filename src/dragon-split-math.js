@@ -18,6 +18,8 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   {name:'Uzlādē mazo kristālu',prompt:'Cik ir vieni × reizinātājs?',answer:(n,k)=>(n%10)*k,tip:(n,k)=>(n%10)+' × '+k},
   {name:'Apvieno kristālus',prompt:'Kāds ir gala rezultāts?',answer:(n,k)=>n*k,tip:(n,k)=>(Math.floor(n/10)*10*k)+' + '+((n%10)*k)}
  ];
+ let previousExamples=new Set();
+ const newExamples=()=>{const pool=[];for(let n=12;n<=79;n++){if(n%10===0)continue;for(let k=2;k<=6;k++)pool.push([n,k]);}const fresh=shuffle(pool.filter(([n,k])=>!previousExamples.has(n+'x'+k))).slice(0,6);previousExamples=new Set(fresh.map(([n,k])=>n+'x'+k));return fresh;};
  let answered=false;
  const drawHome=()=>{
   finished=true;host.replaceChildren();
@@ -25,7 +27,7 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   const sample=el('div','24 × 3 = (20 + 4) × 3 = 60 + 12 = 72','soft-notice');sample.style.cssText='font-size:clamp(1rem,4vw,1.4rem);font-weight:800;padding:14px;margin:12px 0';host.append(sample);
   host.append(el('p','Atver 6 lādes. Katrā lādē ir pieci mazi soļi. Bez taimera — svarīgāk ir saprast, kā rodas atbilde.'));
   host.append(el('p',alreadyEarnedBonus?'🏅 Meistarības bonuss jau iegūts! Vari trenēties atkal.':'🏅 Ja vismaz 85% soļu izpildīsi pareizi ar pirmo mēģinājumu, iegūsi vienreizēju +10 BP meistarības bonusu (provizoriski).'));
-  const b=el('button','⚔️ Sākt kristālu misiju','action-button');b.type='button';b.onclick=()=>{tasks=shuffle(missions).slice(0,6);index=phase=firstTry=errors=attempts=0;finished=false;drawTask();};host.append(b);
+  const b=el('button','⚔️ Sākt kristālu misiju','action-button');b.type='button';b.onclick=()=>{tasks=newExamples();index=phase=firstTry=errors=attempts=0;finished=false;drawTask();};host.append(b);
  };
  const drawTask=()=>{
   if(index>=tasks.length){void finish();return;}
@@ -59,20 +61,33 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    next.onclick=()=>{if(!answered||busy)return;answered=false;if(phase===4){index++;phase=0;}else phase++;drawTask();};host.append(next);
   };
  };
- const finish=async()=>{
-  if(busy||finished)return;finished=busy=true;
+ const finish=()=>{
+  if(busy||finished)return;finished=true;
   host.replaceChildren();const total=tasks.length*stages.length;const score=Math.round(firstTry/total*100);
-  host.append(el('h2','🏆 Kristālu kalve pabeigta!'),el('div','💎 '+tasks.length+' / '+tasks.length,'result-hero'));
-  host.append(el('p','Pirmajā reizē pareizi: '+firstTry+' no '+total+' soļiem ('+score+'%). Kļūdaini mēģinājumi: '+errors+'.'));
-  host.append(el('p','Svarīgākais: tu iemācījies sadalīt divciparu skaitli desmitos un vienos!'));
   const qualified=score>=85;
-  host.append(el('p',qualified?(alreadyEarnedBonus?'🏅 Vismaz 85%! Šīs tēmas bonuss jau ir saņemts.':'🏅 Vismaz 85%! Par pirmo veiksmīgo izpildi pienākas +10 provizoriskie BP!'):'💪 Meistarības bonuss gaida pie 85%. Vari trenēties un mēģināt atkal.'));
-  const note=el('p','Saglabāju rezultātu…');note.setAttribute('role','status');host.append(note);
-  if(canSubmit){
-   try{const id=await saveProgress({studentRole:'marks',subject:'Matemātika',activityType:'Kristālu kalve · skaitļa sadalīšana',score,notes:JSON.stringify({correct:firstTry,total,completedChests:tasks.length,mistakes:errors,masteryBonusEligible:qualified,serverVerified:false,spendableBP:0})});note.textContent=id?'✅ Rezultāts saglabāts Firebase.':'⚠️ Saglabāšana nav apstiprināta.';}
-   catch(e){note.textContent='⚠️ Rezultātu nesaglabāja: '+(e.message||'savienojuma kļūda');}
-  }else note.textContent='Priekšskatījums — rezultāts netiek saglabāts.';
-  const again=el('button','⚔️ Jauna ekspedīcija','action-button');again.type='button';again.onclick=drawHome;host.append(again);busy=false;
+  host.append(el('h2','🏆 Kristālu kalve pabeigta!'),el('div','💎 '+tasks.length+' / '+tasks.length,'result-hero'));
+  host.append(el('p','Pirmajā mēģinājumā pareizi: '+firstTry+' no '+total+' soļiem ('+score+'%). Kļūdaini mēģinājumi: '+errors+'.'));
+  host.append(el('p','Svarīgākais ir saprast skaitļa sadalīšanu desmitos un vienos.'));
+  host.append(el('p',qualified?(alreadyEarnedBonus?'🏅 85% sasniegti! Šīs tēmas vienreizējais bonuss jau ir iegūts.':'🏅 Sasniegti vismaz 85%! Apstiprini rezultātu, lai saņemtu +10 provizoriskos BP pirmo reizi.'):'🎯 Mērķis: vismaz 85% pareizi ar pirmo mēģinājumu. Pamēģini vēlreiz ar jauniem piemēriem.'));
+  const status=el('p','Rezultāts vēl nav iesniegts.');status.setAttribute('role','status');host.append(status);
+  const confirm=el('button','✅ Esmu apmierināts — iesniegt rezultātu','action-button');confirm.type='button';
+  confirm.onclick=async()=>{
+   if(busy)return;
+   if(!canSubmit){status.textContent='Vecāka priekšskatījums — nesaglabā rezultātu.';return;}
+   busy=true;confirm.disabled=true;
+   try{
+    const id=await saveProgress({studentRole:'marks',subject:'Matemātika',activityType:'Kristālu kalve · skaitļa sadalīšana',score,notes:JSON.stringify({correct:firstTry,total,completedChests:tasks.length,mistakes:errors,masteryBonusEligible:qualified,childConfirmed:true,serverVerified:false,spendableBP:0})});
+    if(!id)throw Error('Firebase neapstiprināja saglabāšanu');
+    status.textContent='✅ Rezultāts saglabāts! '+(qualified&&!alreadyEarnedBonus?'🏅 Vienreizējais +10 BP meistarības bonuss ieskaitīts provizoriski.':'Vari turpināt trenēties arī turpmāk.');
+    confirm.remove();
+   }catch(e){status.textContent='⚠️ Saglabāšana neizdevās: '+(e.message||'Savienojuma kļūda')+'. Mēģini vēlreiz.';confirm.disabled=false;}
+   finally{busy=false;}
+  };
+  host.append(confirm);
+  const again=el('button','🔄 Vēlos labāku rezultātu — jauni piemēri','action-button');again.type='button';
+  again.onclick=()=>{if(busy)return;tasks=newExamples();index=phase=firstTry=errors=attempts=0;finished=false;drawTask();};
+  host.append(again);
  };
+
  drawHome();
 }
