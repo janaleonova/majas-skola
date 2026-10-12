@@ -1,3 +1,4 @@
+import {renderDragonSplitMath} from './dragon-split-math.js';
 import {startChildPresence,renderParentPresence} from './activity-presence.js';
 import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
 import {renderMarksMath} from './marks-math.js';
@@ -153,12 +154,13 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
   const available=role==='marks'
     ?[{id:'latviesu',icon:'📕',name:'Latviešu valoda',description:'Vārdu piedzīvojums · 3 tēmas',active:true,kind:'language'},
       {id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, saistītais pieraksts un teksta misijas',active:true,kind:'math'},
+      {id:'kristali',icon:'💎',name:'Kristālu kalve',description:'JAUNUMS · Divciparu skaitļa reizināšana, sadalot desmitos un vienos',active:true,kind:'math'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Dienas, mēneši, gadalaiki un vietniekvārdi',active:true,kind:'english'}]
     :[{id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, attēli un stāsti',active:true,kind:'math'},
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
-   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',anglu:'Angļu valoda'})[id]||'Priekšmets';
+   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',kristali:'Matemātika · Kristālu kalve',anglu:'Angļu valoda'})[id]||'Priekšmets';
    activeLearning=true;
    area.classList.add('learning-active');
    appBackAction=()=>renderSubjects();
@@ -178,6 +180,8 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    try{
    if(id==='latviesu'&&role==='marks'){
     renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,currentUid:state.role===ROLES.MARKS?state.user.uid:'',saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
+   }else if(id==='kristali'&&role==='marks'){
+    renderDragonSplitMath(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;}});
    }else if(id==='matematika'&&role==='marks'){
     renderMarksMath(trainer,{canSubmit:state.role===ROLES.MARKS,
      startVerifiedSession:async(topic,mode)=>{const token=await state.user.getIdToken();const response=await fetch('/api/math/session',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({topic,mode})});const data=await response.json();if(!response.ok)throw Error(data.error||'Servera sesija nav pieejama');return data;},
