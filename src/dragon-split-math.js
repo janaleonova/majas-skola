@@ -101,10 +101,23 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    '2. Sareizini katru daļu ar '+q.k+'. 3. Saskaiti iegūtos rezultātus.',
    'Risini patstāvīgi. Atbildes atklāsim tikai pēc pārbaudes.'
   ]);
-  const form=el('form');host.append(form);
-  const first=row(),a=field(first,'1. daļa'),b=field(first,'2. daļa');
-  const second=row(),c=field(second,'1. daļa × '+q.k),d=field(second,'2. daļa × '+q.k);
-  const e=field(form,'Gala rezultāts: '+q.n+' × '+q.k);
+  const form=el('form','','split-solution-form');host.append(form);
+  const section=(heading)=>{const block=el('section','','split-solution-section');block.append(el('h3',heading));form.append(block);return block;};
+  const firstSection=section('1. Sadali '+q.n+' desmitos un vienos');
+  const first=el('div','','split-solution-row');firstSection.append(first);
+  const a=field(first,'Desmitu daļas vērtība'),b=field(first,'Vienu daļas vērtība');
+  a.placeholder='Piem., 40';b.placeholder='Piem., 5';
+  const secondSection=section('2. Sareizini abas daļas ar '+q.k);
+  const second=el('div','','split-solution-row');secondSection.append(second);
+  const c=field(second,'Pirmās daļas reizinājums'),d=field(second,'Otrās daļas reizinājums');
+  const thirdSection=section('3. Saskaiti abus reizinājumus');
+  const resultRow=el('div','','split-solution-row split-final-row');thirdSection.append(resultRow);
+  const e=field(resultRow,'Gala rezultāts');
+  const sumLabel=el('p','Pirmā reizinājuma rezultāts + otrā reizinājuma rezultāts = gala atbilde','split-sum-hint');thirdSection.insertBefore(sumLabel,resultRow);
+  const tokens=(parent,parts)=>{const line=el('div','','split-math-line');for(const item of parts){const span=el('span',item);line.append(span);}parent.insertBefore(line,parent.querySelector('.split-solution-row'));};
+  tokens(firstSection,[q.n+' = ','□',' + ','□']);
+  tokens(secondSection,['(1. daļa × '+q.k+')',' + ','(2. daļa × '+q.k+')']);
+  tokens(thirdSection,['□',' + ','□',' = ','?']);
   const status=el('p','','answer-feedback');status.setAttribute('role','status');form.append(status);
   const check=el('button','🔍 Pārbaudīt visu risinājumu','action-button');check.type='submit';form.append(check);
   let locked=false;
