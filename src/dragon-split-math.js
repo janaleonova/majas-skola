@@ -5,7 +5,7 @@ const sample=(n,k)=>({n,k,t:Math.floor(n/10)*10,u:n%10});
 const bank=()=>{const out=[];for(let n=12;n<=79;n++)if(n%10!==0)for(let k=2;k<=6;k++)out.push(sample(n,k));return out;};
 
 const parseExpression=(value,operator)=>{
- const text=String(value).trim().replace(/\s+/g,'').replace(/[×xX*]/g,'×').replace(/[−–]/g,'-');
+ const text=String(value).trim().replace(/\s+/g,'').replace(/[×xX*·⋅]/g,'×').replace(/[＝]/g,'=').replace(/[−–]/g,'-');
  const regex=operator==='+'?/^(\d+)\+(\d+)=(\d+)$/:/^(\d+)×(\d+)=(\d+)$/;
  const match=text.match(regex);
  return match?match.slice(1).map(Number):null;
@@ -165,7 +165,12 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    event.preventDefault();if(locked)return;
    if([split,multA,multB,addition].some(x=>!x.value.trim())){feedback.textContent='Aizpildi visas četras pilnās izteiksmes.';return;}
    const sp=parseSplit(split.value),ma=parseExpression(multA.value,'×'),mb=parseExpression(multB.value,'×'),ad=parseExpression(addition.value,'+');
-   if(!sp||!ma||!mb||!ad){feedback.textContent='Pārbaudi pierakstu. Raksti, piemēram: 24 = 20 + 4, 20 × 3 = 60 un 60 + 12 = 72.';return;}
+   const malformed=[[sp,split,'1. Sadalīšana'],[ma,multA,'2. Pirmais reizinājums'],[mb,multB,'3. Otrais reizinājums'],[ad,addition,'4. Saskaitīšana']].find(([parsed])=>!parsed);
+   if(malformed){
+    const [,input,name]=malformed;
+    feedback.textContent='⚠️ Nevaru nolasīt: '+name+'. Pārējās atbildes nav novērtētas. Izmanto ciparus un zīmes +, ×, =; piemēram, 5 × 6 = 30. Vari labot.';
+    input.focus({preventScroll:true});input.scrollIntoView({block:'center',behavior:'smooth'});return;
+   }
    locked=true;check.disabled=true;[split,multA,multB,addition].forEach(input=>input.readOnly=true);
    const checks=[
     sp[0]===q.n&&sp[1]===q.t,
