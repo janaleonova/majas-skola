@@ -834,6 +834,14 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #school .sentence-mission .sentence-feedback{font-size:1.05rem;line-height:1.5;font-weight:750}
 #school .sentence-mission .sentence-next{min-height:52px;font-size:1.05rem;font-weight:800}
 @media(max-width:450px){#school .sentence-mission .sentence-options{grid-template-columns:1fr}#school .sentence-mission .sentence-tip,#school .sentence-mission .sentence-question{padding:12px}}
+
+/* Interactive grammar underline exercise: one line for subject, two for predicate. */
+#school .sentence-underline-line{display:flex;flex-wrap:wrap;gap:12px 9px;align-items:center;padding:18px 8px;margin:12px 0;border-radius:13px;background:#fff;border:1px solid #d6d9fa}
+#school .sentence-word{position:relative;display:inline-block;padding:10px 7px 15px;min-height:51px;background:#fff;color:#1b3068;border:1px solid transparent;border-radius:9px;font-size:clamp(1.16rem,3.8vw,1.55rem);font-weight:800;cursor:pointer;text-decoration:none}
+#school .sentence-word.under-subject{background:#e6efff;border-color:#9cbaef;text-decoration-line:underline;text-decoration-style:solid;text-decoration-thickness:3px;text-underline-offset:6px}
+#school .sentence-word.under-predicate{background:#eeeaff;border-color:#baa7f3;text-decoration-line:underline;text-decoration-style:double;text-decoration-thickness:2px;text-underline-offset:6px}
+#school .sentence-word:focus-visible{outline:3px solid #486ec8;outline-offset:2px}
+#school .underline-legend{font-weight:800;font-size:clamp(1rem,2.3vw,1.15rem);color:#253a76}
 </style>
 </head>
 <body>
