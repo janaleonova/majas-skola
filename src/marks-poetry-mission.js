@@ -28,7 +28,7 @@ const extraQuestions=[{"kind":"choice","question":"Kas palīdz noteikt dzejoļa 
 const fullBank=[...questions,...extraQuestions];
 export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
  const host=el('section','','module learning-hub poetry-mission');root.append(host);
- let items=[],i=0,points=0,complete=false,saving=false,submitted=false;
+ let items=[],i=0,points=0,complete=false,saving=false,submitted=false,mode='learning';
  const btn=(parent,text,cb,cls='action-button')=>{const b=el('button',text,cls);b.type='button';b.onclick=cb;parent.append(b);return b;};
  const heading=(subtitle)=>{host.replaceChildren();host.append(el('h2','🐉 Dzejas superizaicinājums'),el('p',subtitle));};
  const source=(id,hideAuthor=false)=>{const d=texts[id];const block=el('blockquote','','poetry-quote');block.append(el('strong',hideAuthor?'📜 Uzmini autoru no fragmenta':d.author+' — '+d.title));for(const line of d.lines)block.append(el('p',line));const a=el('a','📖 Pārbaudīts avots');a.href=d.source;a.target='_blank';a.rel='noopener noreferrer';if(!hideAuthor)block.append(a);host.append(block);};
@@ -36,12 +36,12 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   heading('Literatūra · Gatavojamies NPD');
   const note=el('div','','sentence-tip');note.append(el('strong','Šīs misijas mērķis'));
   note.append(el('p','Atpazīsti dzejoļa tēmu, noskaņu, tēlus, atskaņas, salīdzini Raini un Juri Kronbergu un veido savas rindiņas. Autoru fragmenti ir īsi un pārbaudīti. Citi uzdevumi ir mūsu pašu sacerēti.'));
-  note.append(el('p','🏆 15 jautājumi · vismaz 13 pareizi = 85% meistarība. Vienreizējs +20 provizorisko BP superbonuss.'));
+  note.append(el('p','🌱 20 mācību jautājumi ar palīdzību, pēc tam 🏆 30 pārbaudes jautājumi (26/30 = vismaz 85%). Vienreizējs +20 provizorisko BP superbonuss.'));
   host.append(note);
   btn(host,'💡 Ātrā atgādne',()=>{
    const hint=el('div','','sentence-tip');hint.append(el('strong','Atceries!'),el('p','Tēma = par ko dzejolis; noskaņa = kādas sajūtas; tēli = kas tajā darbojas; atskaņas = līdzīgi skanošas vārdu beigas.'));host.append(hint);
   },'quiet-button');
-  btn(host,'🚀 Sākt superizaicinājumu',()=>{items=shuffle(questions);i=points=0;complete=false;step();});
+  btn(host,'🚀 Sākt superizaicinājumu',()=>{items=shuffle(fullBank.filter(q=>q.kind!=='open')).slice(0,20);mode='learning';i=points=0;complete=false;step();});
  };
  const step=()=>{
   if(i>=items.length){finish();return;}
