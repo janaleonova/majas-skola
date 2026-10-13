@@ -819,6 +819,21 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 .levelup-guide-launcher:focus-visible{outline:3px solid #ffd166;outline-offset:2px}
 .levelup-guide-bubble:not([hidden])~.levelup-guide-launcher{bottom:80px}
 @media(orientation:landscape) and (max-height:500px){.levelup-guide-launcher{bottom:8px;min-height:42px;font-size:14px;padding:7px 13px}.levelup-guide-bubble{bottom:60px}}
+
+/* Teikumu pūķa akadēmija: readable, accessible Latvian language missions */
+#school .sentence-mission{font-size:clamp(17px,1.7vw,20px);line-height:1.5;color:#20305a}
+#school .sentence-mission h2{font-size:clamp(1.5rem,3vw,2rem);line-height:1.23;color:#243773}
+#school .sentence-mission .sentence-subtitle{font-size:1.1rem;font-weight:700}
+#school .sentence-mission .sentence-tip,#school .sentence-mission .sentence-question{background:#f4f4ff;border:2px solid #d8d9fa;border-radius:17px;padding:clamp(13px,2.5vw,20px);margin:12px 0;color:#223666}
+#school .sentence-mission .sentence-tip strong{font-size:1.16rem}
+#school .sentence-mission .sentence-tip p{margin:7px 0 0;font-size:1.08rem;line-height:1.5}
+#school .sentence-mission .sentence-question h3{font-size:clamp(1.15rem,2.3vw,1.4rem);line-height:1.4;color:#21346a;margin:0 0 12px}
+#school .sentence-mission .sentence-options{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+#school .sentence-mission .sentence-options button{min-height:56px!important;font-size:1.1rem!important;font-weight:800!important;padding:12px!important;background:#e7ebff;color:#223973;border:2px solid #a7b4eb;border-radius:13px}
+#school .sentence-mission .sentence-input{box-sizing:border-box;width:100%;max-width:100%;font:inherit;font-size:1.12rem;min-height:85px;padding:13px;border-radius:12px;border:2px solid #aebcf1;background:white;color:#18294f}
+#school .sentence-mission .sentence-feedback{font-size:1.05rem;line-height:1.5;font-weight:750}
+#school .sentence-mission .sentence-next{min-height:52px;font-size:1.05rem;font-weight:800}
+@media(max-width:450px){#school .sentence-mission .sentence-options{grid-template-columns:1fr}#school .sentence-mission .sentence-tip,#school .sentence-mission .sentence-question{padding:12px}}
 </style>
 </head>
 <body>
