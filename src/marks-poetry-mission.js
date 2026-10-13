@@ -44,8 +44,8 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   btn(host,'🚀 Sākt superizaicinājumu',()=>{items=shuffle(fullBank.filter(q=>q.kind!=='open')).slice(0,20);mode='learning';i=points=0;complete=false;step();});
  };
  const step=()=>{
-  if(i>=items.length){finish();return;}
-  const q=items[i];heading('💎 Jautājums '+(i+1)+' / '+items.length);
+  if(i>=items.length){if(mode==='learning'){ready();return;}finish();return;}
+  const q=items[i];heading((mode==='learning'?'🌱 Mācību jautājums ':'🏆 Tests ')+(i+1)+' / '+items.length);
   if(q.kind==='source')source(q.source,q.question.startsWith('Kurš autors'));
   const card=el('section','','poetry-question');card.append(el('h3',q.question));host.append(card);
   const feedback=el('p','','sentence-feedback');feedback.setAttribute('role','status');card.append(feedback);
