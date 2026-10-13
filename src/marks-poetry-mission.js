@@ -47,7 +47,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   btn(host,'💡 Ātrā atgādne',()=>{
    const hint=el('div','','sentence-tip');hint.append(el('strong','Atceries!'),el('p','Tēma = par ko dzejolis; noskaņa = kādas sajūtas; tēli = kas tajā darbojas; atskaņas = līdzīgi skanošas vārdu beigas.'));host.append(hint);
   },'quiet-button');
-  btn(host,'🚀 Sākt superizaicinājumu',()=>{items=[...shuffle(fullBank.filter(q=>q.kind!=='open')).slice(0,15),...shuffle(writingTasks)];mode='learning';i=points=0;complete=false;step();});
+  btn(host,'🌱 Sākt 20 mācību jautājumus',()=>{items=[...shuffle(fullBank.filter(q=>q.kind!=='open')).slice(0,15),...shuffle(writingTasks)];mode='learning';i=points=0;complete=false;step();});
  };
  const step=()=>{
   if(i>=items.length){if(mode==='learning'){ready();return;}finish();return;}
@@ -80,7 +80,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   }else if(q.kind==='open'){
    const ta=el('textarea','','poetry-input');ta.rows=3;ta.placeholder='Uzraksti savu dzejas rindu vai nelielu divrindi…';card.append(ta);
    const info=el('p','Radošo atbildi programma nevar droši novērtēt pēc nozīmes vai atskaņām. Par divrindes uzrakstīšanu saņemsi dalības punktu, bet saturu vari pārrunāt ar vecāku.');card.append(info);
-   btn(card,'✅ Iesniegt savu rindu',()=>{const value=ta.value.trim();if(value.length<16){feedback.textContent='Uzraksti mazliet garāku rindiņu — vismaz 16 rakstzīmes.';return;}answer(true,'Paldies par radošo darbu!');});
+   btn(card,'✅ Iesniegt savu rindu',()=>{const value=ta.value.trim();if(value.length<16){feedback.textContent='Uzraksti mazliet garāku rindiņu — vismaz 16 rakstzīmes.';return;}answer(true,'Paldies par radošo darbu! Pārrunā ar vecāku, vai atskaņa skan pareizi.');});
   }else{
    const choices=el('div','','poetry-choices');card.append(choices);
    for(const text of shuffle(q.options))btn(choices,text,()=>answer(text===q.correct,q.hint),'quiet-button');
