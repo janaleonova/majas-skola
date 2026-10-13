@@ -57,9 +57,9 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   // Always provide the text being analysed; learners should read, not guess from memory.
   if(q.kind!=='source'&&!(q.kind==='writing'&&typeof q.source==='number')){
    const prompt=q.question.toLocaleLowerCase('lv-LV');
-   if(prompt.includes('kronberg')||prompt.includes('zilbe'))source(1);
+   if(prompt.includes('abu autoru')||prompt.includes('abiem fragmentiem')||prompt.includes('abos fragmentos')){source(0);source(1);}
+   else if(prompt.includes('kronberg')||prompt.includes('zilbe'))source(1);
    else if(prompt.includes('rain')||prompt.includes('saulīt'))source(0);
-   else if(prompt.includes('abu autoru')||prompt.includes('abiem fragmentiem')){source(0);source(1);}
   }
   const card=el('section','','poetry-question');card.append(el('h3',q.question));host.append(card);
   const feedback=el('p','','sentence-feedback poetry-feedback');feedback.setAttribute('role','status');card.append(feedback);
