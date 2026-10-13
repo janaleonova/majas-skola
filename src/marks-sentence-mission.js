@@ -14,6 +14,33 @@ const words=[
  {word:'rūc',answer:'Darbības vārds',why:'Ko dara? — rūc.'},
  {word:'bērni',answer:'Lietvārds',why:'Kas? — bērni.'}
 ];
+const wordHelp={
+ 'Lietvārds':[
+  'Pajautā: KAS tas ir? Vārds var nosaukt cilvēku, dzīvnieku, lietu vai parādību.',
+  'Pamēģini ievietot vārdu teikumā: “Es redzu ...”. Vai tas nosauc kaut ko vai kādu?',
+  'Atceries: vārdšķira ir lietvārds, ja vārds nosauc būtni, priekšmetu vai parādību.'
+ ],
+ 'Darbības vārds':[
+  'Pajautā: KO DARA? Ko kāds dara šajā brīdī?',
+  'Vai šis vārds nosauc darbību vai procesu? Piemēram, “suns skrien”.',
+  'Atceries: darbības vārds nosauc darbību vai stāvokli.'
+ ],
+ 'Īpašības vārds':[
+  'Pajautā: KĀDS? KĀDA? Kāds ir priekšmets vai dzīvnieks?',
+  'Pamēģini pievienot vārdu pirms lietvārda, piemēram, “... koks”.',
+  'Atceries: īpašības vārds nosauc pazīmi.'
+ ],
+ 'Apstākļa vārds':[
+  'Pajautā: KĀ? KUR? KAD? Šeit vajadzētu noskaidrot, KĀ notiek darbība.',
+  'Pievieno vārdu darbībai: “skrien ...”. Vai tas paskaidro skriešanas veidu?',
+  'Atceries: apstākļa vārds var paskaidrot darbības veidu, vietu vai laiku.'
+ ]
+};
+const wordContexts={
+ kaķis:'Kaķis guļ uz paklāja.',skrien:'Suns skrien pa taku.',zaļš:'Zaļš koks aug pagalmā.',
+ suns:'Suns rej.',lēni:'Bruņurupucis lēni rāpo.',zīmē:'Bērns zīmē māju.',
+ balodis:'Balodis lido.',skaists:'Skaists zieds zied.',rūc:'Lauva rūc.',bērni:'Bērni rotaļājas.'
+};
 const sentences=[
  {sentence:'Kaķis ņaud.',center:['Kaķis','ņaud'],type:'Nepaplašināts'},
  {sentence:'Melns kaķis skaļi ņaud.',center:['kaķis','ņaud'],type:'Paplašināts'},
@@ -40,18 +67,29 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
  const button=(parent,text,handler,cls='action-button')=>{const b=el('button',text,cls);b.type='button';b.onclick=handler;parent.append(b);return b;};
  const head=(sub)=>{host.replaceChildren();host.append(el('h2','🐉 Teikumu pūķa akadēmija'),el('p',sub,'sentence-subtitle'));};
  const explain=(title,body)=>{const box=el('div','','sentence-tip');box.append(el('strong',title),el('p',body));host.append(box);};
- const choices=(question,items,correct,after,{hint='',independent=false}={})=>{
+ const choices=(question,items,correct,after,{hint='',independent=false,help=[]}={})=>{
   const box=el('section','','sentence-question');box.append(el('h3',question));host.append(box);
   const options=el('div','','sentence-options');box.append(options);
   const feedback=el('p','','sentence-feedback');feedback.setAttribute('role','status');box.append(feedback);
+  let shownHints=0;
+  if(!independent&&help.length){
+   const guides=el('div','','sentence-help-tools');
+   const ask=button(guides,'🧠 Kādu jautājumu uzdot?',()=>{
+    feedback.style.color='';
+    feedback.textContent=help[Math.min(shownHints,help.length-1)];
+    if(shownHints<help.length-1)shownHints++;
+   },'quiet-button');
+   ask.setAttribute('aria-label','Saņemt palīgjautājumu vārdšķiras noteikšanai');
+   box.insertBefore(guides,options);
+  }
   let done=false;
   for(const choice of items)button(options,choice,()=>{
    if(done)return;
    const ok=choice===correct;
-   if(!independent&&!ok){feedback.textContent='Vēl ne. '+hint+' Mēģini vēlreiz.';feedback.style.color='#a53b34';return;}
+   if(!independent&&!ok){feedback.textContent='Vēl ne. Padomā, uz kādu jautājumu šis vārds atbild. '+(help[0]||'')+' Mēģini vēlreiz.';feedback.style.color='#a53b34';return;}
    done=true;[...options.querySelectorAll('button')].forEach(x=>x.disabled=true);
    if(independent)score+=Number(ok);
-   feedback.textContent=ok?'✨ Pareizi!':independent?'Pareizā atbilde: '+correct+'. '+hint:'✅ Pareizi!';
+   feedback.textContent=ok?'✨ Pareizi! '+(!independent?hint:''):independent?'Pareizā atbilde: '+correct+'. '+hint:'✅ Pareizi! '+hint;
    const next=button(box,'➡️ '+(after.label||'Turpināt'),after.action,'action-button sentence-next');next.focus({preventScroll:true});
   },'quiet-button');
  };
@@ -78,13 +116,14 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
   explain('1. Vispirms atšķirsim vārdšķiras','Lietvārds nosauc būtni, priekšmetu vai parādību (kas?). Darbības vārds nosauc darbību (ko dara?). Īpašības vārds pasaka, kāds ir priekšmets.');
   explain('2. Tad atradīsim gramatisko centru','Teikuma gramatiskais centrs ir teikuma priekšmets (par ko runā?) un izteicējs (ko tas dara? / kāds ir?). Vārdšķira nav tas pats, kas teikuma loceklis.');
   explain('3. Pārveidosim teikumus','Vienkāršā nepaplašinātā teikumā nav citu teikuma locekļu ārpus gramatiskā centra. Paplašinātā teikumā ir arī citi teikuma locekļi. Piemērs: Kaķis ņaud. → Melns kaķis skaļi ņaud.');
-  button(host,'🌱 Vispirms patrenēties →',()=>{practice=shuffle(words).slice(0,4);position=0;wordPractice();});
+  button(host,'🌱 Vispirms patrenēties →',()=>{practice=shuffle(words).slice(0,8);position=0;wordPractice();});
  };
  const wordPractice=()=>{
   stage='practice';if(position>=practice.length){position=0;grammarPractice();return;}
-  head('1/3 · Vārdšķiru treniņš · '+(position+1)+'/4');
-  const w=practice[position];choices('Kāda vārdšķira ir vārdam “'+w.word+'”?',['Lietvārds','Darbības vārds','Īpašības vārds','Apstākļa vārds'],w.answer,
-   {label:'Nākamais vārds',action:()=>{position++;wordPractice();}},{hint:w.why});
+  head('1/3 · Vārdšķiru treniņš · '+(position+1)+'/'+practice.length);
+  const w=practice[position];explain('Vārds teikumā',wordContexts[w.word]||w.word);
+  choices('Kāda vārdšķira ir vārdam “'+w.word+'”?',['Lietvārds','Darbības vārds','Īpašības vārds','Apstākļa vārds'],w.answer,
+   {label:'Nākamais vārds',action:()=>{position++;wordPractice();}},{hint:w.why,help:wordHelp[w.answer]});
  };
  const grammarPractice=()=>{
   stage='practice';const list=[sentences[0],sentences[1],sentences[3]];if(position>=list.length){position=0;transformPractice();return;}
