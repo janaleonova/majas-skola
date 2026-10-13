@@ -63,7 +63,7 @@ const toSentence=(subject,verb)=>subject.charAt(0).toLocaleUpperCase('lv-LV')+su
 
 export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
  const host=el('section','','module learning-hub sentence-mission');root.append(host);
- let stage='intro',practice=[],exam=[],position=0,score=0,submitted=false,saving=false,prevSet=new Set();
+ let stage='intro',practice=[],exam=[],underlineRound=[],position=0,score=0,submitted=false,saving=false,prevSet=new Set();
  const create=(kind)=>{let bank=kind==='word'?words:sentences;let options=shuffle(bank.filter(i=>!prevSet.has(i.word||i.sentence)));if(options.length<8)options=shuffle(bank);return options;};
  const button=(parent,text,handler,cls='action-button')=>{const b=el('button',text,cls);b.type='button';b.onclick=handler;parent.append(b);return b;};
  const head=(sub)=>{host.replaceChildren();host.append(el('h2','🐉 Teikumu pūķa akadēmija'),el('p',sub,'sentence-subtitle'));};
@@ -164,8 +164,8 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
   host.append(section);
  };
  const grammarPractice=()=>{
-  stage='practice';const list=shuffle(underlineBank).slice(0,15);if(position>=15){position=0;transformPractice();return;}
-  const item=list[position];head('2/3 · Teikuma centrs · '+(position+1)+'/3');
+  stage='practice';const list=underlineRound.length?underlineRound:(underlineRound=shuffle(underlineBank).slice(0,15));if(position>=15){position=0;transformPractice();return;}
+  const item=list[position];head('2/3 · Teikuma centrs · '+(position+1)+'/15');
   underlineQuestion(item,{action:()=>{position++;grammarPractice();}});
  };
  const transformPractice=()=>{
