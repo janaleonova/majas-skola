@@ -71,6 +71,17 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
    for(const text of shuffle(q.options))btn(choices,text,()=>answer(text===q.correct,q.hint),'quiet-button');
   }
  };
+ const ready=()=>{
+  heading('🏆 Mācību daļa pabeigta');
+  const card=el('section','','poetry-question');
+  card.append(el('h3','Tagad 30 patstāvīgi jautājumi'));
+  card.append(el('p','Mācību daļā tu saņēmi skaidrojumus un pavedienus. Testā atbildēsi patstāvīgi. No 30 jautājumiem vismaz 26 jāatbild pareizi, lai saņemtu īpašo vienreizējo +20 BP bonusu.'));
+  host.append(card);
+  btn(host,'⚔️ Sākt 30 jautājumu testu',()=>{
+   mode='exam';items=shuffle(fullBank).slice(0,30);i=points=0;step();
+  });
+  btn(host,'🔁 Vēlreiz 20 mācību jautājumi',intro,'quiet-button');
+ };
  const finish=()=>{
   complete=true;heading('🏆 Superizaicinājums pabeigts!');
   const percent=Math.round(points/questions.length*100),qualified=percent>=85;
