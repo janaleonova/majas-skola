@@ -29,7 +29,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
  let items=[],i=0,points=0,complete=false,saving=false,submitted=false;
  const btn=(parent,text,cb,cls='action-button')=>{const b=el('button',text,cls);b.type='button';b.onclick=cb;parent.append(b);return b;};
  const heading=(subtitle)=>{host.replaceChildren();host.append(el('h2','🐉 Dzejas superizaicinājums'),el('p',subtitle));};
- const source=(id)=>{const d=texts[id];const block=el('blockquote','','poetry-quote');block.append(el('strong',d.author+' — '+d.title));for(const line of d.lines)block.append(el('p',line));const a=el('a','📖 Pārbaudīts avots');a.href=d.source;a.target='_blank';a.rel='noopener noreferrer';block.append(a);host.append(block);};
+ const source=(id,hideAuthor=false)=>{const d=texts[id];const block=el('blockquote','','poetry-quote');block.append(el('strong',hideAuthor?'📜 Uzmini autoru no fragmenta':d.author+' — '+d.title));for(const line of d.lines)block.append(el('p',line));const a=el('a','📖 Pārbaudīts avots');a.href=d.source;a.target='_blank';a.rel='noopener noreferrer';if(!hideAuthor)block.append(a);host.append(block);};
  const intro=()=>{
   heading('Literatūra · Gatavojamies NPD');
   const note=el('div','','sentence-tip');note.append(el('strong','Šīs misijas mērķis'));
@@ -44,13 +44,14 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
  const step=()=>{
   if(i>=items.length){finish();return;}
   const q=items[i];heading('💎 Jautājums '+(i+1)+' / '+items.length);
-  if(q.kind==='source')source(q.source);
+  if(q.kind==='source')source(q.source,q.question.startsWith('Kurš autors'));
   const card=el('section','','poetry-question');card.append(el('h3',q.question));host.append(card);
   const feedback=el('p','','sentence-feedback');feedback.setAttribute('role','status');card.append(feedback);
   let answered=false;
   const answer=(ok,explanation)=>{
    if(answered)return;answered=true;points+=Number(ok);
    feedback.textContent=ok?'✨ Pareizi! '+(explanation||''):'Pārdomā: '+(explanation||q.hint);
+   if(q.kind==='source'&&q.question.startsWith('Kurš autors')){const details=el('p','Autors: '+texts[q.source].author+' · '+texts[q.source].title);card.append(details);}
    for(const x of card.querySelectorAll('button'))x.disabled=true;
    btn(card,i===items.length-1?'🏆 Skatīt rezultātu →':'➡️ Nākamais jautājums →',()=>{i++;step();});
   };
