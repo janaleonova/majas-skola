@@ -13,11 +13,12 @@ export function calculateChildPoints(role,progressRecords=[],now=new Date()){
   const millis=typeof stamp.toMillis==='function'?stamp.toMillis():typeof stamp.seconds==='number'?stamp.seconds*1000:typeof stamp==='string'?Date.parse(stamp):stamp instanceof Date?stamp.getTime():null;
   return Number.isFinite(millis)?new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(millis)):null;
  };
- const bestByTopic=new Map();let todayEarned=0,activityCount=0,masteryBonusEarned=false;
+ const bestByTopic=new Map();let todayEarned=0,activityCount=0,masteryBonusEarned=false,sentenceBonusEarned=false;
  for(const item of [...records].sort((a,b)=>(a.recordedAt?.seconds||0)-(b.recordedAt?.seconds||0))){
   if(item.studentUid!==childUid||item.studentRole!==role||!Number.isFinite(item.score))continue;
   const pct=Math.max(0,Math.min(100,item.score));
   if(role==='marks'&&item.activityType==='Kristālu kalve · skaitļa sadalīšana'&&pct>=85&&!masteryBonusEarned){masteryBonusEarned=true;if(dayOf(item.recordedAt)===date)todayEarned+=10;}
+  if(role==='marks'&&item.activityType==='Teikumu pūķa akadēmija · gramatikas centrs'&&pct>=85&&!sentenceBonusEarned){sentenceBonusEarned=true;if(dayOf(item.recordedAt)===date)todayEarned+=10;}
   const subject=String(item.subject||'Vispārīgi').trim();
   const topic=String(item.activityType||'trenins').split(' · ')[0].trim();
   const key=subject+'|'+topic;
@@ -28,7 +29,7 @@ export function calculateChildPoints(role,progressRecords=[],now=new Date()){
   if(improvement&&dayOf(item.recordedAt)===date)todayEarned+=improvement;
   activityCount++;
  }
- const totalEarned=[...bestByTopic.values()].reduce((sum,n)=>sum+n,0)+(masteryBonusEarned?10:0);
+ const totalEarned=[...bestByTopic.values()].reduce((sum,n)=>sum+n,0)+(masteryBonusEarned?10:0)+(sentenceBonusEarned?10:0);
  return {totalEarned,todayEarned,spent:0,balance:totalEarned,provisional:true,activityCount,goal:250,remaining:Math.max(0,250-totalEarned)};
 }
 const rewards=[
