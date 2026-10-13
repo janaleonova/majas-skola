@@ -114,6 +114,9 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
  const intro=()=>{
   stage='intro';head('Jauna tēma · 4. klase · Mācies bez taimera');
   explain('1. Vispirms atšķirsim vārdšķiras','Lietvārds nosauc būtni, priekšmetu vai parādību (kas?). Darbības vārds nosauc darbību (ko dara?). Īpašības vārds pasaka, kāds ir priekšmets.');
+  const cheat=el('div','','sentence-tip');cheat.append(el('strong','🧠 Kādu jautājumu uzdot vārdam?'));
+  for(const [part,prompt] of [['Lietvārds','Kas? Kas tas ir? — kaķis, suns, zieds'],['Darbības vārds','Ko dara? — skrien, zīmē, rūc'],['Īpašības vārds','Kāds? Kāda? — zaļš, skaists'],['Apstākļa vārds','Kā? — lēni, skaļi']])cheat.append(el('p',part+' → '+prompt));
+  host.append(cheat);
   explain('2. Tad atradīsim gramatisko centru','Teikuma gramatiskais centrs ir teikuma priekšmets (par ko runā?) un izteicējs (ko tas dara? / kāds ir?). Vārdšķira nav tas pats, kas teikuma loceklis.');
   explain('3. Pārveidosim teikumus','Vienkāršā nepaplašinātā teikumā nav citu teikuma locekļu ārpus gramatiskā centra. Paplašinātā teikumā ir arī citi teikuma locekļi. Piemērs: Kaķis ņaud. → Melns kaķis skaļi ņaud.');
   button(host,'🌱 Vispirms patrenēties →',()=>{practice=shuffle(words).slice(0,8);position=0;wordPractice();});
