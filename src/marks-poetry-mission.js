@@ -22,7 +22,7 @@ const questions=[
  {kind:'rhyme',question:'Kurš vārds atskaņojas ar “diena”?',options:['viena','lietus','saule'],correct:'viena',hint:'Klausies vārda beigas.'},
  {kind:'rhyme',question:'Kurš pāris atskaņojas?',options:['zied — dzied','zied — koks','zied — saule'],correct:'zied — dzied',hint:'Vai skan līdzīgi vārdu beigas?'},
  {kind:'choice',question:'Kura noskaņa vislabāk atbilst rindai “Vējš klusi čukst pie loga”?',options:['Noslēpumaina un mierīga','Dusmīga un trokšņaina','Svētku un skaļa'],correct:'Noslēpumaina un mierīga',hint:'Šī ir šai spēlei īpaši sacerēta rinda, nevis citāts.'},
- {kind:'open',question:'Papildini autora neattiecināto rindu “Dārzā uzzied koša ...” ar atskaņu vārdam “roze”.',accept:['oze'],sample:'roze — koze? Izdomā citu rindu ar atskaņu; šajā uzdevumā ieskaitām radošu domu.',hint:'Uzraksti vienu vai divas rindiņas, kuras veido tēlu.'}
+ {kind:'open',question:'Uzraksti savu divrindi par dabu. Pamēģini izveidot atskaņu rindu beigās.',accept:['oze'],sample:'Izdomā divas īsas rindiņas par dabu.',hint:'Uzraksti vienu vai divas rindiņas, kuras veido tēlu.'}
 ];
 export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
  const host=el('section','','module learning-hub poetry-mission');root.append(host);
@@ -56,8 +56,8 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   };
   if(q.kind==='open'){
    const ta=el('textarea','','poetry-input');ta.rows=3;ta.placeholder='Uzraksti savu dzejas rindu vai nelielu divrindi…';card.append(ta);
-   const info=el('p','Radošai atbildei nav vienas pareizas formulas. Ja uzraksti jēgpilnu rindu, to ieskaitām; vecāks vēlāk var pārrunāt atskaņas.');card.append(info);
-   btn(card,'✅ Iesniegt savu rindu',()=>{const value=ta.value.trim();if(value.length<12){feedback.textContent='Uzraksti mazliet garāku rindiņu — vismaz 12 rakstzīmes.';return;}answer(true,'Paldies par radošo darbu!');});
+   const info=el('p','Radošo atbildi programma nevar droši novērtēt pēc nozīmes vai atskaņām. Par divrindes uzrakstīšanu saņemsi dalības punktu, bet saturu vari pārrunāt ar vecāku.');card.append(info);
+   btn(card,'✅ Iesniegt savu rindu',()=>{const value=ta.value.trim();if(value.length<16){feedback.textContent='Uzraksti mazliet garāku rindiņu — vismaz 16 rakstzīmes.';return;}answer(true,'Paldies par radošo darbu!');});
   }else{
    const choices=el('div','','poetry-choices');card.append(choices);
    for(const text of shuffle(q.options))btn(choices,text,()=>answer(text===q.correct,q.hint),'quiet-button');
