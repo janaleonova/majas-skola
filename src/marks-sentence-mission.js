@@ -164,7 +164,7 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
   host.append(section);
  };
  const grammarPractice=()=>{
-  stage='practice';const list=[sentences[0],sentences[1],sentences[3]];if(position>=list.length){position=0;transformPractice();return;}
+  stage='practice';const list=shuffle(underlineBank).slice(0,15);if(position>=15){position=0;transformPractice();return;}
   const item=list[position];head('2/3 · Teikuma centrs · '+(position+1)+'/3');
   underlineQuestion(item,{action:()=>{position++;grammarPractice();}});
  };
@@ -177,13 +177,13 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
  };
  const ready=()=>{
   stage='ready';head('🏆 Gatavs patstāvīgajai misijai?');
-  explain('8 jautājumi · 85% meistarība','Pārbaudījumā būs vārdšķiras, teikuma centrs un teikumu veidi. Bonusu dod par vismaz 7 pareizām atbildēm no 8 (87,5%).');
+  explain('30 jautājumi · 85% meistarība','Pārbaudījumā būs vārdšķiras, teikuma centrs un teikumu veidi. Bonusu dod par vismaz 26 pareizām atbildēm no 30.');
   explain('Bonuss',alreadyEarnedBonus?'Šīs tēmas vienreizējais +10 provizorisko BP bonuss jau ir iegūts.':'Par pirmo apstiprināto pārbaudījumu no 85% — vienreizēji +10 provizoriskie BP. Mēģinājumu vari atkārtot ar citiem jautājumiem.');
-  button(host,'⚔️ Sākt pārbaudījumu',()=>{exam=shuffle([...shuffle(words).slice(0,3).map(w=>({kind:'word',data:w})),...shuffle(sentences).slice(0,3).map(x=>({kind:'center',data:x})),...shuffle(sentences).slice(0,2).map(x=>({kind:'type',data:x}))]);prevSet=new Set(exam.map(x=>x.data.word||x.data.sentence));position=score=0;examStep();});
+  button(host,'⚔️ Sākt pārbaudījumu',()=>{exam=shuffle([...shuffle(words).slice(0,10).map(w=>({kind:'word',data:w})),...shuffle(underlineBank).slice(0,15).map(x=>({kind:'center',data:x})),...shuffle(underlineBank).slice(0,5).map(x=>({kind:'type',data:x}))]);prevSet=new Set(exam.map(x=>x.data.word||x.data.sentence));position=score=0;examStep();});
  };
  const examStep=()=>{
   stage='exam';if(position>=exam.length){results();return;}
-  const q=exam[position];head('💎 Patstāvīgā misija · '+(position+1)+'/8');
+  const q=exam[position];head('💎 Patstāvīgā misija · '+(position+1)+'/30');
   if(q.kind==='word')choices('Kāda vārdšķira ir “'+q.data.word+'”?',['Lietvārds','Darbības vārds','Īpašības vārds','Apstākļa vārds'],q.data.answer,
     {label:'Nākamais jautājums',action:()=>{position++;examStep();}},{independent:true,hint:q.data.why});
   else if(q.kind==='type')choices('Kāds teikums ir “'+q.data.sentence+'”?',['Nepaplašināts','Paplašināts'],q.data.type,
@@ -192,15 +192,15 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
  };
  const results=()=>{
   stage='results';head('🏆 Teikumu pūķa misija pabeigta');
-  const pct=Math.round(score/8*100),qualified=pct>=85;
-  host.append(el('div',pct+'%','result-hero'),el('p','Pareizi: '+score+' no 8.'));
+  const pct=Math.round(score/30*100),qualified=pct>=85;
+  host.append(el('div',pct+'%','result-hero'),el('p','Pareizi: '+score+' no 30.'));
   host.append(el('p',qualified?'💎 Meistarība sasniegta! Vari apstiprināt rezultātu.':'💪 Pamēģini vēlreiz ar citiem jautājumiem, lai apgūtu tēmu.'));
   const notice=el('p','Rezultāts vēl nav saglabāts.');notice.setAttribute('role','status');host.append(notice);
   const confirm=button(host,'✅ Esmu apmierināts — saglabāt',async()=>{
    if(saving||submitted)return;
    if(!canSubmit){notice.textContent='Vecāka priekšskatījums — rezultātu nesaglabā.';return;}
    saving=true;confirm.disabled=true;
-   try{const id=await saveProgress({studentRole:'marks',subject:'Latviešu valoda',activityType:TYPE,score:pct,notes:JSON.stringify({correct:score,total:8,childConfirmed:true,masteryBonusEligible:qualified,spendableBP:0,serverVerified:false})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;notice.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'Vienreizējais +10 provizorisko BP bonuss nopelnīts.':'');}
+   try{const id=await saveProgress({studentRole:'marks',subject:'Latviešu valoda',activityType:TYPE,score:pct,notes:JSON.stringify({correct:score,total:30,childConfirmed:true,masteryBonusEligible:qualified,spendableBP:0,serverVerified:false})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;notice.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'Vienreizējais +10 provizorisko BP bonuss nopelnīts.':'');}
    catch(err){notice.textContent='⚠️ Neizdevās saglabāt: '+(err.message||'savienojuma kļūda');confirm.disabled=false;}
    finally{saving=false;}
   });
