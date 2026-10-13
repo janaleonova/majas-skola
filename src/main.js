@@ -1,3 +1,4 @@
+import {renderMarksSentenceMission} from './marks-sentence-mission.js';
 import {installChildGuide} from './child-guide.js';
 import {renderDragonSplitMath} from './dragon-split-math.js';
 import {startChildPresence,renderParentPresence} from './activity-presence.js';
@@ -155,6 +156,7 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
   const subjectRoot=document.createElement('section');subjectRoot.className='subjects-root';subjectRoot.style.gridColumn='1/-1';area.append(subjectRoot);
   const available=role==='marks'
     ?[{id:'latviesu',icon:'📕',name:'Latviešu valoda',description:'Vārdu piedzīvojums · 3 tēmas',active:true,kind:'language'},
+      {id:'teikumi',icon:'🐉',name:'Teikumu pūķa akadēmija',description:'JAUNUMS · Vārdšķiras, teikuma centrs un paplašināti teikumi',active:true,kind:'language'},
       {id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, saistītais pieraksts un teksta misijas',active:true,kind:'math'},
       {id:'kristali',icon:'💎',name:'Kristālu kalve',description:'JAUNUMS · Divciparu skaitļa reizināšana, sadalot desmitos un vienos',active:true,kind:'math'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Dienas, mēneši, gadalaiki un vietniekvārdi',active:true,kind:'english'}]
@@ -162,7 +164,7 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
-   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',kristali:'Matemātika · Kristālu kalve',anglu:'Angļu valoda'})[id]||'Priekšmets';
+   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',kristali:'Matemātika · Kristālu kalve',teikumi:'Latviešu valoda · Teikumu akadēmija',anglu:'Angļu valoda'})[id]||'Priekšmets';
    activeLearning=true;
    area.classList.add('learning-active');
    appBackAction=()=>renderSubjects();
@@ -180,7 +182,9 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
     if(!confirmLeaveLearning()){event.preventDefault();event.stopImmediatePropagation();return;}
    },true);
    try{
-   if(id==='latviesu'&&role==='marks'){
+   if(id==='teikumi'&&role==='marks'){
+    renderMarksSentenceMission(trainer,{canSubmit:state.role===ROLES.MARKS,alreadyEarnedBonus:progress.some(p=>p.studentRole==='marks'&&p.activityType==='Teikumu pūķa akadēmija · gramatikas centrs'&&Number(p.score)>=85),saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;}});
+   }else if(id==='latviesu'&&role==='marks'){
     renderLatvianSchool(trainer,{canSubmit:state.role===ROLES.MARKS,currentUid:state.role===ROLES.MARKS?state.user.uid:'',saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw new Error('Firestore neapstiprināja saglabāšanu');return saved;},askAI:async payload=>{const token=await state.user.getIdToken();const response=await fetch('/api/marka-ai',{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},body:JSON.stringify(payload)});const data=await response.json();if(!response.ok)throw new Error(data.error||'MI treneris nav pieejams');return data.reply;}});
    }else if(id==='kristali'&&role==='marks'){
     renderDragonSplitMath(trainer,{canSubmit:state.role===ROLES.MARKS,alreadyEarnedBonus:progress.some(p=>p.studentRole==='marks'&&p.activityType==='Kristālu kalve · skaitļa sadalīšana'&&Number(p.score)>=85),saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase neapstiprināja saglabāšanu');return saved;}});
@@ -232,6 +236,13 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
     const text=document.createElement('p');text.textContent='Reizini divciparu skaitļus, sadalot desmitos un vienos. Tavs mērķis — 85% pareizi ar pirmo mēģinājumu. Pirmais apstiprinātais sasniegums: +10 provizoriskie BP vienu reizi.';featured.append(text);
     const b=document.createElement('button');b.type='button';b.className='action-button';b.textContent=masteryDone?'⚔️ Trenēties vēlreiz →':'🚀 Sākt jauno misiju →';b.onclick=()=>openSubject('kristali');featured.append(b);
     subjectRoot.append(featured);
+   }
+   if(role==='marks'){
+    const masteryDone=progress.some(p=>p.studentRole==='marks'&&p.activityType==='Teikumu pūķa akadēmija · gramatikas centrs'&&Number(p.score)>=85);
+    const feature=document.createElement('section');feature.className='module featured-new-mission';feature.style.cssText='grid-column:1/-1;border:2px solid #c5a2fa;border-radius:20px;padding:clamp(15px,3vw,22px);background:linear-gradient(125deg,#f6f0ff,#fff);color:#252047;margin:12px 0';
+    const heading=document.createElement('h2');heading.textContent=masteryDone?'🐉 Teikumu akadēmija — apgūta!':'🔥 JAUNA LATVIEŠU VALODAS TĒMA · Teikumu akadēmija';feature.append(heading);
+    const desc=document.createElement('p');desc.textContent='Iemācies atpazīt vārdšķiras, atrast teikuma priekšmetu un izteicēju, atšķirt paplašinātus un nepaplašinātus teikumus. Sasniedz 85% un vienreiz nopelni +10 provizoriskos BP!';feature.append(desc);
+    const start=document.createElement('button');start.className='action-button';start.type='button';start.textContent=masteryDone?'🔄 Atkārtot tēmu →':'🚀 Sākt jauno tēmu →';start.onclick=()=>openSubject('teikumi');feature.append(start);subjectRoot.append(feature);
    }
    const diagnosticBox=document.createElement('div');diagnosticBox.className='card';diagnosticBox.style.cssText='margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff';
    const diagnosticDone=progress.some(p=>p.activityType===DIAGNOSTIC_VERSION && p.studentRole===role && (state.role===ROLES.PARENT || p.studentUid===state.user.uid));
