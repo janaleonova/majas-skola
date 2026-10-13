@@ -59,6 +59,9 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
    for(const x of card.querySelectorAll('button'))x.disabled=true;
    btn(card,i===items.length-1?'🏆 Skatīt rezultātu →':'➡️ Nākamais jautājums →',()=>{i++;step();});
   };
+  if(mode==='learning'){
+   let seen=0;btn(card,'💡 Pavediens',()=>{feedback.textContent=seen++===0?'Padomā, ko prasa jautājums, un atrodi norādi fragmentā.':q.hint;},'quiet-button');
+  }
   if(q.kind==='open'){
    const ta=el('textarea','','poetry-input');ta.rows=3;ta.placeholder='Uzraksti savu dzejas rindu vai nelielu divrindi…';card.append(ta);
    const info=el('p','Radošo atbildi programma nevar droši novērtēt pēc nozīmes vai atskaņām. Par divrindes uzrakstīšanu saņemsi dalības punktu, bet saturu vari pārrunāt ar vecāku.');card.append(info);
