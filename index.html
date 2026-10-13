@@ -857,6 +857,18 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #school .poetry-mission .poetry-input{width:100%;min-height:110px;box-sizing:border-box;border:2px solid #b8b0e7;background:#fff;color:#1f3262;border-radius:12px;padding:12px;font:inherit}
 #school .poetry-mission .sentence-feedback{font-size:1.08rem;font-weight:750;line-height:1.5}
 @media(max-width:650px){#school .poetry-mission .poetry-choices{grid-template-columns:1fr}}
+
+/* High-contrast poetry learning layout: hints are NOT answer choices. */
+#school .poetry-mission .poetry-hint-panel{display:block;background:#fff3ca!important;color:#533900!important;border:2px solid #b88520!important;border-left:7px solid #97620c!important;border-radius:14px;padding:15px 17px;margin:16px 0;font-size:1.06rem;line-height:1.55}
+#school .poetry-mission .poetry-hint-panel[hidden]{display:none!important}
+#school .poetry-mission .poetry-hint-panel strong{display:block;color:#4e3400;font-weight:900;font-size:1.1rem}
+#school .poetry-mission .poetry-hint-panel p{color:#4e3400!important;margin:9px 0 0;font-weight:650}
+#school .poetry-mission .poetry-hint-button{display:block;min-height:48px;padding:11px 15px;margin:12px 0;border:2px dashed #9b691b;border-radius:12px;background:#fff9e9!important;color:#553700!important;font-size:1.01rem;font-weight:850;text-align:left}
+#school .poetry-mission .poetry-choices button{background:#fff!important;color:#172d57!important;border:2px solid #8595b7!important;opacity:1}
+#school .poetry-mission .poetry-choices button:disabled{color:#263b62!important;background:#e3e8f2!important;opacity:1}
+#school .poetry-mission .poetry-feedback{color:#193863!important;padding:12px 0;font-weight:800}
+html[data-school-theme="marks"] #school .subject-intro .eyebrow{background:#e7f8ff!important;color:#163650!important;font-weight:950!important;border:1px solid #8ab5ce!important;letter-spacing:.06em}
+html[data-school-theme="marks"] #school .eyebrow{color:#163650!important;background:#e7f8ff!important}
 </style>
 </head>
 <body>
