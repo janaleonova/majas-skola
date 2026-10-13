@@ -84,14 +84,14 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
  };
  const finish=()=>{
   complete=true;heading('🏆 Superizaicinājums pabeigts!');
-  const percent=Math.round(points/questions.length*100),qualified=percent>=85;
-  host.append(el('div',percent+'%','result-hero'),el('p','Pareizi: '+points+' / '+questions.length+'.'));
+  const percent=Math.round(points/items.length*100),qualified=percent>=85;
+  host.append(el('div',percent+'%','result-hero'),el('p','Pareizi: '+points+' / '+items.length+'.'));
   host.append(el('p',qualified?'💎 Esi sasniedzis meistarības mērķi!':'💪 Patrenējies un izmēģini jaunu jautājumu secību.'));
   const status=el('p','Rezultāts nav saglabāts — tu pats izvēlies.');status.setAttribute('role','status');host.append(status);
   const save=btn(host,'✅ Esmu apmierināts — saglabāt',async()=>{
    if(saving||submitted)return;if(!canSubmit){status.textContent='Vecāka priekšskatījumā nesaglabā.';return;}
    saving=true;save.disabled=true;
-   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:questions.length,childConfirmed:true,masteryBonusEligible:qualified,bonus:20,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
+   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,childConfirmed:true,masteryBonusEligible:qualified,bonus:20,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
    catch(e){status.textContent='⚠️ Neizdevās saglabāt: '+(e.message||'pārbaudi savienojumu');save.disabled=false;}finally{saving=false;}
   });
   btn(host,'🔁 Vēlreiz ar mainītu jautājumu secību',intro);
