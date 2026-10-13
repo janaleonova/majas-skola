@@ -54,12 +54,20 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   const q=items[i];heading((mode==='learning'?'🌱 Mācību jautājums ':'🏆 Tests ')+(i+1)+' / '+items.length);
   if(q.kind==='source')source(q.source,q.question.startsWith('Kurš autors'));
   if(q.kind==='writing'&&typeof q.source==='number')source(q.source);
+  // Always provide the text being analysed; learners should read, not guess from memory.
+  if(q.kind!=='source'&&!(q.kind==='writing'&&typeof q.source==='number')){
+   const prompt=q.question.toLocaleLowerCase('lv-LV');
+   if(prompt.includes('kronberg')||prompt.includes('zilbe'))source(1);
+   else if(prompt.includes('rain')||prompt.includes('saulīt'))source(0);
+   else if(prompt.includes('abu autoru')||prompt.includes('abiem fragmentiem')){source(0);source(1);}
+  }
   const card=el('section','','poetry-question');card.append(el('h3',q.question));host.append(card);
-  const feedback=el('p','','sentence-feedback');feedback.setAttribute('role','status');card.append(feedback);
+  const feedback=el('p','','sentence-feedback poetry-feedback');feedback.setAttribute('role','status');card.append(feedback);
+  const hintPanel=el('aside','','poetry-hint-panel');hintPanel.hidden=true;hintPanel.append(el('strong','💡 Padomā par šo'));const hintText=el('p');hintPanel.append(hintText);card.append(hintPanel);
   let answered=false;
   const answer=(ok,explanation)=>{
    if(answered)return;
-   if(mode==='learning'&&!ok){feedback.textContent='Mēģini vēlreiz. '+(explanation||q.hint);return;}
+   if(mode==='learning'&&!ok){feedback.textContent='Mēģini vēlreiz — atbildi vari labot.';hintPanel.hidden=false;hintText.textContent=q.hint||'Izlasi jautājumu un fragmentu vēlreiz.';return;}
    answered=true;points+=Number(ok);
    feedback.textContent=ok?'✨ Pareizi! '+(explanation||''):'Pārdomā: '+(explanation||q.hint);
    if(q.kind==='source'&&q.question.startsWith('Kurš autors')){const details=el('p','Autors: '+texts[q.source].author+' · '+texts[q.source].title);card.append(details);}
@@ -67,12 +75,12 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
    btn(card,i===items.length-1?'🏆 Skatīt rezultātu →':'➡️ Nākamais jautājums →',()=>{i++;step();});
   };
   if(mode==='learning'){
-   let seen=0;btn(card,'💡 Pavediens',()=>{feedback.textContent=seen++===0?'Padomā, ko prasa jautājums, un atrodi norādi fragmentā.':q.hint;},'quiet-button');
+   let seen=0;btn(card,'💡 Atvērt pavedienu',()=>{hintPanel.hidden=false;hintText.textContent=seen++===0?'Pārlasi jautājumu un sameklē pierādījumu tekstā.':q.hint;},'poetry-hint-button');
   }
   if(q.kind==='writing'){
    const ta=el('textarea','','poetry-input');ta.rows=4;ta.placeholder='Uzraksti savu atbildi pilnā teikumā un pamato ar tekstu.';card.append(ta);
-   btn(card,'💡 Kā veidot atbildi?',()=>{feedback.textContent=q.hint;},'quiet-button');
-   btn(card,'📖 Apskatīt atbildes paraugu',()=>{feedback.textContent='Parauga atbilde: '+q.example;},'quiet-button');
+   btn(card,'💡 Kā veidot atbildi?',()=>{hintPanel.hidden=false;hintText.textContent=q.hint;},'quiet-button');
+   btn(card,'📖 Apskatīt atbildes paraugu',()=>{hintPanel.hidden=false;hintText.textContent='Parauga atbilde: '+q.example;},'quiet-button');
    btn(card,'✅ Esmu uzrakstījis un sapratis',()=>{
     if(ta.value.trim().length<25){feedback.textContent='Pamēģini izveidot vismaz vienu pilnu teikumu ar pamatojumu.';return;}
     answer(true,'Labi! Salīdzini savu atbildi ar paraugu un pārrunā, vai to pamato teksta vārdi.');
