@@ -128,14 +128,44 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
   choices('Kāda vārdšķira ir vārdam “'+w.word+'”?',['Lietvārds','Darbības vārds','Īpašības vārds','Apstākļa vārds'],w.answer,
    {label:'Nākamais vārds',action:()=>{position++;wordPractice();}},{hint:w.why,help:wordHelp[w.answer]});
  };
+ const underlineQuestion=(item,after,{independent=false}={})=>{
+  const section=el('section','','sentence-question');section.append(el('h3','Pasvītro teikuma virslocekļus'));
+  section.append(el('p','Pieskaries vārdam: 1 reize — viena svītra (priekšmets), 2 reizes — divas svītras (izteicējs), 3 reizes — noņemt.'));
+  const legend=el('p','Priekšmets — KAS?  |  Izteicējs — KO DARA?','underline-legend');section.append(legend);
+  const line=el('div','','sentence-underline-line');section.append(line);
+  const raw=item.sentence.split(/\s+/);const marks=raw.map(()=>0);
+  raw.forEach((word,i)=>{
+   const b=el('button',word,'sentence-word');b.type='button';b.setAttribute('aria-label','Vārds '+word+'. Nav atzīmēts');
+   const render=()=>{
+    b.classList.toggle('under-subject',marks[i]===1);b.classList.toggle('under-predicate',marks[i]===2);
+    b.setAttribute('aria-label','Vārds '+word+'. '+(marks[i]===1?'Priekšmets, viena svītra':marks[i]===2?'Izteicējs, divas svītras':'Nav atzīmēts'));
+   };
+   b.onclick=()=>{if(complete)return;marks[i]=(marks[i]+1)%3;render();};
+   render();line.append(b);
+  });
+  const status=el('p','','sentence-feedback');status.setAttribute('role','status');section.append(status);
+  let complete=false,hintLevel=0;
+  if(!independent)button(section,'💡 Pavediens',()=>{
+   const hints=['Kurš vai kas teikumā kaut ko dara? Tam vajag vienu svītru.','Ko teikuma priekšmets dara? Tam vajag divas svītras.','Ja teikumā ir vairāk vārdu, nepasvītro tos visus — tikai priekšmetu un izteicēju.'];
+   status.textContent=hints[Math.min(hintLevel++,hints.length-1)];
+  },'quiet-button');
+  button(section,'🔎 Pārbaudīt pasvītrojumu',()=>{
+   if(complete)return;
+   if(marks.filter(x=>x===1).length!==1||marks.filter(x=>x===2).length!==1){status.textContent='Atzīmē tieši vienu priekšmetu ar vienu svītru un vienu izteicēju ar divām.';return;}
+   const correct=marks.every((mark,i)=>{
+    const word=normal(raw[i]);return mark===(word===normal(item.center[0])?1:word===normal(item.center[1])?2:0);
+   });
+   if(!independent&&!correct){status.textContent='Vēl ne. Atceries: par ko ir teikums, un ko tas dara? Vari mainīt pasvītrojumu.';return;}
+   complete=true;if(independent)score+=Number(correct);
+   status.textContent=correct?'✨ Pareizi! Viena svītra — '+item.center[0]+', divas svītras — '+item.center[1]+'.':'Šoreiz pareizi ir: viena svītra — '+item.center[0]+', divas svītras — '+item.center[1]+'.';
+   button(section,'➡️ Nākamais teikums',after.action,'action-button sentence-next');
+  });
+  host.append(section);
+ };
  const grammarPractice=()=>{
   stage='practice';const list=[sentences[0],sentences[1],sentences[3]];if(position>=list.length){position=0;transformPractice();return;}
   const item=list[position];head('2/3 · Teikuma centrs · '+(position+1)+'/3');
-  explain('Aplūko teikumu',item.sentence);
-  inputQuestion('Ieraksti priekšmetu un izteicēju','Raksti abus vārdus, piemēram: kaķis, ņaud',
-   answer=>{const words=parseAnswer(answer);const ok=words.length===2&&item.center.every(w=>words.includes(normal(w)));return {ok,feedback:'Meklē, PAR KO ir teikums un KO tas dara. Teikuma centrs: '+item.center.join(', ')+'.'};},
-   {label:'Nākamais teikums',action:()=>{position++;grammarPractice();}},
-   {hints:['Atrodi vārdu, kurš atbild uz jautājumu “kas?”.','Atrodi izteicēju — ko dara teikuma priekšmets?']});
+  underlineQuestion(item,{action:()=>{position++;grammarPractice();}});
  };
  const transformPractice=()=>{
   head('3/3 · Pārveido teikumu');
@@ -157,12 +187,7 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
     {label:'Nākamais jautājums',action:()=>{position++;examStep();}},{independent:true,hint:q.data.why});
   else if(q.kind==='type')choices('Kāds teikums ir “'+q.data.sentence+'”?',['Nepaplašināts','Paplašināts'],q.data.type,
     {label:'Nākamais jautājums',action:()=>{position++;examStep();}},{independent:true,hint:'Teikumā gramatiskais centrs ir '+q.data.center.join(' un ')+'.'});
-  else{
-   explain('Atrodi teikuma gramatisko centru',q.data.sentence);
-   inputQuestion('Ieraksti priekšmetu un izteicēju','Raksti divus vārdus, atdalot ar komatu. Piemēram: suns, skrien',
-    answer=>{const words=parseAnswer(answer);const ok=words.length===2&&q.data.center.every(w=>words.includes(normal(w)));return {ok,feedback:'Gramatiskais centrs: '+q.data.center.join(', ')+'.'};},
-    {label:'Nākamais jautājums',action:()=>{position++;examStep();}},{independent:true});
-  }
+  else{underlineQuestion(q.data,{action:()=>{position++;examStep();}},{independent:true});}
  };
  const results=()=>{
   stage='results';head('🏆 Teikumu pūķa misija pabeigta');
