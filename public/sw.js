@@ -1,5 +1,5 @@
 // Mājas skola — Service Worker pamats (PWA atbalsts)
-const CACHE_NAME = 'majas-skola-shell-v41';
+const CACHE_NAME = 'majas-skola-shell-v42';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
