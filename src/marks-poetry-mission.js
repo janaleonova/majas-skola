@@ -53,6 +53,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   if(i>=items.length){if(mode==='learning'){ready();return;}finish();return;}
   const q=items[i];heading((mode==='learning'?'🌱 Mācību jautājums ':'🏆 Tests ')+(i+1)+' / '+items.length);
   if(q.kind==='source')source(q.source,q.question.startsWith('Kurš autors'));
+  if(q.kind==='writing'&&typeof q.source==='number')source(q.source);
   const card=el('section','','poetry-question');card.append(el('h3',q.question));host.append(card);
   const feedback=el('p','','sentence-feedback');feedback.setAttribute('role','status');card.append(feedback);
   let answered=false;
@@ -68,7 +69,15 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   if(mode==='learning'){
    let seen=0;btn(card,'💡 Pavediens',()=>{feedback.textContent=seen++===0?'Padomā, ko prasa jautājums, un atrodi norādi fragmentā.':q.hint;},'quiet-button');
   }
-  if(q.kind==='open'){
+  if(q.kind==='writing'){
+   const ta=el('textarea','','poetry-input');ta.rows=4;ta.placeholder='Uzraksti savu atbildi pilnā teikumā un pamato ar tekstu.';card.append(ta);
+   btn(card,'💡 Kā veidot atbildi?',()=>{feedback.textContent=q.hint;},'quiet-button');
+   btn(card,'📖 Apskatīt atbildes paraugu',()=>{feedback.textContent='Parauga atbilde: '+q.example;},'quiet-button');
+   btn(card,'✅ Esmu uzrakstījis un sapratis',()=>{
+    if(ta.value.trim().length<25){feedback.textContent='Pamēģini izveidot vismaz vienu pilnu teikumu ar pamatojumu.';return;}
+    answer(true,'Labi! Salīdzini savu atbildi ar paraugu un pārrunā, vai to pamato teksta vārdi.');
+   });
+  }else if(q.kind==='open'){
    const ta=el('textarea','','poetry-input');ta.rows=3;ta.placeholder='Uzraksti savu dzejas rindu vai nelielu divrindi…';card.append(ta);
    const info=el('p','Radošo atbildi programma nevar droši novērtēt pēc nozīmes vai atskaņām. Par divrindes uzrakstīšanu saņemsi dalības punktu, bet saturu vari pārrunāt ar vecāku.');card.append(info);
    btn(card,'✅ Iesniegt savu rindu',()=>{const value=ta.value.trim();if(value.length<16){feedback.textContent='Uzraksti mazliet garāku rindiņu — vismaz 16 rakstzīmes.';return;}answer(true,'Paldies par radošo darbu!');});
