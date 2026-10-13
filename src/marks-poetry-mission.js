@@ -51,7 +51,9 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   const feedback=el('p','','sentence-feedback');feedback.setAttribute('role','status');card.append(feedback);
   let answered=false;
   const answer=(ok,explanation)=>{
-   if(answered)return;answered=true;points+=Number(ok);
+   if(answered)return;
+   if(mode==='learning'&&!ok){feedback.textContent='Mēģini vēlreiz. '+(explanation||q.hint);return;}
+   answered=true;points+=Number(ok);
    feedback.textContent=ok?'✨ Pareizi! '+(explanation||''):'Pārdomā: '+(explanation||q.hint);
    if(q.kind==='source'&&q.question.startsWith('Kurš autors')){const details=el('p','Autors: '+texts[q.source].author+' · '+texts[q.source].title);card.append(details);}
    for(const x of card.querySelectorAll('button'))x.disabled=true;
