@@ -253,7 +253,7 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
     const banner=document.createElement('section');banner.className='module featured-new-mission';
     banner.style.cssText='grid-column:1/-1;background:linear-gradient(125deg,#fff5d9,#f2e9ff);border:3px solid #b58cf1;border-radius:20px;color:#243461;padding:18px;margin:12px 0';
     const title=document.createElement('h2');title.textContent=done?'🏆 Dzejas superizaicinājums izpildīts!':'🔥 ŠODIEN · Literatūras superizaicinājums';banner.append(title);
-    const message=document.createElement('p');message.textContent='Rainis un Juris Kronbergs · Dzejoļa tēma, noskaņa, tēli un atskaņas · 15 uzdevumi · 85% meistarība · īpašs vienreizējs +20 provizorisko BP bonuss.';banner.append(message);
+    const message=document.createElement('p');message.textContent='Rainis un Juris Kronbergs · Dzejoļa tēma, noskaņa, tēli un atskaņas · 20 mācību jautājumi + 30 jautājumu tests · 85% meistarība · īpašs vienreizējs +20 provizorisko BP bonuss.';banner.append(message);
     const action=document.createElement('button');action.className='action-button';action.type='button';action.textContent=done?'📖 Atkārtot superizaicinājumu →':'🐉 Sākt superizaicinājumu →';action.onclick=()=>openSubject('dzeja');banner.append(action);subjectRoot.append(banner);
    }
    const diagnosticBox=document.createElement('div');diagnosticBox.className='card';diagnosticBox.style.cssText='margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff';
