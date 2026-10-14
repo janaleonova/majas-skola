@@ -90,7 +90,22 @@ function renderDashboard(role){
  const assigned=tasks.find(t=>t.daily&&['available','completed'].includes(taskState(t,role,state.day))&&(!t.dueDate||t.dueDate>=state.day)&&(!t.startDate||t.startDate<=state.day))||activeTasks.find(t=>t.moduleId);
  const dailyModule=CATALOG[role][Math.floor(Date.parse(state.day+'T00:00:00Z')/86400000)%CATALOG[role].length];
  const daily=E('section','','module daily-task');daily.append(E('span','ŠODIENAS TĒMA','eyebrow'));
- if(assigned)taskCard(daily,assigned,role);
+ if(role==='marks'&&['2026-10-14','2026-10-15'].includes(state.day)){
+  const poetry=E('article','','card task-card');
+  poetry.append(E('h3','📖 Literatūra — Rainis un Juris Kronbergs'),E('p','Izlasi vai noklausies abus pārbaudītos autoru stāstus. Pēc tam izpildi 20 mācību jautājumus un 30 patstāvīgos pārbaudes jautājumus. Rakstiskie pamatojumi palīdz sagatavoties NPD.'));
+  poetry.append(E('p','Īpašais vienreizējais bonuss: +20 BP pie vismaz 85% pārbaudē. Darbu vari pabeigt arī 15. oktobrī.'));
+  button(poetry,'Atvērt literatūras superizaicinājumu →',()=>openModule(role,'dzeja'));
+  daily.append(poetry);
+  if(state.day==='2026-10-14'){
+   const math=E('article','','card task-card');
+   math.append(E('h3','🔗 Šodienas matemātika — saistītais pieraksts'),E('p','Atkārto saistīto pierakstu, darbību secību un iekavas. Sāc režīmā “Mācos”, pēc tam trenējies un pārbaudi sevi.'));
+   math.append(E('p','BP tiek aprēķināti pēc vienotās meistarības un centības politikas; šim darbam nav izdomāta atsevišķa bonusa.'));
+   button(math,'Sākt saistīto pierakstu →',()=>openModule(role,'matematika',null,false,'family'));
+   daily.append(math);
+  }
+  if(assigned){const moreAssigned=E('section','','daily-assigned');moreAssigned.append(E('h3','Vecāka piešķirtais uzdevums'));taskCard(moreAssigned,assigned,role);daily.append(moreAssigned);}
+ }
+ else if(assigned)taskCard(daily,assigned,role);
  else {
   const done=completedModule(role,dailyModule,state.day);daily.append(E('h2',(done?'✅ ':'')+dailyModule.name));
   daily.append(E('p',done?'Šodienas tēma izpildīta. Vari nostiprināt zināšanas vai izvēlēties citu priekšmetu.':'Sāc ar šo tēmu; pēc tam izvēlies nākamo dienas priekšmetu.'));
@@ -120,7 +135,7 @@ function receipt(trainer,row){
  if(event)box.append(E('p','Meistarība +'+event.mastery+' · Centība +'+event.effort+' · Dienas bonuss +'+event.dailyBonus+' · Īpašais bonuss +'+event.missionBonus+' · Uzdevuma bonuss +'+event.assignedBonus),E('p','Kopā '+points.balance+' BP.'));
  button(box,'Atgriezties pie dienas plāna →',()=>renderDashboard(row.studentRole));trainer.append(box);
 }
-function openModule(role,id,task=null,resume=false){
+function openModule(role,id,task=null,resume=false,initialTopic=null){
  const module=CATALOG[role].find(x=>x.id===id)||{id,name:'Pirmā ekspedīcija'},key=role+':'+id;
  if(readDraft(uidFor(role),id)&&!resume){if(confirm('Šī tēma jau ir iesākta. Turpināt saglabāto darbu?'))resume=true;else{parked.delete(key);clearDraft(uidFor(role),id);}}
  const area=$('modules');area.replaceChildren();area.classList.add('learning-active');state.active={role,id,task};currentActivity=module.name;
@@ -157,7 +172,7 @@ function openModule(role,id,task=null,resume=false){
  try{
   if(id==='diagnostic')renderFirstDiagnostic(trainer,{...options,role,alreadyCompleted:state.progress.some(r=>r.studentUid===uidFor(role)&&r.activityType===DIAGNOSTIC_VERSION),onBack:()=>leave(()=>renderDashboard(role))});
   else if(role==='marks'&&id==='latviesu')renderLatvianSchool(trainer,{...options,askAI:async payload=>(await api('/api/marka-ai',payload)).reply});
-  else if(role==='marks'&&id==='matematika')renderMarksMath(trainer,{...options,startVerifiedSession:async(topic,mode)=>api('/api/math/session',{topic,mode}),gradeVerifiedSession:async(token,answers)=>api('/api/math/grade',{token,answers})});
+  else if(role==='marks'&&id==='matematika')renderMarksMath(trainer,{...options,initialTopic,startVerifiedSession:async(topic,mode)=>api('/api/math/session',{topic,mode}),gradeVerifiedSession:async(token,answers)=>api('/api/math/grade',{token,answers})});
   else if(role==='marks'&&id==='teikumi')renderMarksSentenceMission(trainer,options);
   else if(role==='marks'&&id==='dzeja')renderMarksPoetryMission(trainer,options);
   else if(role==='marks'&&id==='kristali')renderDragonSplitMath(trainer,options);
