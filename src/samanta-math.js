@@ -92,22 +92,36 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
    for(let i=0;i<q.a;i++){const group=el('div','visual-group');for(let j=0;j<q.b;j++)group.append(el('span','visual-object',q.icon));grid.append(group);}
    card.append(grid);
   }
-  if(q.kind.startsWith('story')){
+  if(q.kind.startsWith('story')||s.mode==='learn'){
    const controls=el('div','reading-controls');
    const read=button(controls,'🔊 Nolasīt uzdevumu',()=>{
     if(!('speechSynthesis' in window)){feedback.textContent='Šajā pārlūkā balss nolasīšana nav pieejama.';return;}
-    window.speechSynthesis.cancel();const speech=new SpeechSynthesisUtterance(q.prompt);speech.lang='lv-LV';speech.rate=0.85;speech.pitch=1;
+    window.speechSynthesis.cancel();
+    const spokenMath=q.prompt.replace(/×/g,' reiz ').replace(/÷/g,' dalīts ar ').replace(/=/g,' ir ').replace(/\?/g,' cik?');
+    const fullSpeech=spokenMath+(s.mode==='learn'&&q.hint?'. Pavediens: '+q.hint:'');
+    const speech=new SpeechSynthesisUtterance(fullSpeech);speech.lang='lv-LV';speech.rate=0.85;speech.pitch=1.05;
     const available=window.speechSynthesis.getVoices().find(v=>v.lang.toLowerCase().startsWith('lv'));
     if(available)speech.voice=available;
     window.speechSynthesis.speak(speech);
    },'quiet-button');
-   read.setAttribute('aria-label','Nolasīt teksta uzdevumu skaļi');
+   read.setAttribute('aria-label','Nolasīt uzdevumu skaļi');
    button(controls,'⏹ Apturēt',()=>{if('speechSynthesis' in window)window.speechSynthesis.cancel();},'quiet-button');
    card.append(controls);
   }
   const form=el('form','math-answer-form');const inp=el('input','big-number-input');inp.type='number';inp.inputMode='numeric';inp.min='0';inp.max='100';inp.step='1';inp.required=true;inp.placeholder='?';inp.autocomplete='off';inp.setAttribute('aria-label','Tava atbilde');form.append(inp);
   const feedback=el('p','feedback-line');feedback.setAttribute('role','status');
-  if(s.mode==='learn')button(card,'💡 Parādi pavedienu',()=>{feedback.textContent=q.kind.includes('multiply')?'Atceries: reizināšana ir atkārtota saskaitīšana.':q.kind.includes('divide')?'Pārbaudi dalīšanu ar reizināšanu.':'Domā, kura darbība jāizpilda.';},'quiet-button');
+  if(s.mode==='learn')button(card,'💡 Parādi pavedienu',()=>{
+    const hintText=q.kind.includes('multiply')?'Atceries: reizināšana ir atkārtota saskaitīšana. '+q.hint:q.kind.includes('divide')?'Pārbaudi dalīšanu ar reizināšanu. '+q.hint:q.hint||'Domā, kura darbība jāizpilda.';
+    feedback.textContent=hintText;
+    if('speechSynthesis' in window){
+      window.speechSynthesis.cancel();
+      const sp=new SpeechSynthesisUtterance(hintText.replace(/×/g,' reiz ').replace(/÷/g,' dalīts ar ').replace(/=/g,' ir '));
+      sp.lang='lv-LV';sp.rate=0.85;sp.pitch=1.05;
+      const v=window.speechSynthesis.getVoices().find(x=>x.lang.toLowerCase().startsWith('lv'));
+      if(v)sp.voice=v;
+      window.speechSynthesis.speak(sp);
+    }
+  },'quiet-button');
   const submit=el('button','action-button','Pārbaudīt');submit.type='submit';form.append(submit);card.append(form,feedback);
   const numpad=attachTouchNumpad(card,inp);
   host.append(card);
@@ -116,30 +130,41 @@ export function renderSamantaMath(container,{canSubmit=false,currentUid='',saveP
    const good=val===q.answer;s.correct+=Number(good);s.answers.push({key:q.key,correct:good});s.streak=good?(s.streak||0)+1:0;s.maxStreak=Math.max(s.maxStreak||0,s.streak);if(!good)s.misses.push(q);
    inp.disabled=true;submit.disabled=true;
    numpad.querySelectorAll('button').forEach(b=>b.disabled=true);
-   feedback.textContent=good?'🎉 Pareizi! Malacis!':s.mode==='exam'?'Atbilde pieņemta. Pareizo atbildi redzēsi rezultātu pārskatā.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;
+   feedback.textContent=good?(s.streak>=3?`🔥 Fantastiski, Samanta! Sērija: ${s.streak}`:'🎉 Pareizi! Malacis!'):s.mode==='exam'?'Atbilde pieņemta. Pareizo atbildi redzēsi rezultātu pārskatā.':'💡 Pareizā atbilde: '+q.answer+'. '+q.hint;
    feedback.className='feedback-line answer-feedback '+(good?'answer-feedback-good':'answer-feedback-error');
+   if(s.mode==='learn'&&'speechSynthesis' in window){
+     const fbSpeech=new SpeechSynthesisUtterance(good?(s.streak>=3?'Fantastiski, Samanta! Pareizi!':'Pareizi! Malacis!'):'Pareizā atbilde ir '+q.answer+'. '+q.hint.replace(/×/g,' reiz ').replace(/÷/g,' dalīts ar ').replace(/=/g,' ir '));
+     fbSpeech.lang='lv-LV';fbSpeech.rate=0.88;fbSpeech.pitch=1.05;
+     const v=window.speechSynthesis.getVoices().find(x=>x.lang.toLowerCase().startsWith('lv'));
+     if(v)fbSpeech.voice=v;
+     window.speechSynthesis.speak(fbSpeech);
+   }
    const advance=()=>{if(advanced||!card.isConnected)return;advanced=true;stopAnswerTimer();s.index++;step();};
    button(card,s.index+1===s.items.length?'Skatīt rezultātu →':'Turpināt uzreiz →',advance);
-   if(good||s.mode!=='exam')answerTimer=setTimeout(advance,good?1150:3000);
+   if(good||s.mode!=='exam')answerTimer=setTimeout(advance,good?1150:2800);
   };
  }
  async function finish(){const s=session,pct=Math.round(s.correct/s.items.length*100);errors=s.misses;currentMode=s.type;family=s.fam;
-  shell('Tavs rezultāts','Katrs mēģinājums palīdz kļūt drošākai.');
-  host.append(el('div','result-hero',pct+'%'),el('p','result-subtitle',s.correct+' pareizi no '+s.items.length+' uzdevumiem'));
-  const weak=el('div','soft-notice',s.misses.length?'Visvairāk jānostiprina '+(s.type==='multiply'?'reizināšana':s.type==='division'?'dalīšana':'dažas reizināšanas un dalīšanas darbības')+'.':'🌟 Visas atbildes pareizas!');
+  shell('Tavs rezultāts',pct>=80?'🎉 Izcils treniņš, Samanta!':pct>=50?'👍 Labi pastrādāts! Katrs mēģinājums tevi stiprina.':'🌱 Labs treniņš! Ar katru reizi kļūsi drošāka.');
+  host.append(el('div','result-hero',pct+'%'),el('p','result-subtitle',s.correct+' pareizi no '+s.items.length+' uzdevumiem · Garākā sērija: '+(s.maxStreak||0)));
+  const weak=el('div','soft-notice',s.misses.length?'Visvairāk jānostiprina '+(s.type==='multiply'?'reizināšana':s.type==='division'?'dalīšana':'dažas darbības')+'. Izmanto kļūdu treniņu, lai nostiprinātu!':'🌟 Izcili! Visi uzdevumi atrisināti pareizi!');
   host.append(weak);
   if(s.misses.length){const review=el('div','soft-notice');review.append(el('h3','','Pareizās atbildes'));for(const q of s.misses)review.append(el('p','',q.prompt+'  →  '+q.answer));host.append(review);}
   const policy=calculatePracticePoints({correct:s.correct,total:s.items.length,maxStreak:s.maxStreak||0,mode:s.mode});
   const key=storagePrefix+'best-'+s.type+'-'+s.fam;let previous=0;if(storagePrefix)try{previous=Number(localStorage.getItem(key))||0;}catch{}
   const award=previewImprovement(previous,policy.potential);
   const row={type:s.type,mode:s.mode,percent:pct,correct:s.correct,total:s.items.length,date:new Date().toISOString(),streak:s.maxStreak||0,pointsPreview:award.earned,pointsPotential:policy.potential};
-  const pts=el('div','soft-notice',policy.eligible?'🏅 Šī mēģinājuma punktu potenciāls: '+policy.potential+'/20 · Jauns uzlabojums: +'+award.earned+' treniņa BP · Sērijas bonuss: '+policy.streakBonus:'🌱 Šis ir mācību režīms — bez balvu punktiem.');host.append(pts);
-  const disclaimer=el('p','points-disclaimer','Treniņa BP pagaidām ir informatīvi. Balvu makam tos nepieskaita, līdz ir droša servera vērtēšana.');host.append(disclaimer);
+  const pts=el('div','soft-notice');
+  pts.style.cssText='background:linear-gradient(135deg,#fdf2f8,#f5f3ff);border:2px solid #a855f7;padding:16px;border-radius:18px;margin:12px 0;text-align:center';
+  pts.innerHTML=`<div style="font-size:1.55rem;font-weight:900;color:#7c3aed;margin-bottom:4px">🌟 +${award.earned} BP nopelnīti!</div><div style="font-size:0.92rem;color:#4b5563">Tēmas meistarība: ${award.best}/20 · Sērijas bonuss: +${policy.streakBonus} BP · Lielisks ieguldījums ceļā uz kino vakaru!</div>`;
+  host.append(pts);
   const status=el('p','save-status');host.append(status);
-  if(canSubmit){try{const id=await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Reizrēķins un dalīšana · '+s.type+' · '+s.mode,score:pct,notes:JSON.stringify(row)});if(id){store(row);if(storagePrefix)try{localStorage.setItem(key,String(award.best));}catch{};status.textContent='✅ Rezultāts saglabāts.';}else status.textContent='⚠️ Saglabāšanu nevarēja apstiprināt.';}catch{status.textContent='⚠️ Firebase saglabāšana neizdevās. Rezultāts paliek šīs pārlūkprogrammas vēsturē.';}}
+  const typeLabel={multiply:s.fam?`Reizināšana ar ${s.fam}`:'Visas reizināšanas tabulas',division:s.fam?`Dalīšana ar ${s.fam}`:'Visas dalīšanas tabulas',mixed:'Jauktais izaicinājums',visual:'Vizuālā skaitīšana',story:'Teksta uzdevumi'}[s.type]||'Reizrēķins';
+  const activityType=`Reizrēķins · ${typeLabel} · ${s.mode}`;
+  if(canSubmit){try{const id=await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType,score:pct,notes:JSON.stringify(row)});if(id){store(row);if(storagePrefix)try{localStorage.setItem(key,String(award.best));}catch{};status.textContent='✅ Rezultāts un punkti saglabāti!';}else status.textContent='⚠️ Saglabāšanu nevarēja apstiprināt.';}catch{status.textContent='⚠️ Firebase saglabāšana neizdevās. Rezultāts paliek šīs pārlūkprogrammas vēsturē.';}}
   else status.textContent='Vecāka priekšskatījums — rezultāts netiek ieskaitīts.';
   const actions=el('div','button-cluster');host.append(actions);
-  if(s.misses.length){button(actions,'🎯 Trenēt manas kļūdas',()=>start(s.type,s.fam,'mistakes'));button(actions,'Vēlāk',welcome,'quiet-button');}
+  if(s.misses.length){button(actions,'🎯 Trenēt manas kļūdas ('+s.misses.length+')',()=>start(s.type,s.fam,'mistakes'));button(actions,'Vēlāk',welcome,'quiet-button');}
   button(actions,'Mēģināt vēlreiz',()=>start(s.type,s.fam,s.mode));button(actions,'← Uz sākumu',welcome,'quiet-button');
  }
  welcome();

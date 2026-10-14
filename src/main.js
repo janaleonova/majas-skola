@@ -11,6 +11,7 @@ import {renderSamantaEnglish} from './samanta-english.js';
 import {renderRewardShop,renderParentRewardManager,calculateChildPoints} from './rewards-system.js';
 import { applyPersonalTheme,renderThemePicker } from './personal-theme.js';
 import { renderSamantaMath } from './samanta-math.js';
+import { renderSamantaAdditionGame } from './samanta-sum-game.js';
 import { renderLatvianSchool } from './latvian-school.js';
 import {initFirebase,auth,db,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
 import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,recordProgress,deleteParentTestProgress,resetChildProgress,ROLES} from './firebase/homeSchoolService.js';
@@ -162,11 +163,12 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
       {id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, saistītais pieraksts un teksta misijas',active:true,kind:'math'},
       {id:'kristali',icon:'💎',name:'Kristālu kalve',description:'JAUNUMS · Divciparu skaitļa reizināšana, sadalot desmitos un vienos',active:true,kind:'math'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Dienas, mēneši, gadalaiki un vietniekvārdi',active:true,kind:'english'}]
-    :[{id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, attēli un stāsti',active:true,kind:'math'},
+    :[{id:'saskaitisana',icon:'🌸',name:'Saskaitīšanas pērles',description:'JAUNĀ VIELA · Saskaitīšanas paņēmieni un summas 100 apjomā · +15 BP',active:true,kind:'math'},
+      {id:'matematika',icon:'🧮',name:'Matemātika',description:'Reizrēķins, dalīšana, attēli un stāsti',active:true,kind:'math'},
       {id:'latviesu',icon:'📚',name:'Latviešu valoda',description:'Lasīšana, vārdšķiras un burti',active:true,kind:'language'},
       {id:'anglu',icon:'🌎',name:'Angļu valoda',description:'Vārdi, krāsas, dzīvnieki un audio izruna',active:true,kind:'english'}];
   const openSubject=id=>{
-   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',kristali:'Matemātika · Kristālu kalve',teikumi:'Latviešu valoda · Teikumu akadēmija',dzeja:'Literatūra · Dzejas superizaicinājums',anglu:'Angļu valoda'})[id]||'Priekšmets';
+   currentActivity=({latviesu:'Latviešu valoda',matematika:'Matemātika',saskaitisana:'Matemātika · Saskaitīšanas pērles',kristali:'Matemātika · Kristālu kalve',teikumi:'Latviešu valoda · Teikumu akadēmija',dzeja:'Literatūra · Dzejas superizaicinājums',anglu:'Angļu valoda'})[id]||'Priekšmets';
    activeLearning=true;
    area.classList.add('learning-active');
    appBackAction=()=>renderSubjects();
@@ -199,6 +201,8 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
      saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firebase saglabāšana nav apstiprināta');return id;}});
    }else if(id==='matematika'&&role==='samanta'){
     renderSamantaMath(trainer,{canSubmit:state.role===ROLES.SAMANTA,currentUid:state.role===ROLES.SAMANTA?state.user.uid:'',saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firestore saglabāšana nav apstiprināta');return id;}});
+   }else if(id==='saskaitisana'&&role==='samanta'){
+    renderSamantaAdditionGame(trainer,{canSubmit:state.role===ROLES.SAMANTA,currentUid:state.role===ROLES.SAMANTA?state.user.uid:'',alreadyEarnedBonus:progress.some(p=>p.studentRole==='samanta'&&(p.activityType==='Saskaitīšanas pērles · Summas 100 apjomā'||p.activityType?.startsWith('Saskaitīšanas pērles'))&&Number(p.score)>=80),saveProgress:async data=>{const id=await recordProgress({...data,currentUid:state.user.uid});if(!id)throw Error('Firestore saglabāšana nav apstiprināta');return id;}});
    }
    else if(id==='anglu'&&role==='marks'){
     renderMarksEnglish(trainer,{canSubmit:state.role===ROLES.MARKS,saveProgress:async data=>{const saved=await recordProgress({...data,currentUid:state.user.uid});if(!saved)throw Error('Firebase saglabāšana nav apstiprināta');return saved;}});
@@ -256,6 +260,15 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
     const message=document.createElement('p');message.textContent='Rainis un Juris Kronbergs · Dzejoļa tēma, noskaņa, tēli un atskaņas · 20 mācību jautājumi + 30 jautājumu tests · 85% meistarība · īpašs vienreizējs +20 provizorisko BP bonuss.';banner.append(message);
     const action=document.createElement('button');action.className='action-button';action.type='button';action.textContent=done?'📖 Atkārtot superizaicinājumu →':'🐉 Sākt superizaicinājumu →';action.onclick=()=>openSubject('dzeja');banner.append(action);subjectRoot.append(banner);
    }
+   if(role==='samanta'){
+    const bonusDone=progress.some(p=>p.studentRole==='samanta'&&(p.activityType==='Saskaitīšanas pērles · Summas 100 apjomā'||p.activityType?.startsWith('Saskaitīšanas pērles'))&&Number(p.score)>=80);
+    const banner=document.createElement('section');banner.className='module featured-new-mission';
+    banner.style.cssText='grid-column:1/-1;background:linear-gradient(130deg,#fdf2f8,#ffffff);border:3px solid #ec4899;border-radius:20px;color:#831843;padding:clamp(16px,3vw,24px);margin:12px 0;box-shadow:0 8px 24px rgba(236,72,153,0.12)';
+    const title=document.createElement('h2');title.textContent=bonusDone?'🌸 Saskaitīšanas pērles — apgūta jaunā tēma!':'🔥 JAUNĀ VIELA · Saskaitīšanas paņēmieni 100 apjomā';banner.append(title);
+    const message=document.createElement('p');message.style.cssText='color:#475569;font-size:1.02rem;line-height:1.5';message.textContent='Apgūsti 3 saskaitīšanas paņēmienus un aprēķini summas 100 apjomā! Sadalīšana pa šķirām, pieskaitīšana pa daļām un papildināšana līdz apaļam 10. Sasniedz vismaz 80% un saņem vienreizēju +15 BP kino vakara bonusu!';banner.append(message);
+    const action=document.createElement('button');action.className='action-button';action.type='button';action.textContent=bonusDone?'🌸 Spēlēt un trenēties vēlreiz →':'🚀 Sākt saskaitīšanas spēli →';action.onclick=()=>openSubject('saskaitisana');banner.append(action);
+    subjectRoot.append(banner);
+   }
    const diagnosticBox=document.createElement('div');diagnosticBox.className='card';diagnosticBox.style.cssText='margin:16px 0;padding:20px;border:2px solid #8a77c5;border-radius:18px;background:#faf7ff';
    const diagnosticDone=progress.some(p=>p.activityType===DIAGNOSTIC_VERSION && p.studentRole===role && (state.role===ROLES.PARENT || p.studentUid===state.user.uid));
    const dxTitle=document.createElement('h3');dxTitle.textContent=diagnosticDone?'✅ Pirmā ekspedīcija izpildīta':'🌟 Tava pirmā ekspedīcija';
@@ -277,7 +290,7 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    const isDoneToday=pattern=>progress.some(p=>p.studentRole===role&&dayOfStamp(p.recordedAt)===todayStr&&pattern.test((p.subject||'')+' '+(p.activityType||'')));
    const crystals={
      latviesu:isDoneToday(/latvie|lasīš|vārdu|galotn/i),
-     matematika:isDoneToday(/matemāt|reizrēķ|reizin|dalīš|ātruma/i),
+     matematika:isDoneToday(/matemāt|reizrēķ|reizin|dalīš|ātruma|saskait|pērles|summas/i),
      anglu:isDoneToday(/angļu|english/i)
    };
    const collectedCount=Number(crystals.latviesu)+Number(crystals.matematika)+Number(crystals.anglu);
@@ -335,9 +348,9 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    }
    const details=document.createElement('details');details.style.marginTop='12px';
    const summary=document.createElement('summary');summary.textContent='💎 Kā rodas mani BP?';summary.style.cssText='cursor:pointer;font-weight:800;font-size:1.05rem';details.append(summary);
-   const pointsHelp=document.createElement('p');pointsHelp.textContent='Pašlaik punkti ir provizoriski. Par katras tēmas LABĀKĀ rezultāta sasniegšanu: 40–59% = 4 BP, 60–74% = 8 BP, 75–89% = 12 BP, 90–100% = 16 BP. Ja uzlabo rezultātu, ieskaita tikai starpību. Par atkārtotu 100% tajā pašā tēmā nav jaunu BP. Marka Kristālu kalvei par pirmo apstiprināto rezultātu no 85% papildus ir vienreizējs +10 BP. Dienas kristāli motivē izmēģināt visus trīs priekšmetus, bet pagaidām paši nepievieno tērējamus BP.';pointsHelp.style.cssText='font-size:1rem;line-height:1.5;margin-top:10px';details.append(pointsHelp);
+   const pointsHelp=document.createElement('p');pointsHelp.textContent='Par katras tēmas un tabulas apgūšanu saņem līdz 18–20 BP! Par katru pabeigtu treniņu un kļūdu labošanu saņem papildu treniņa punktus, un, savācot visus 3 dienas priekšmetu kristālus, saņem +10 BP dienas zelta lādes bonusu. Visi punkti krājas ceļā uz kino vakaru un ģimenes balvām!';pointsHelp.style.cssText='font-size:1rem;line-height:1.5;margin-top:10px';details.append(pointsHelp);
    coach.append(details);
-   const disclosure=document.createElement('p');disclosure.textContent='Ceļvedis šobrīd izmanto tavu saglabāto progresu un noteikumus. Sarunājošu MI palīgu pieslēgsim atsevišķi, ar drošiem bērnu datu ierobežojumiem.';disclosure.style.cssText='font-size:.87rem;opacity:.8;margin:12px 0 0';coach.append(disclosure);
+   const disclosure=document.createElement('p');disclosure.textContent='Ceļvedis izmanto tavu saglabāto progresu un palīdz izvēlēties nākamās foršākās misijas!';disclosure.style.cssText='font-size:.87rem;opacity:.8;margin:12px 0 0';coach.append(disclosure);
    subjectRoot.append(coach);
    const tiles=document.createElement('div');tiles.className=role==='marks'?'subject-grid levelup-marks-missions':'subject-grid';
    for(const subject of available){
@@ -357,7 +370,7 @@ async function showSchool(role){if(stopParentPresence){stopParentPresence();stop
    const shopTile=document.createElement('button');
    shopTile.type='button';shopTile.className='subject-card shop-summary-card';
    const points=calculateChildPoints(role,progress);
-   shopTile.innerHTML=`<div class="shop-summary-left"><span class="shop-summary-icon">🎁</span><div class="shop-summary-text"><strong class="shop-summary-title">Balvu veikals un mērķi</strong><span class="shop-summary-desc">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP (provizoriski)</span></div></div><span class="subject-status shop-summary-btn">Atvērt veikalu →</span>`;
+   shopTile.innerHTML=`<div class="shop-summary-left"><span class="shop-summary-icon">🎁</span><div class="shop-summary-text"><strong class="shop-summary-title">Balvu veikals un mērķi</strong><span class="shop-summary-desc">🎬 Kino vakars: ${points.balance}/250 BP · Šodien +${points.todayEarned} BP! 🌟</span></div></div><span class="subject-status shop-summary-btn">Atvērt veikalu →</span>`;
    shopTile.onclick=()=>{
     currentActivity='Balvu veikals';
     activeLearning=false;

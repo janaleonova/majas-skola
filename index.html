@@ -869,6 +869,34 @@ html,body{width:100%;max-width:100%;overflow-x:clip}
 #school .poetry-mission .poetry-feedback{color:#193863!important;padding:12px 0;font-weight:800}
 html[data-school-theme="marks"] #school .subject-intro .eyebrow{background:#e7f8ff!important;color:#163650!important;font-weight:950!important;border:1px solid #8ab5ce!important;letter-spacing:.06em}
 html[data-school-theme="marks"] #school .eyebrow{color:#163650!important;background:#e7f8ff!important}
+
+/* Marks 4th grade Saistītais pieraksts & Darbību secība */
+.marks-order-stage{padding:clamp(16px,3.5vw,32px);text-align:left}
+.order-expression-banner{background:linear-gradient(135deg,#f5f0ff 0%,#eef4ff 100%);border:2px solid #c9bcf7;border-radius:22px;padding:16px 20px;margin:12px 0 14px;text-align:center}
+.order-expression-title{font-size:.88rem;font-weight:850;color:#6b57bf;text-transform:uppercase;letter-spacing:.05em;margin-bottom:5px}
+.order-expression-text{font-family:'Nunito',sans-serif;font-size:clamp(2.2rem,6vw,3.8rem);font-weight:900;color:#1f2c58;line-height:1.2;letter-spacing:-.02em}
+.order-rules-pill{display:block;background:#fffbeb;border:1px solid #fde68a;color:#854d0e;border-radius:14px;padding:9px 15px;font-size:.92rem;font-weight:750;line-height:1.45;margin-bottom:16px;text-align:center}
+.order-steps-container{display:flex;flex-direction:column;gap:14px;margin:12px 0}
+.order-step-card{border:2px solid #e7e5fa;border-radius:18px;padding:16px 18px;background:#fff;transition:all .2s ease}
+.order-step-card.active{border-color:#8b5cf6;background:#faf9ff;box-shadow:0 8px 24px rgba(139,92,246,.12)}
+.order-step-card.completed{border-color:#10b981;background:#f0fdf4}
+.order-step-card.locked{opacity:.55;background:#f9f9fb;border-style:dashed}
+.order-step-header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.order-step-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:999px;font-size:.85rem;font-weight:900;background:#ede9fe;color:#6d28d9}
+.order-step-card.completed .order-step-badge{background:#d1fae5;color:#047857}
+.order-step-title{font-size:1.08rem;font-weight:800;color:#202e5c}
+.order-step-prompt{font-size:1.25rem;font-weight:900;color:#1e293b;margin:8px 0 12px;font-family:'Nunito',sans-serif}
+.order-choice-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin:10px 0}
+.order-choice-btn{background:#fff;border:2px solid #c4b5fd;color:#3730a3;padding:13px 16px;border-radius:14px;font-size:1.05rem;font-weight:800;text-align:center;cursor:pointer;transition:transform .14s ease,border-color .14s ease,background .14s ease}
+.order-choice-btn:hover:not(:disabled){background:#f5f3ff;border-color:#7c3aed;transform:translateY(-2px)}
+.order-choice-btn.choice-correct{background:#d1fae5!important;border-color:#10b981!important;color:#065f46!important}
+.order-choice-btn.choice-wrong{background:#fee2e2!important;border-color:#ef4444!important;color:#991b1b!important;animation:orderShake .35s}
+.order-step-form{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:8px}
+.order-step-form .big-number-input{min-height:58px;font-size:1.7rem;width:130px!important}
+.order-step-form .action-button{min-height:58px;font-size:1rem}
+.order-numpad-slot{margin-top:14px}
+@keyframes orderShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+@media(max-width:600px){.order-choice-grid{grid-template-columns:1fr}.order-step-form{flex-direction:column}.order-step-form .big-number-input{width:100%!important}.order-step-form .action-button{width:100%!important}}
 </style>
 </head>
 <body>

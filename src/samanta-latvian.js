@@ -1,4 +1,5 @@
 // Samantas latviešu valodas dārzs — vieglā lasīšana, zilbēšana un disleksijas atbalsts.
+import { calculatePracticePoints, previewImprovement } from './points-policy.js';
 
 const readingStories = [
   { sentence: 'Kaķis guļ uz sola.', syllables: 'Ka-ķis guļ uz so-la.', q: 'Kur guļ kaķis?', a: 'uz sola', options: ['uz sola', 'zem sola', 'kokā'], hint: 'Izlasi teikumu vēlreiz: kur atrodas kaķis?' },
@@ -335,10 +336,21 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
     const heading = el('div', undefined, 'learning-heading');
     heading.append(
       el('span', '🌸 TRENIŅŠ PABEIGTS', 'eyebrow'),
-      el('h2', 'Rezultāts: ' + pct + '%'),
-      el('p', 'Pareizi ' + correct + ' no ' + questions.length + ' · Garākā sērija: ' + maxStreak)
+      el('h2', pct >= 80 ? 'Izcili, Samanta!' : pct >= 50 ? 'Labi pastrādāts!' : 'Treniņš pabeigts!'),
+      el('p', 'Pareizi ' + correct + ' no ' + questions.length + ' (' + pct + '%) · Garākā sērija: ' + maxStreak)
     );
     host.append(heading);
+
+    const policy = calculatePracticePoints({ correct, total: questions.length, maxStreak, mode });
+    const award = previewImprovement(0, policy.potential);
+
+    const pts = el('div', undefined, 'soft-notice');
+    pts.style.cssText = 'background:linear-gradient(135deg,#fdf2f8,#f5f3ff);border:2px solid #a855f7;padding:16px;border-radius:18px;margin:12px 0;text-align:center';
+    pts.innerHTML = `
+      <div style="font-size:1.55rem;font-weight:900;color:#7c3aed;margin-bottom:4px">🌟 +${award.earned} BP nopelnīti!</div>
+      <div style="font-size:0.92rem;color:#4b5563">Tēmas meistarība: ${award.best}/20 · Sērijas bonuss: +${policy.streakBonus} BP · Valodas kristāls iegūts!</div>
+    `;
+    host.append(pts);
 
     const status = el('p', undefined, 'reading-feedback');
     host.append(status);
@@ -350,9 +362,9 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
           subject: 'Latviešu valoda',
           activityType: topic + ' · ' + mode,
           score: pct,
-          notes: JSON.stringify({ correct, total: questions.length, maxStreak, dyslexiaMode: showSyllables })
+          notes: JSON.stringify({ correct, total: questions.length, maxStreak, dyslexiaMode: showSyllables, pointsPreview: award.earned })
         });
-        status.textContent = id ? '✅ Rezultāts saglabāts Firebase.' : '⚠️ Saglabāšana nav apstiprināta.';
+        status.textContent = id ? '✅ Rezultāts un punkti saglabāti!' : '⚠️ Saglabāšana nav apstiprināta.';
       } catch {
         status.textContent = '⚠️ Rezultāta saglabāšana neizdevās.';
       }

@@ -14,7 +14,19 @@ function item(topic,index){
  const a=Math.floor((index%(100))/10)+1,b=index%10+1,n=a*b;
  if(topic==='multiply')return {id:'m'+a+'-'+b,answer:n};
  if(topic==='divide')return {id:'d'+a+'-'+b,answer:b};
- if(topic==='family'){const kind=Math.floor(index/100);return kind===0?{id:'f1-'+a+'-'+b,answer:n}:kind===1?{id:'f2-'+a+'-'+b,answer:a}:{id:'f3-'+a+'-'+b,answer:b};}
+ if(topic==='family'){
+  const kind=Math.floor(index/100);
+  if(kind===0){
+   const ans=a%2===1?(a*10+20)+(a*b):(70+b*2)-b;
+   return {id:'f1-'+a+'-'+b,answer:ans};
+  }
+  if(kind===1){
+   const ans=a%2===1?3+b:a*b;
+   return {id:'f2-'+a+'-'+b,answer:ans};
+  }
+  const ans=a%2===1?120-(a*b)+(b*3):80+b;
+  return {id:'f3-'+a+'-'+b,answer:ans};
+ }
  if(topic==='story'){return index<100?{id:'s1-'+a+'-'+b,answer:n}:{id:'s2-'+a+'-'+b,answer:b};}
  throw Error('Nederīga tēma');
 }

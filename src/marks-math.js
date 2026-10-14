@@ -5,13 +5,105 @@ export function makeMarksMathBank(topic){
  const visual={groups:a,each:b,icon:['⭐','💎','🍎','🟣'][(a+b)%4]};
  if(topic==='multiply')out.push({id:'m'+a+'-'+b,prompt:a+' × '+b+' = ?',answer:n,hint:a+' grupas pa '+b+' = '+n});
  if(topic==='divide')out.push({id:'d'+a+'-'+b,prompt:n+' ÷ '+a+' = ?',answer:b,hint:'Pārbaudi: '+a+' × '+b+' = '+n});
- if(topic==='family'){out.push({id:'f1-'+a+'-'+b,prompt:a+' × '+b+' = ?',answer:n,hint:'Šī pati skaitļu saime: '+n+' ÷ '+a+' = '+b});out.push({id:'f2-'+a+'-'+b,prompt:n+' ÷ '+b+' = ?',answer:a,hint:'Atceries: '+a+' × '+b+' = '+n});out.push({id:'f3-'+a+'-'+b,prompt:a+' × □ = '+n,answer:b,hint:'Nosaki nezināmo reizinātāju'});}
+ if(topic==='family'){
+  // 4. klases matemātika: Saistītais pieraksts, darbību secība un iekavas
+  // f1: Darbību secība bez iekavām (reizināšana un dalīšana pirms saskaitīšanas/atņemšanas)
+  if(a%2===1){
+   const left=a*10+20,mult=a*b,ans=left+mult;
+   out.push({
+    id:'f1-'+a+'-'+b,
+    prompt:left+' + '+a+' × '+b+' = ?',
+    expressionDisplay:left+' + '+a+' × '+b,
+    answer:ans,
+    firstOpChoice:a+' × '+b+' (reizināšana)',
+    wrongOpChoice:left+' + '+a+' (saskaitīšana)',
+    firstOpRule:'Reizināšana un dalīšana vienmēr jāveic pirms saskaitīšanas un atņemšanas!',
+    step1:{title:'Reizināšana',prompt:'Cik ir '+a+' × '+b+' = ?',answer:mult,hint:'Vispirms jāveic reizināšana: '+a+' × '+b+' = '+mult+'.'},
+    step2:{title:'Saskaitīšana (gala rezultāts)',prompt:'Cik ir '+left+' + '+mult+' = ?',answer:ans,hint:'Pieskaiti starprezultātu: '+left+' + '+mult+' = '+ans+'.'},
+    hint:'Darbību secība: vispirms reizini '+a+' × '+b+' = '+mult+', pēc tam pieskaiti '+left+' = '+ans+'.'
+   });
+  }else{
+   const product=a*b,left=70+b*2,ans=left-b;
+   out.push({
+    id:'f1-'+a+'-'+b,
+    prompt:left+' - '+product+' ÷ '+a+' = ?',
+    expressionDisplay:left+' - '+product+' ÷ '+a,
+    answer:ans,
+    firstOpChoice:product+' ÷ '+a+' (dalīšana)',
+    wrongOpChoice:left+' - '+product+' (atņemšana)',
+    firstOpRule:'Dalīšana vienmēr jāveic pirms atņemšanas!',
+    step1:{title:'Dalīšana',prompt:'Cik ir '+product+' ÷ '+a+' = ?',answer:b,hint:'Vispirms jāveic dalīšana: '+product+' ÷ '+a+' = '+b+'.'},
+    step2:{title:'Atņemšana (gala rezultāts)',prompt:'Cik ir '+left+' - '+b+' = ?',answer:ans,hint:'Atņem starprezultātu: '+left+' - '+b+' = '+ans+'.'},
+    hint:'Darbību secība: vispirms izdali '+product+' ÷ '+a+' = '+b+', pēc tam atņem: '+left+' - '+b+' = '+ans+'.'
+   });
+  }
+  // f2: Darbības ar iekavām ( ) — iekavas nosaka pirmo soli
+  if(a%2===1){
+   const p1=a*3,p2=a*b,sum=p1+p2,ans=3+b;
+   out.push({
+    id:'f2-'+a+'-'+b,
+    prompt:'('+p1+' + '+p2+') ÷ '+a+' = ?',
+    expressionDisplay:'('+p1+' + '+p2+') ÷ '+a,
+    answer:ans,
+    firstOpChoice:p1+' + '+p2+' (iekavās)',
+    wrongOpChoice:p2+' ÷ '+a+' (dalīšana)',
+    firstOpRule:'Darbības iekavās vienmēr jāveic pirmās!',
+    step1:{title:'Darbība iekavās',prompt:'Cik ir '+p1+' + '+p2+' = ?',answer:sum,hint:'Darbības iekavās veic pirmās: '+p1+' + '+p2+' = '+sum+'.'},
+    step2:{title:'Dalīšana (gala rezultāts)',prompt:'Cik ir '+sum+' ÷ '+a+' = ?',answer:ans,hint:'Izdali iekavu rezultātu ar '+a+': '+sum+' ÷ '+a+' = '+ans+'.'},
+    hint:'Darbības iekavās veic pirmās: '+p1+' + '+p2+' = '+sum+'. Pēc tam izdali ar '+a+': '+sum+' ÷ '+a+' = '+ans+'.'
+   });
+  }else{
+   const x=a+4+b,y=a+4,diff=b,ans=a*b;
+   out.push({
+    id:'f2-'+a+'-'+b,
+    prompt:a+' × ('+x+' - '+y+') = ?',
+    expressionDisplay:a+' × ('+x+' - '+y+')',
+    answer:ans,
+    firstOpChoice:x+' - '+y+' (iekavās)',
+    wrongOpChoice:a+' × '+x+' (reizināšana)',
+    firstOpRule:'Darbības iekavās vienmēr jāveic pirmās!',
+    step1:{title:'Darbība iekavās',prompt:'Cik ir '+x+' - '+y+' = ?',answer:diff,hint:'Darbības iekavās veic pirmās: '+x+' - '+y+' = '+diff+'.'},
+    step2:{title:'Reizināšana (gala rezultāts)',prompt:'Cik ir '+a+' × '+diff+' = ?',answer:ans,hint:'Reizini '+a+' ar iekavu rezultātu '+diff+': '+a+' × '+diff+' = '+ans+'.'},
+    hint:'Darbības iekavās veic pirmās: '+x+' - '+y+' = '+diff+'. Pēc tam reizini: '+a+' × '+diff+' = '+ans+'.'
+   });
+  }
+  // f3: Kombinētais saistītais pieraksts (3 darbības)
+  if(a%2===1){
+   const mult=a*b,add=b*3,ans=120-mult+add;
+   out.push({
+    id:'f3-'+a+'-'+b,
+    prompt:'120 - '+a+' × '+b+' + '+add+' = ?',
+    expressionDisplay:'120 - '+a+' × '+b+' + '+add,
+    answer:ans,
+    firstOpChoice:a+' × '+b+' (reizināšana)',
+    wrongOpChoice:'120 - '+a+' (atņemšana)',
+    firstOpRule:'Reizināšana vienmēr jāveic pirms saskaitīšanas un atņemšanas!',
+    step1:{title:'1. darbība (reizināšana)',prompt:'Cik ir '+a+' × '+b+' = ?',answer:mult,hint:'Vispirms jāveic reizināšana: '+a+' × '+b+' = '+mult+'.'},
+    step2:{title:'2. darbība (gala rezultāts)',prompt:'Cik ir 120 - '+mult+' + '+add+' = ?',answer:ans,hint:'120 - '+mult+' = '+(120-mult)+', tad '+(120-mult)+' + '+add+' = '+ans+'.'},
+    hint:'1. solis (reizini): '+a+' × '+b+' = '+mult+'. 2. solis: 120 - '+mult+' = '+(120-mult)+'. 3. solis: '+(120-mult)+' + '+add+' = '+ans+'.'
+   });
+  }else{
+   const product=a*b,add=b*2,ans=80+b;
+   out.push({
+    id:'f3-'+a+'-'+b,
+    prompt:'80 - '+product+' ÷ '+a+' + '+add+' = ?',
+    expressionDisplay:'80 - '+product+' ÷ '+a+' + '+add,
+    answer:ans,
+    firstOpChoice:product+' ÷ '+a+' (dalīšana)',
+    wrongOpChoice:'80 - '+product+' (atņemšana)',
+    firstOpRule:'Dalīšana vienmēr jāveic pirms saskaitīšanas un atņemšanas!',
+    step1:{title:'1. darbība (dalīšana)',prompt:'Cik ir '+product+' ÷ '+a+' = ?',answer:b,hint:'Vispirms jāveic dalīšana: '+product+' ÷ '+a+' = '+b+'.'},
+    step2:{title:'2. darbība (gala rezultāts)',prompt:'Cik ir 80 - '+b+' + '+add+' = ?',answer:ans,hint:'80 - '+b+' = '+(80-b)+', tad '+(80-b)+' + '+add+' = '+ans+'.'},
+    hint:'1. solis (izdali): '+product+' ÷ '+a+' = '+b+'. 2. solis: 80 - '+b+' = '+(80-b)+'. 3. solis: '+(80-b)+' + '+add+' = '+ans+'.'
+   });
+  }
+ }
  if(topic==='story'){out.push({id:'s1-'+a+'-'+b,prompt:'Pūķis atrada '+a+' lādes. Katrā lādē ir '+b+' kristāli. Cik kristālu kopā?',answer:n,hint:'Reizini lādes ar kristālu skaitu.',visual});out.push({id:'s2-'+a+'-'+b,prompt:n+' kristālus vienādi sadalīja '+a+' kastēs. Cik kristālu ir katrā kastē?',answer:b,hint:'Sadali visus kristālus kastēs.',visual});}
  }return out;
 }
 export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,gradeVerifiedSession=null,saveProgress=async()=>{}}={}){
  const host=document.createElement('section');host.className='module learning-hub marks-math';root.append(host);
- const topics=[['multiply','⚔️ Reizrēķins','Reizināšana 1–10, rezultāti līdz 100'],['divide','🛡️ Dalīšana','Dalīšana bez atlikuma'],['family','🔗 Saistītais pieraksts','Reizināšanas un dalīšanas saimes'],['story','🐉 Teksta misijas','Uzdevumi ar kristālu grupām']];
+ const topics=[['multiply','⚔️ Reizrēķins','Reizināšana 1–10, rezultāti līdz 100'],['divide','🛡️ Dalīšana','Dalīšana bez atlikuma'],['family','🔗 Saistītais pieraksts','Darbību secība, iekavas un kombinētās izteiksmes (4. klase)'],['story','🐉 Teksta misijas','Uzdevumi ar kristālu grupām']];
  const el=(tag,txt)=>{const e=document.createElement(tag);if(txt!==undefined)e.textContent=txt;return e;};
  const btn=(parent,txt,fn)=>{const b=el('button',txt);b.type='button';b.className='action-button';b.onclick=fn;parent.append(b);return b;};
  let chosen='',mode='',items=[],position=0,correct=0,streak=0,record=0,errors=[],entered=[],sessionToken=null,sessionError='';
@@ -45,8 +137,182 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
   }
   step();
  }
- function step(){stopAnswerTimer();qStartTime=Date.now();if(position>=items.length){void finish();return;}const q=items[position];head('Misija '+(position+1)+' no '+items.length,'Atrisini un turpini savu sēriju.');if(mode==='speed'){const timer=el('p','⏱️ Atlikušais laiks: '+Math.max(0,Math.ceil((speedDeadline-Date.now())/1000))+' s · 12 jautājumi');timer.className='speed-clock';timer.setAttribute('role','timer');host.append(timer);}
- const progress=el('div');progress.className='progress-track';const fill=el('div');fill.className='progress-fill';fill.style.width=Math.round(position/items.length*100)+'%';progress.append(fill);host.append(progress);const count=el('p','🔥 '+streak+' pēc kārtas · Rekords '+record);count.className='streak-label';host.append(count);const card=el('div');card.className='question-stage';card.append(el('div',q.prompt));card.firstChild.className='math-expression';if(q.visual){const groups=el('div');groups.className='visual-groups';groups.setAttribute('role','img');groups.setAttribute('aria-label',q.visual.groups+' grupas pa '+q.visual.each);for(let i=0;i<q.visual.groups;i++){const g=el('div');g.className='visual-group';for(let j=0;j<q.visual.each;j++){const icon=el('span',q.visual.icon);icon.className='visual-object';g.append(icon);}groups.append(g);}card.append(groups);}const form=el('form');form.className='math-answer-form';const input=el('input');input.type='number';input.inputMode='numeric';input.required=true;input.min=0;input.max=100;input.step=1;input.className='big-number-input';input.setAttribute('aria-label','Tava atbilde');const submit=el('button','Pārbaudīt');submit.type='submit';submit.className='action-button';form.append(input,submit);card.append(form);const status=el('p');status.setAttribute('role','status');card.append(status);const numpad=attachTouchNumpad(card,input);host.append(card);if(mode==='learn')btn(card,'💡 Pavediena palīdzība',()=>{status.textContent=q.hint;});let answered=false,advanced=false;form.onsubmit=e=>{e.preventDefault();if(answered||!card.isConnected)return;const value=Number(input.value);if(input.value===''||!Number.isInteger(value))return;answered=true;entered.push(value);const elapsedSec=Math.max(0.2,(Date.now()-qStartTime)/1000);reactionTimes.push(elapsedSec);const ok=value===q.answer;const isFast=ok&&elapsedSec<=3.2;if(isFast)automatedCount++;correct+=Number(ok);streak=ok?streak+1:0;record=Math.max(record,streak);if(!ok)errors.push(q);input.disabled=submit.disabled=true;numpad.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=ok?'🎉 Pareizi! Lieliski!':mode==='exam'?'Atbilde pieņemta.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;status.className='answer-feedback '+(ok?'answer-feedback-good':'answer-feedback-error');if(ok&&mode!=='exam'){const badge=isFast?el('div','⚡ Zibenīgs automātisms! ('+elapsedSec.toFixed(1)+'s)','speed-badge-flash'):el('div','💡 Pareizi izdomāts! ('+elapsedSec.toFixed(1)+'s)','speed-badge-thinking');card.append(badge);}const advance=()=>{if(advanced||!card.isConnected)return;advanced=true;stopAnswerTimer();position++;step();};if(mode==='exam'&&!ok){btn(card,'Nākamais →',advance);}else{const wait=ok?1000:2800;const next=btn(card,'Turpināt uzreiz →',advance);next.setAttribute('aria-label','Pāriet uz nākamo uzdevumu');answerTimer=setTimeout(advance,wait);}};}
+  function renderOrderQuestion(card, q) {
+   card.className = 'question-stage marks-order-stage';
+   let stepMistake = false;
+   let step1Done = false;
+   let step2Done = false;
+
+   const banner = el('div', 'order-expression-banner');
+   banner.append(
+    el('div', 'order-expression-title', '🔗 4. klase · Saistītais pieraksts un darbību secība'),
+    el('div', 'order-expression-text', q.expressionDisplay || q.prompt)
+   );
+   const rulePill = el('div', 'order-rules-pill', '📘 Darbību secība: 1. Iekavas ➔ 2. Reizināšana un dalīšana ➔ 3. Saskaitīšana un atņemšana');
+   card.append(banner, rulePill);
+
+   const stepsContainer = el('div', 'order-steps-container');
+   card.append(stepsContainer);
+
+   const status = el('p', 'answer-feedback');
+   status.setAttribute('role', 'status');
+   card.append(status);
+
+   const numpadSlot = el('div', 'order-numpad-slot');
+   card.append(numpadSlot);
+
+   // 1. SOLIS: Kura darbība jāveic vispirms?
+   const s1Card = el('div', 'order-step-card active');
+   const s1Header = el('div', 'order-step-header');
+   s1Header.append(el('span', 'order-step-badge', '① 1. solis'), el('strong', 'order-step-title', 'Kura darbība jāveic vispirms?'));
+   s1Card.append(s1Header);
+
+   const choiceGrid = el('div', 'order-choice-grid');
+   const choices = shuffle([
+    { text: q.firstOpChoice, correct: true },
+    { text: q.wrongOpChoice, correct: false }
+   ]);
+
+   choices.forEach(c => {
+    const b = el('button', 'order-choice-btn', c.text);
+    b.type = 'button';
+    b.onclick = () => {
+     if (step1Done) return;
+     if (!c.correct) {
+      b.classList.add('choice-wrong');
+      status.textContent = '❌ Nē! ' + q.firstOpRule;
+      status.className = 'answer-feedback answer-feedback-error';
+      stepMistake = true;
+      return;
+     }
+     step1Done = true;
+     b.classList.add('choice-correct');
+     choiceGrid.querySelectorAll('button').forEach(btn => btn.disabled = true);
+     s1Card.className = 'order-step-card completed';
+     s1Header.querySelector('.order-step-title').textContent = '1. darbība izvēlēta: ' + q.firstOpChoice + ' ✅';
+     status.textContent = '✅ Pareizi! Tagad aprēķini 1. darbību:';
+     status.className = 'answer-feedback answer-feedback-good';
+     initStep2();
+    };
+    choiceGrid.append(b);
+   });
+   s1Card.append(choiceGrid);
+   stepsContainer.append(s1Card);
+
+   // 2. SOLIS: 1. darbības starprezultāts
+   function initStep2() {
+    const s2Card = el('div', 'order-step-card active');
+    const s2Header = el('div', 'order-step-header');
+    s2Header.append(el('span', 'order-step-badge', '② 2. solis'), el('strong', 'order-step-title', 'Aprēķini 1. darbību: ' + q.step1.title));
+    const s2Prompt = el('div', 'order-step-prompt', q.step1.prompt);
+
+    const form = el('form', 'order-step-form');
+    const inp = el('input', 'big-number-input');
+    inp.type = 'number'; inp.inputMode = 'numeric'; inp.required = true; inp.min = 0; inp.max = 500; inp.step = 1;
+    inp.placeholder = '?'; inp.setAttribute('aria-label', '1. darbības rezultāts');
+    const sub = el('button', 'action-button', 'Pārbaudīt 1. darbību'); sub.type = 'submit';
+    form.append(inp, sub);
+    s2Card.append(s2Header, s2Prompt, form);
+    stepsContainer.append(s2Card);
+
+    numpadSlot.replaceChildren();
+    attachTouchNumpad(numpadSlot, inp);
+
+    form.onsubmit = e => {
+     e.preventDefault();
+     if (step2Done || !card.isConnected) return;
+     const val = Number(inp.value);
+     if (inp.value === '' || !Number.isInteger(val)) return;
+
+     if (val !== q.step1.answer) {
+      status.textContent = '❌ Nav pareizi: ' + q.step1.hint;
+      status.className = 'answer-feedback answer-feedback-error';
+      stepMistake = true;
+      inp.value = '';
+      return;
+     }
+
+     step2Done = true;
+     inp.disabled = true; sub.disabled = true;
+     s2Card.className = 'order-step-card completed';
+     s2Header.querySelector('.order-step-title').textContent = q.step1.title + ': ' + q.step1.answer + ' ✅';
+     status.textContent = '✅ Lieliski! 1. darbības rezultāts ir ' + q.step1.answer + '. Tagad aprēķini galīgo rezultātu:';
+     status.className = 'answer-feedback answer-feedback-good';
+     initStep3();
+    };
+   }
+
+   // 3. SOLIS: Galīgais izteiksmes rezultāts
+   function initStep3() {
+    const s3Card = el('div', 'order-step-card active');
+    const s3Header = el('div', 'order-step-header');
+    s3Header.append(el('span', 'order-step-badge', '③ 3. solis'), el('strong', 'order-step-title', 'Galīgais izteiksmes rezultāts:'));
+    const s3Prompt = el('div', 'order-step-prompt', q.step2.prompt);
+
+    const form = el('form', 'order-step-form');
+    const inp = el('input', 'big-number-input');
+    inp.type = 'number'; inp.inputMode = 'numeric'; inp.required = true; inp.min = 0; inp.max = 500; inp.step = 1;
+    inp.placeholder = '?'; inp.setAttribute('aria-label', 'Galīgais rezultāts');
+    const sub = el('button', 'action-button', 'Pabeigt uzdevumu'); sub.type = 'submit';
+    form.append(inp, sub);
+    s3Card.append(s3Header, s3Prompt, form);
+    stepsContainer.append(s3Card);
+
+    numpadSlot.replaceChildren();
+    attachTouchNumpad(numpadSlot, inp);
+
+    let finalAnswered = false;
+    form.onsubmit = e => {
+     e.preventDefault();
+     if (finalAnswered || !card.isConnected) return;
+     const val = Number(inp.value);
+     if (inp.value === '' || !Number.isInteger(val)) return;
+     finalAnswered = true;
+
+     inp.disabled = true; sub.disabled = true;
+     numpadSlot.querySelectorAll('button').forEach(b => b.disabled = true);
+
+     const elapsedSec = Math.max(0.2, (Date.now() - qStartTime) / 1000);
+     reactionTimes.push(elapsedSec);
+
+     const ok = val === q.answer;
+     const fullyCorrect = ok && !stepMistake;
+     entered.push(val);
+
+     if (fullyCorrect) {
+      correct++;
+      streak++;
+      record = Math.max(record, streak);
+     } else {
+      errors.push(q);
+      streak = 0;
+     }
+
+     s3Card.className = 'order-step-card ' + (ok ? 'completed' : '');
+     status.textContent = fullyCorrect
+      ? '🎉 Izcili! Pareiza darbību secība un gala rezultāts: ' + q.answer + '!'
+      : ok
+      ? '💡 Gala rezultāts pareizs (' + q.answer + '), bet pievērs uzmanību 1. soļa darbību secībai!'
+      : '❌ Pareizais gala rezultāts: ' + q.answer + '. ' + q.hint;
+     status.className = 'answer-feedback ' + (fullyCorrect ? 'answer-feedback-good' : 'answer-feedback-error');
+
+     const advance = () => {
+      if (!card.isConnected) return;
+      stopAnswerTimer();
+      position++;
+      step();
+     };
+
+     const next = btn(card, position + 1 === items.length ? 'Skatīt rezultātus →' : 'Turpināt uzreiz →', advance);
+     next.setAttribute('aria-label', 'Pāriet uz nākamo uzdevumu');
+     answerTimer = setTimeout(advance, fullyCorrect ? 1300 : 3200);
+    };
+   }
+  }
+  function step(){stopAnswerTimer();qStartTime=Date.now();if(position>=items.length){void finish();return;}const q=items[position];head('Misija '+(position+1)+' no '+items.length,'Atrisini un turpini savu sēriju.');if(mode==='speed'){const timer=el('p','⏱️ Atlikušais laiks: '+Math.max(0,Math.ceil((speedDeadline-Date.now())/1000))+' s · 12 jautājumi');timer.className='speed-clock';timer.setAttribute('role','timer');host.append(timer);}
+  const progress=el('div');progress.className='progress-track';const fill=el('div');fill.className='progress-fill';fill.style.width=Math.round(position/items.length*100)+'%';progress.append(fill);host.append(progress);const count=el('p','🔥 '+streak+' pēc kārtas · Rekords '+record);count.className='streak-label';host.append(count);const card=el('div');card.className='question-stage';
+  if(q.step1 && q.step2 && mode!=='speed'){host.append(card);renderOrderQuestion(card,q);return;}
+  card.append(el('div',q.prompt));card.firstChild.className='math-expression';if(q.visual){const groups=el('div');groups.className='visual-groups';groups.setAttribute('role','img');groups.setAttribute('aria-label',q.visual.groups+' grupas pa '+q.visual.each);for(let i=0;i<q.visual.groups;i++){const g=el('div');g.className='visual-group';for(let j=0;j<q.visual.each;j++){const icon=el('span',q.visual.icon);icon.className='visual-object';g.append(icon);}groups.append(g);}card.append(groups);}const form=el('form');form.className='math-answer-form';const input=el('input');input.type='number';input.inputMode='numeric';input.required=true;input.min=0;input.max=500;input.step=1;input.className='big-number-input';input.setAttribute('aria-label','Tava atbilde');const submit=el('button','Pārbaudīt');submit.type='submit';submit.className='action-button';form.append(input,submit);card.append(form);const status=el('p');status.setAttribute('role','status');card.append(status);const numpad=attachTouchNumpad(card,input);host.append(card);if(mode==='learn')btn(card,'💡 Pavediena palīdzība',()=>{status.textContent=q.hint;});let answered=false,advanced=false;form.onsubmit=e=>{e.preventDefault();if(answered||!card.isConnected)return;const value=Number(input.value);if(input.value===''||!Number.isInteger(value))return;answered=true;entered.push(value);const elapsedSec=Math.max(0.2,(Date.now()-qStartTime)/1000);reactionTimes.push(elapsedSec);const ok=value===q.answer;const isFast=ok&&elapsedSec<=3.2;if(isFast)automatedCount++;correct+=Number(ok);streak=ok?streak+1:0;record=Math.max(record,streak);if(!ok)errors.push(q);input.disabled=submit.disabled=true;numpad.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent=ok?'🎉 Pareizi! Lieliski!':mode==='exam'?'Atbilde pieņemta.':'❌ Pareizā atbilde: '+q.answer+'. '+q.hint;status.className='answer-feedback '+(ok?'answer-feedback-good':'answer-feedback-error');if(ok&&mode!=='exam'){const badge=isFast?el('div','⚡ Zibenīgs automātisms! ('+elapsedSec.toFixed(1)+'s)','speed-badge-flash'):el('div','💡 Pareizi izdomāts! ('+elapsedSec.toFixed(1)+'s)','speed-badge-thinking');card.append(badge);}const advance=()=>{if(advanced||!card.isConnected)return;advanced=true;stopAnswerTimer();position++;step();};if(mode==='exam'&&!ok){btn(card,'Nākamais →',advance);}else{const wait=ok?1000:2800;const next=btn(card,'Turpināt uzreiz →',advance);next.setAttribute('aria-label','Pāriet uz nākamo uzdevumu');answerTimer=setTimeout(advance,wait);}};}
  async function finish(){
   stopAnswerTimer();stopSpeedTimer();
   const localPct=Math.round(correct/items.length*100);

@@ -1,4 +1,6 @@
 // Samantas skola — Angļu valodas trenažieris ar audio izrunu un vizuālām kartītēm
+import { calculatePracticePoints, previewImprovement } from './points-policy.js';
+
 const shuffle = a => {
   const b = [...a];
   for (let i = b.length - 1; i > 0; i--) {
@@ -388,8 +390,19 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
     host.append(head);
 
     const scoreCard = el('div', pct + '%', 'result-hero');
-    const summary = el('p', `Pareizi ${correct} no ${questions.length} vārdiem · Garākā pareizo sērija: ${maxStreak}`, 'result-subtitle');
+    const summary = el('p', `Pareizi ${correct} no ${questions.length} vārdiem (${pct}%) · Garākā pareizo sērija: ${maxStreak}`, 'result-subtitle');
     host.append(scoreCard, summary);
+
+    const policy = calculatePracticePoints({ correct, total: questions.length, maxStreak, mode });
+    const award = previewImprovement(0, policy.potential);
+
+    const pts = el('div', undefined, 'soft-notice');
+    pts.style.cssText = 'background:linear-gradient(135deg,#fdf2f8,#f5f3ff);border:2px solid #a855f7;padding:16px;border-radius:18px;margin:12px 0;text-align:center';
+    pts.innerHTML = `
+      <div style="font-size:1.55rem;font-weight:900;color:#7c3aed;margin-bottom:4px">🌟 +${award.earned} BP nopelnīti!</div>
+      <div style="font-size:0.92rem;color:#4b5563">Tēmas meistarība: ${award.best}/20 · Sērijas bonuss: +${policy.streakBonus} BP · Pasaules kristāls iegūts!</div>
+    `;
+    host.append(pts);
 
     const saveNotice = el('p', '', 'save-status');
     host.append(saveNotice);
@@ -401,9 +414,9 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
           subject: 'Angļu valoda',
           activityType: `${topics.find(x => x[0] === currentTopic)?.[1] || currentTopic} · ${mode}`,
           score: pct,
-          notes: JSON.stringify({ correct, total: questions.length, maxStreak })
+          notes: JSON.stringify({ correct, total: questions.length, maxStreak, pointsPreview: award.earned })
         });
-        saveNotice.textContent = id ? '✅ Rezultāts saglabāts Firebase.' : '⚠️ Saglabāšana nav apstiprināta.';
+        saveNotice.textContent = id ? '✅ Rezultāts un punkti saglabāti!' : '⚠️ Saglabāšana nav apstiprināta.';
       } catch {
         saveNotice.textContent = '⚠️ Saglabāšana Firebase neizdevās.';
       }

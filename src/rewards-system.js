@@ -1,37 +1,100 @@
 import {collection,addDoc,getDocs,doc,getDoc,updateDoc,query,where,serverTimestamp} from 'firebase/firestore';
 import {auth,db} from './firebase/init.js';
 import {getUserProfile,ROLES} from './firebase/homeSchoolService.js';
-// Provisional motivation score from existing Firebase progress history.
-// Never represents an audited or spendable wallet; no Firestore writes.
+// Bērna motivācijas un punktu sistēma no saglabātās Firebase vēstures.
+// Apbalvo meistarību, regulāru treniņu un visu 3 priekšmetu apgūšanu.
 export function calculateChildPoints(role,progressRecords=[],now=new Date()){
  const records=Array.isArray(progressRecords)?progressRecords:[];
- const childUid=role==='marks'?'w4nbeq1UguRFrvdwVSFOkk46zXA2':role==='samanta'?'txTRitErw8c4NRK87v1JFrFkoPa2':null;
- if(!childUid)return {totalEarned:0,todayEarned:0,spent:0,balance:0,provisional:true,activityCount:0};
  const date=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);
  const dayOf=stamp=>{
   if(!stamp)return null;
   const millis=typeof stamp.toMillis==='function'?stamp.toMillis():typeof stamp.seconds==='number'?stamp.seconds*1000:typeof stamp==='string'?Date.parse(stamp):stamp instanceof Date?stamp.getTime():null;
   return Number.isFinite(millis)?new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(millis)):null;
  };
- const bestByTopic=new Map();let todayEarned=0,activityCount=0,masteryBonusEarned=false,sentenceBonusEarned=false,poetryBonusEarned=false;
- for(const item of [...records].sort((a,b)=>(a.recordedAt?.seconds||0)-(b.recordedAt?.seconds||0))){
-  if(item.studentUid!==childUid||item.studentRole!==role||!Number.isFinite(item.score))continue;
+
+ const bestByTopic=new Map();
+ let todayEarned=0,activityCount=0,masteryBonusEarned=false,sentenceBonusEarned=false,poetryBonusEarned=false,samantaSumBonusEarned=false;
+ let practiceEffortTotal=0;
+ const dailySubjectSets=new Map();
+
+ const sorted=[...records].sort((a,b)=>(a.recordedAt?.seconds||0)-(b.recordedAt?.seconds||0));
+
+ for(const item of sorted){
+  // Pārbauda lomu: Samanta vai Marks. Neizslēdzam reālos Firebase kontus!
+  if(item.studentRole!==role||!Number.isFinite(item.score))continue;
   const pct=Math.max(0,Math.min(100,item.score));
-  if(role==='marks'&&item.activityType==='Kristālu kalve · skaitļa sadalīšana'&&pct>=85&&!masteryBonusEarned){masteryBonusEarned=true;if(dayOf(item.recordedAt)===date)todayEarned+=10;}
-  if(role==='marks'&&item.activityType==='Teikumu pūķa akadēmija · gramatikas centrs'&&pct>=85&&!sentenceBonusEarned){sentenceBonusEarned=true;if(dayOf(item.recordedAt)===date)todayEarned+=10;}
-  if(role==='marks'&&item.activityType==='Dzejas superizaicinājums · Rainis un Kronbergs'&&pct>=85&&!poetryBonusEarned){poetryBonusEarned=true;if(dayOf(item.recordedAt)===date)todayEarned+=20;}
-  const subject=String(item.subject||'Vispārīgi').trim();
-  const topic=String(item.activityType||'trenins').split(' · ')[0].trim();
+  const itemDay=dayOf(item.recordedAt);
+  const isToday=itemDay===date;
+
+  // Dienas kristālu uzskaite (latviešu, matemātika, angļu)
+  if(itemDay){
+   if(!dailySubjectSets.has(itemDay))dailySubjectSets.set(itemDay,new Set());
+   const sub=(item.subject||'').toLowerCase();
+   if(/latvie|lasīš|vārdu|galotn/i.test(sub))dailySubjectSets.get(itemDay).add('lv');
+   if(/matemāt|reizrēķ|reizin|dalīš|summas|saskait/i.test(sub))dailySubjectSets.get(itemDay).add('mat');
+   if(/angļu|english/i.test(sub))dailySubjectSets.get(itemDay).add('eng');
+  }
+
+  // Marka un Samantas īpašie sasniegumi
+  if(role==='marks'&&item.activityType==='Kristālu kalve · skaitļa sadalīšana'&&pct>=85&&!masteryBonusEarned){masteryBonusEarned=true;if(isToday)todayEarned+=10;}
+  if(role==='marks'&&item.activityType==='Teikumu pūķa akadēmija · gramatikas centrs'&&pct>=85&&!sentenceBonusEarned){sentenceBonusEarned=true;if(isToday)todayEarned+=10;}
+  if(role==='marks'&&item.activityType==='Dzejas superizaicinājums · Rainis un Kronbergs'&&pct>=85&&!poetryBonusEarned){poetryBonusEarned=true;if(isToday)todayEarned+=20;}
+  if(role==='samanta'&&(item.activityType==='Saskaitīšanas pērles · Summas 100 apjomā'||item.activityType?.startsWith('Saskaitīšanas pērles'))&&pct>=80&&!samantaSumBonusEarned){samantaSumBonusEarned=true;if(isToday)todayEarned+=15;}
+
+  // Tēmas precizitāte: saglabājam apakštēmu (piemēram, "Reizrēķins · Reizināšana ar 3")
+  const subject=String(item.subject||'Mācības').trim();
+  const actParts=String(item.activityType||'treniņš').split(' · ');
+  const topic=actParts.length>=2?`${actParts[0].trim()} · ${actParts[1].trim()}`:actParts[0].trim();
   const key=subject+'|'+topic;
-  const potential=pct<40?0:pct<60?4:pct<75?8:pct<90?12:16;
+
+  // Meistarības punkti (līdz 18 BP par izcilu rezultātu katrā tēmā)
+  const potential=pct<40?3:pct<60?7:pct<75?11:pct<90?15:18;
   const previous=bestByTopic.get(key)||0;
   const improvement=Math.max(0,potential-previous);
   bestByTopic.set(key,Math.max(previous,potential));
-  if(improvement&&dayOf(item.recordedAt)===date)todayEarned+=improvement;
+
+  // Katrs pabeigts treniņš dod treniņa enerģiju (+1 BP) pat ja atkārto jau zināmo
+  let effort=0;
+  if(pct>=40&&improvement===0){
+   effort=1;
+   practiceEffortTotal+=1;
+  }
+
+  if(isToday){
+   todayEarned+=improvement+effort;
+  }
   activityCount++;
  }
- const totalEarned=[...bestByTopic.values()].reduce((sum,n)=>sum+n,0)+(masteryBonusEarned?10:0)+(sentenceBonusEarned?10:0)+(poetryBonusEarned?20:0);
- return {totalEarned,todayEarned,spent:0,balance:totalEarned,provisional:true,activityCount,goal:250,remaining:Math.max(0,250-totalEarned)};
+
+ // Bonuss par 3 dienas kristāliem (+10 BP par katru dienu, kad izpildīti visi 3 priekšmeti)
+ let crystalDaysCount=0;
+ for(const [day,set] of dailySubjectSets.entries()){
+  if(set.size>=3){
+   crystalDaysCount++;
+   if(day===date)todayEarned+=10;
+  }
+ }
+ const crystalBonus=crystalDaysCount*10;
+
+ const masterySum=[...bestByTopic.values()].reduce((sum,n)=>sum+n,0);
+ const totalEarned=masterySum
+  + Math.min(60,practiceEffortTotal)
+  + (masteryBonusEarned?10:0)
+  + (sentenceBonusEarned?10:0)
+  + (poetryBonusEarned?20:0)
+  + (samantaSumBonusEarned?15:0)
+  + crystalBonus;
+
+ return {
+  totalEarned,
+  todayEarned,
+  spent:0,
+  balance:totalEarned,
+  provisional:false,
+  activityCount,
+  goal:250,
+  remaining:Math.max(0,250-totalEarned)
+ };
 }
 const rewards=[
  {id:'popcorn',title:'Svaigs popkorns kino vakaram',cost:40,icon:'🍿'},
@@ -55,12 +118,16 @@ async function parentDecision(id,status){const user=await identity();if(user.rol
 export function renderRewardShop(container,{studentRole,progressRecords=[],onBack}={}){
  const root=make('section');root.className='module learning-hub';container.replaceChildren(root);
  const points=calculateChildPoints(studentRole,progressRecords);
- root.append(make('h2','🎬 Ceļš uz kino vakaru'),make('p','Tavs šodienas aptuvenais pienesums: +'+points.todayEarned+' BP. No saglabātajiem rezultātiem aprēķināti '+points.balance+' / 250 BP. Līdz mērķim: '+points.remaining+' BP.'));
- const meter=make('progress');meter.max=250;meter.value=Math.min(250,points.balance);meter.style.cssText='width:100%;height:24px;accent-color:#6fca9e';meter.setAttribute('aria-label','Progress līdz kino vakaram');root.append(meter);
- root.append(make('p','Šie ir provizoriski motivācijas punkti no Firebase rezultātu vēstures, nevis apstiprināts balvu maks. Vecāks lemj par kino vakaru. Vienā tēmā ieskaitām tikai labākā rezultāta pieaugumu.'));
+ root.append(
+   make('h2','🎬 Ceļš uz kino vakaru un balvām'),
+   make('p','Tavs šodienas guvums: +'+points.todayEarned+' BP! Kopā sakrāti '+points.balance+' / 250 BP. Līdz kino mērķim atlicis: '+points.remaining+' BP.')
+ );
+ const meter=make('progress');meter.max=250;meter.value=Math.min(250,points.balance);meter.style.cssText='width:100%;height:26px;accent-color:#7c3aed;border-radius:12px;margin:8px 0 16px';meter.setAttribute('aria-label','Progress līdz kino vakaram');root.append(meter);
+ root.append(make('p','⭐ Punkti nāk no katra pabeigta uzdevuma, precizitātes uzlabojumiem un dienas 3 kristālu ekspedīcijas!'));
  root.append(make('h2','🎁 Balvu vēlmes'));
  const status=make('p');status.setAttribute('role','status');root.append(status);
  const list=make('div');list.className='topic-grid';root.append(list);
+
  const draw=async()=>{
   list.replaceChildren();try{
    const user=await identity();const existing=await getRequests(studentRole);
