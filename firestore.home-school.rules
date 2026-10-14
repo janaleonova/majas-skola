@@ -39,7 +39,9 @@ service cloud.firestore {
      && ownCompletion());
    }
    match /progress/{id} {
-    allow read: if parent() || (child() && resource.data.studentUid == request.auth.uid);
+    // Idempotent writer checks whether a new ID already exists before creating it.
+    allow get: if parent() || (child() && (!exists(/databases/$(database)/documents/homeSchool/data/progress/$(id)) || resource.data.studentUid == request.auth.uid));
+    allow list: if parent() || (child() && resource.data.studentUid == request.auth.uid);
     function validAssignedTask(){
      let data=request.resource.data;
      let task=get(/databases/$(database)/documents/homeSchool/data/tasks/$(data.taskId)).data;
