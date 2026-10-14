@@ -2,7 +2,7 @@ import {attachTouchNumpad} from './touch-numpad.js';
 const shuffle=a=>{const x=[...a];for(let i=x.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]];}return x;};
 export {makeMarksMathBank} from './math-bank.js';
 import {makeMarksMathBank} from './math-bank.js';
-export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,gradeVerifiedSession=null,saveProgress=async()=>{},initialState=null,onCheckpoint=()=>{}}={}){
+export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,gradeVerifiedSession=null,saveProgress=async()=>{},initialState=null,onCheckpoint=()=>{},initialTopic=null}={}){
  const host=document.createElement('section');host.className='module learning-hub marks-math';root.append(host);
  const topics=[['multiply','⚔️ Reizrēķins','Reizināšana 1–10, rezultāti līdz 100'],['divide','🛡️ Dalīšana','Dalīšana bez atlikuma'],['family','🔗 Saistītais pieraksts','Darbību secība, iekavas un kombinētās izteiksmes (4. klase)'],['story','🐉 Teksta misijas','Uzdevumi ar kristālu grupām']];
  const el=(tag,value,third)=>{const e=document.createElement(tag);if(third!==undefined){e.className=value||'';e.textContent=third;}else if(value!==undefined)e.textContent=value;return e;};
@@ -265,5 +265,5 @@ export function renderMarksMath(root,{canSubmit=false,startVerifiedSession=null,
   btn(host,'Atkārtot misiju',()=>{void start(mode);});
   btn(host,'← Uz tēmām',home);
  }
- if(initialState){({chosen,mode,items,position,correct,streak,record,errors,entered,sessionToken,sessionError,automatedCount,reactionTimes}=initialState);if(mode==='speed'){mode='practice';sessionToken=null;sessionError='Ātruma mēģinājums pārtraukts. Sāc jaunu ātruma treniņu vai trenējies savā tempā.';}step();}else home();
+ if(initialState){({chosen,mode,items,position,correct,streak,record,errors,entered,sessionToken,sessionError,automatedCount,reactionTimes}=initialState);if(mode==='speed'){mode='practice';sessionToken=null;sessionError='Ātruma mēģinājums pārtraukts. Sāc jaunu ātruma treniņu vai trenējies savā tempā.';}step();}else if(initialTopic==='family')choose('family');else home();
 }
