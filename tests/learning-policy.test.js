@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculateChildPoints,CHILD_UIDS,dayKey,describeActivity,calculatePracticePoints} from '../src/learning-policy.js';
+import {calculateChildPoints,CHILD_UIDS,dayKey,rigaDayStart,rigaDayEnd,describeActivity,calculatePracticePoints} from '../src/learning-policy.js';
 import {taskStatus,taskState,qualifiesTask} from '../src/catalog.js';
 const now=new Date('2026-10-14T10:00:00Z');
 const row=(id,subject='Matemātika',activityType='multiply · practice',score=100,notes={})=>({id,studentUid:CHILD_UIDS.marks,studentRole:'marks',subject,activityType,score,recordedAt:{seconds:now.getTime()/1000},notes:JSON.stringify(notes)});
@@ -14,3 +14,5 @@ test('assigned bonus is bounded and awarded only once per task',()=>{const a={..
 test('shared tasks have independent child completion',()=>{const t={assignedTo:'both',status:'completed',completions:{marks:{status:'completed'}}};assert.equal(taskStatus(t,'marks'),'completed');assert.equal(taskStatus(t,'samanta'),'pending');assert.equal(taskState({...t,dueDate:'2026-10-13'},'samanta','2026-10-14'),'expired');});
 test('task qualification requires module, mode, threshold and dates',()=>{const t={moduleId:'matematika',requiredMode:'exam',targetScore:70,startDate:'2026-10-14',dueDate:'2026-10-14'};assert.equal(qualifiesTask(t,{moduleId:'matematika',score:80},'exam','2026-10-14'),true);assert.equal(qualifiesTask(t,{moduleId:'matematika',score:80},'learn','2026-10-14'),false);assert.equal(qualifiesTask(t,{moduleId:'matematika',score:80},'exam','2026-10-15'),false);});
 test('Riga date boundaries and invalid percentage',()=>{assert.equal(dayKey(new Date('2026-10-13T21:30:00Z')),'2026-10-14');assert.throws(()=>calculatePracticePoints({correct:17,total:16}));});
+
+test('Riga deadline bounds account for DST changes',()=>{assert.equal(rigaDayStart('2026-10-14').toISOString(),'2026-10-13T21:00:00.000Z');assert.equal(rigaDayStart('2026-10-25').toISOString(),'2026-10-24T21:00:00.000Z');assert.equal(rigaDayEnd('2026-10-25').toISOString(),'2026-10-25T21:59:59.999Z');});

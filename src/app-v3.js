@@ -14,7 +14,7 @@ import {applyPersonalTheme,renderThemePicker} from './personal-theme.js';
 import {installChildGuide} from './child-guide.js';
 import {startChildPresence,renderParentPresence} from './activity-presence.js';
 import {initFirebase,auth,signInWithEmailAndPassword,setPersistence,browserLocalPersistence,signOut,onAuthStateChanged} from './firebase/init.js';
-import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,editTask,removeTask,recordProgress,getFamilyIdentities,ROLES} from './firebase/homeSchoolService.js';
+import {getUserProfile,getTasks,getProgressHistory,createTask,updateTaskStatus,editTask,removeTask,recordProgress,getProgressRecord,getFamilyIdentities,ROLES} from './firebase/homeSchoolService.js';
 import {CATALOG,SUBJECTS,taskStatus,taskState,qualifiesTask} from './catalog.js';
 import {calculateChildPoints,dayKey,readNotes,describeActivity,CHILD_UIDS} from './learning-policy.js';
 import {readDraft,writeDraft,clearDraft,captureFields,restoreFields} from './drafts.js';
@@ -30,7 +30,7 @@ let familyIds={},spentByRole={};
 const uidFor=role=>role===state.role?state.user?.uid:familyIds[role]||CHILD_UIDS[role];
 const pointsFor=role=>{const p=calculateChildPoints(role,state.progress,new Date(),uidFor(role));p.spent=spentByRole[role]||0;p.balance=Math.max(0,p.balance-p.spent);p.remaining=Math.max(0,250-p.balance);return p;};
 const canSubmit=role=>state.role===role;
-const sendQueued=async row=>{const id=await recordProgress(row);if(id&&row.taskId&&row.taskQualified)await updateTaskStatus(row.taskId,'completed',row.studentRole,id);if(id&&state.user?.uid===row.currentUid&&!state.progress.some(r=>r.attemptId===id))state.progress.push({...row,studentUid:row.currentUid,recordedAt:{seconds:Date.parse(row.completedAt)/1000}});return id;};
+const sendQueued=async row=>{const id=await recordProgress(row);const stored=id?await getProgressRecord(id):null;row={...row,...stored};if(id&&row.taskId&&row.taskQualified)await updateTaskStatus(row.taskId,'completed',row.studentRole,id);if(id&&state.user?.uid===row.currentUid&&!state.progress.some(r=>r.attemptId===id))state.progress.push({...row,studentUid:row.currentUid,recordedAt:{seconds:Date.parse(row.completedAt)/1000}});return id;};
 function stopAudio(){if('speechSynthesis' in window)speechSynthesis.cancel();}
 function leave(fn){if(state.dirty&&!confirm('Darbs vēl nav iesniegts. Iesākto posmu varēsi turpināt no dienas plāna. Vai atgriezties?'))return;stopAudio();state.dirty=false;fn();}
 function welcome(){version++;state.progress=[];state.tasks=[];familyIds={};spentByRole={};stopAudio();stopPresence?.();stopPresence=null;stopParent?.();stopParent=null;guide?.stop();guide=null;parked.clear();state.dirty=false;state.active=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=true;header();}
@@ -136,16 +136,16 @@ function openModule(role,id,task=null,resume=false){
  let retryRow=savedDraft?.pendingAttemptId?{attemptId:savedDraft.pendingAttemptId}:null;
  const saveProgress=async data=>{
   if(!canSubmit(role))return null;const ownerUid=state.user.uid;
-  const qualified=task?qualifiesTask(task,{...data,moduleId:id},describeActivity(data).mode,dayKey(new Date())):false;
-  const row=queueResult(state.user.uid,{...data,taskQualified:qualified,taskBonus:qualified?task.bonusBP||0:0,currentUid:state.user.uid,studentRole:role,moduleId:id,taskId:task?.id||null,attemptId:retryRow?.attemptId});retryRow=row;
+  let qualified=task?qualifiesTask(task,{...data,moduleId:id},describeActivity(data).mode,dayKey(new Date())):false;
+  let row=queueResult(state.user.uid,{...data,mode:describeActivity(data).mode,taskQualified:qualified,taskBonus:qualified?task.bonusBP||0:0,currentUid:state.user.uid,studentRole:role,moduleId:id,taskId:task?.id||null,attemptId:retryRow?.attemptId});retryRow=row;
   if(checkpoint)writeDraft(ownerUid,id,{name:module.name,state:checkpoint,fields:captureFields(trainer),taskId:task?.id||null,pendingAttemptId:row.attemptId});
   const send=async()=>{
-   const savedId=await recordProgress(row);if(!savedId)throw Error('Saglabāšanu nevar apstiprināt.');
+   const savedId=await recordProgress(row);if(!savedId)throw Error('Saglabāšanu nevar apstiprināt.');const stored=await getProgressRecord(savedId);row={...row,...stored};qualified=row.taskQualified;
    acknowledgeResult(ownerUid,savedId);clearDraft(ownerUid,id);retryRow=null;
    if(state.user?.uid!==ownerUid)return savedId;
    if(!state.progress.some(r=>r.attemptId===row.attemptId))state.progress.push({...row,studentUid:ownerUid,recordedAt:{seconds:Date.parse(row.completedAt)/1000}});
    if(task&&qualified)try{await updateTaskStatus(task.id,'completed',role,savedId);task.completions={...task.completions,[role]:{status:'completed',attemptId:savedId}};}catch(e){notice(trainer,'Rezultāts saglabāts; uzdevuma statusu neizdevās atjaunot: '+e.message);}
-   draft.dirty=false;if(state.active?.id===id)state.dirty=false;if(task&&!qualified)notice(trainer,'Rezultāts saglabāts. Uzdevuma pabeigšanai vajadzīgs '+(task.targetScore||0)+'% un režīms '+(task.requiredMode||'jebkurš')+'.');receipt(trainer,row);return savedId;
+   draft.dirty=false;if(state.active?.id===id)state.dirty=false;if(task&&!qualified)notice(trainer,'Rezultāts saglabāts; uzdevuma nosacījumi vēl nav sasniegti. Apskati prasības dienas plānā.');receipt(trainer,row);return savedId;
   };
   try{return await send();}catch(e){
    trainer.querySelector('.save-retry')?.remove();const box=E('section','','soft-notice save-retry');notice(box,'Rezultāts ir saglabāts rezerves atmiņā. '+e.message);

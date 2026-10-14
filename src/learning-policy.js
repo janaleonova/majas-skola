@@ -6,11 +6,18 @@ export const dayKey=value=>{
  const ms=typeof value?.toMillis==='function'?value.toMillis():typeof value?.seconds==='number'?value.seconds*1000:value instanceof Date?value.getTime():typeof value==='number'?value:Date.parse(value||'');
  return Number.isFinite(ms)?new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ms)):null;
 };
+export function rigaDayStart(day){
+ let ms=Date.parse(day+'T00:00:00Z');if(!Number.isFinite(ms))throw Error('Nederīgs datums');
+ const wanted=ms,formatter=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hourCycle:'h23'});
+ for(let i=0;i<3;i++){const p=Object.fromEntries(formatter.formatToParts(new Date(ms)).map(x=>[x.type,x.value]));ms+=wanted-Date.UTC(Number(p.year),Number(p.month)-1,Number(p.day),Number(p.hour),Number(p.minute),Number(p.second));}
+ return new Date(ms);
+}
+export function rigaDayEnd(day){const next=new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString().slice(0,10);return new Date(rigaDayStart(next).getTime()-1);}
 export function readNotes(row){try{const n=typeof row.notes==='string'?JSON.parse(row.notes):row.notes;return n&&typeof n==='object'?n:{};}catch{return {};}}
 export function describeActivity(row){
  const notes=readNotes(row),parts=String(row.activityType||'').split(' · ').map(x=>x.trim());
  const knownModes=['learn','practice','exam','speed','review','errors','mistakes'];
- const mode=knownModes.includes(notes.mode)?notes.mode:[...parts].reverse().find(x=>knownModes.includes(x))||'practice';
+ const mode=knownModes.includes(row.mode)?row.mode:knownModes.includes(notes.mode)?notes.mode:[...parts].reverse().find(x=>knownModes.includes(x))||'practice';
  const text=String(row.subject||'')+' '+parts[0];
  const subjectId=row.subjectId||(/matemāt|reizrēķ|reizin|dalīš|saskait|kristālu|multiply|divide|family|story/i.test(text)?'math':/angļu|english/i.test(text)?'english':/latvie|literat|dzeja|dzejas|teikumu/i.test(text)?'language':null);
  const base=parts.filter(x=>!knownModes.includes(x)).join(' · ');
@@ -30,7 +37,7 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
  let totalEarned=0,todayEarned=0,activityCount=0;
  if(!['marks','samanta'].includes(role)||!expectedUid)return {totalEarned:0,todayEarned:0,balance:0,activityCount:0,crystals:[],events:[],goal:250,remaining:250,provisional:true};
  const sorted=[...records].sort((a,b)=>{
-  const ms=x=>typeof x.recordedAt?.seconds==='number'?x.recordedAt.seconds*1000:Date.parse(x.completedAt||x.recordedAt||'')||0;
+  const ms=x=>Date.parse(x.completedAt||'')||(typeof x.recordedAt?.seconds==='number'?x.recordedAt.seconds*1000+(x.recordedAt.nanoseconds||0)/1e6:Date.parse(x.recordedAt||'')||0);
   return ms(a)-ms(b)||String(a.attemptId||a.id||'').localeCompare(String(b.attemptId||b.id||''));
  });
  for(const row of sorted){

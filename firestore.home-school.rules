@@ -46,7 +46,7 @@ service cloud.firestore {
      return assigned(task) && data.moduleId == task.moduleId
        && (data.taskQualified == false && data.taskBonus == 0
         || data.taskQualified == true && data.score >= task.get('targetScore',0)
-         && data.taskBonus == task.get('bonusBP',0));
+         && data.taskBonus == task.get('bonusBP',0) && request.time >= task.get('startsAt',request.time) && (task.get('endsAt',null) == null || request.time <= task.endsAt) && (task.get('requiredMode','any') == 'any' || data.mode == task.requiredMode));
     }
     function validTask(){
      let data=request.resource.data;
@@ -63,8 +63,9 @@ service cloud.firestore {
       && request.resource.data.notes is string && request.resource.data.notes.size() <= 24000
       && request.resource.data.activityType is string && request.resource.data.activityType.size() <= 180
       && request.resource.data.subjectId in ['math','language','english',null]
+      && request.resource.data.mode in ['learn','practice','exam','speed','review','errors','mistakes']
       && request.resource.data.recordedAt == request.time
-      && request.resource.data.keys().hasOnly(['studentUid','studentRole','activityType','subject','score','notes','attemptId','moduleId','taskId','subjectId','topicId','pointsVersion','taskQualified','taskBonus','completedAt','recordedAt'])
+      && request.resource.data.keys().hasOnly(['studentUid','studentRole','activityType','subject','score','notes','attemptId','moduleId','taskId','subjectId','topicId','mode','pointsVersion','taskQualified','taskBonus','completedAt','recordedAt'])
       && validTask();
     allow update: if false;
     allow delete: if parent();

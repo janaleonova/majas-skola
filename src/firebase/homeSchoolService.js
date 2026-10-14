@@ -14,7 +14,8 @@
 import { 
   collection, 
   doc, 
-  getDoc, 
+  getDoc,
+  getDocFromServer,
   getDocs, 
   setDoc, 
   addDoc, 
@@ -27,7 +28,7 @@ import {
   serverTimestamp 
 } from 'firebase/firestore';
 import {qualifiesTask} from '../catalog.js';
-import {dayKey,describeActivity,POINTS_VERSION} from '../learning-policy.js';
+import {dayKey,rigaDayStart,rigaDayEnd,describeActivity,POINTS_VERSION} from '../learning-policy.js';
 import { db, auth, handleFirestoreError, OperationType } from './init.js';
 
 export const ROLES = {
@@ -257,6 +258,8 @@ export async function createTask({ title, subject, assignedTo, description, dueD
       targetScore:Math.max(0,Math.min(100,Math.floor(Number(targetScore)||0))),
       requiredMode,
       startDate: startDate || dayKey(new Date()),
+      startsAt:rigaDayStart(startDate||dayKey(new Date())),
+      endsAt:dueDate?rigaDayEnd(dueDate):null,
       completions: {},
       subject: subject || 'Vispārīgi',
       assignedTo: assignedTo || 'both',
@@ -294,6 +297,7 @@ export async function updateTaskStatus(taskId,status,childRole=null,attemptId=nu
 export async function editTask(taskId,data){
  const profile=await getUserProfile(auth?.currentUser?.uid);if(profile?.role!==ROLES.PARENT)throw Error('Tikai vecāks var rediģēt uzdevumu.');
  const payload={};for(const key of ['title','description','dueDate','startDate','moduleId','assignedTo','daily','bonusBP','targetScore','requiredMode'])if(key in data)payload[key]=data[key];
+ if('startDate' in payload)payload.startsAt=rigaDayStart(payload.startDate);if('dueDate' in payload)payload.endsAt=payload.dueDate?rigaDayEnd(payload.dueDate):null;
  await updateDoc(getTaskDocRef(taskId),{...payload,updatedAt:serverTimestamp()});
 }
 export async function removeTask(taskId){const p=await getUserProfile(auth?.currentUser?.uid);if(p?.role!==ROLES.PARENT)throw Error('Tikai vecāks.');await deleteDoc(getTaskDocRef(taskId));}
@@ -312,18 +316,19 @@ export async function recordProgress(data) {
  if(!Number.isFinite(score)||score<0||score>100)throw Error('Rezultātam jābūt no 0 līdz 100%.');
  const attemptId=data.attemptId||crypto.randomUUID();
  if(!/^[a-zA-Z0-9_-]{8,100}$/.test(attemptId))throw Error('Nederīgs mēģinājuma ID.');
- const ref=getProgressDocRef(attemptId),existing=await getDoc(ref);
+ const timed=promise=>new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(Error('Serveris vēl nav apstiprinājis saglabāšanu.')),15000);promise.then(value=>{clearTimeout(timer);resolve(value)},error=>{clearTimeout(timer);reject(error)});});
+ const ref=getProgressDocRef(attemptId),existing=await timed(getDocFromServer(ref));
  if(existing.exists()){if(existing.data().studentUid!==uid)throw Error('Mēģinājums pieder citam kontam.');return attemptId;}
  const d=describeActivity(data);
  let taskQualified=false,taskBonus=0;
- if(data.taskId){const taskSnap=await getDoc(getTaskDocRef(data.taskId));if(!taskSnap.exists())throw Error('Uzdevums vairs nav pieejams.');const task=taskSnap.data();if(![studentRole,'both'].includes(task.assignedTo))throw Error('Uzdevums nav piešķirts šim bērnam.');taskQualified=qualifiesTask(task,data,d.mode,dayKey(data.completedAt||new Date()));taskBonus=taskQualified?task.bonusBP||0:0;}
- await setDoc(ref,{
+ if(data.taskId){const taskSnap=await getDoc(getTaskDocRef(data.taskId));if(!taskSnap.exists())throw Error('Uzdevums vairs nav pieejams.');const task=taskSnap.data();if(![studentRole,'both'].includes(task.assignedTo))throw Error('Uzdevums nav piešķirts šim bērnam.');taskQualified=qualifiesTask(task,data,d.mode,dayKey(new Date()));taskBonus=taskQualified?task.bonusBP||0:0;}
+ await timed(setDoc(ref,{
   studentUid:uid,studentRole,activityType:String(activityType||'Treniņš').slice(0,180),subject:String(subject||'Mācības').slice(0,80),score,
   notes:typeof notes==='string'?notes.slice(0,24000):'',attemptId,moduleId:data.moduleId||null,taskId:data.taskId||null,
-  subjectId:d.subjectId,topicId:d.topicId,pointsVersion:POINTS_VERSION,
+  subjectId:d.subjectId,topicId:d.topicId,mode:d.mode,pointsVersion:POINTS_VERSION,
   taskQualified,taskBonus,
   completedAt:data.completedAt||new Date().toISOString(),recordedAt:serverTimestamp()
- });
+ }));
  return attemptId;
 }
 
@@ -397,3 +402,5 @@ export async function getFamilyIdentities(){
  if(!db)return {};const profile=await getUserProfile(auth?.currentUser?.uid);if(profile?.role!==ROLES.PARENT)return {};
  const snap=await getDocs(getUsersColRef()),ids={};for(const d of snap.docs){const p=d.data();if(p.approved&&['marks','samanta'].includes(p.role))ids[p.role]=d.id;}return ids;
 }
+
+export async function getProgressRecord(id){const snap=await getDocFromServer(getProgressDocRef(id));return snap.exists()?{id:snap.id,...snap.data()}:null;}
