@@ -19,5 +19,5 @@ test('progress ownership, range and bonus are enforced',async()=>{
 test('parent approval and BP debit are permitted together; child approval is denied',async()=>{
  const request={studentUid:'marks',studentRole:'marks',rewardId:'popcorn',rewardTitle:'Popkorns',cost:40,kind:'points_request',status:'pending',createdAt:serverTimestamp(),updatedAt:serverTimestamp()};
  await assertSucceeds(setDoc(doc(db('marks'),'homeSchool/data/rewardRequests/reward'),request));await assertFails(updateDoc(doc(db('marks'),'homeSchool/data/rewardRequests/reward'),{status:'approved'}));
- await assertSucceeds(runTransaction(db('parent'),async tx=>{const user=doc(db('parent'),'homeSchool/data/users/marks'),reward=doc(db('parent'),'homeSchool/data/rewardRequests/reward');await tx.get(user);await tx.get(reward);tx.update(user,{spentBP:40});tx.update(reward,{status:'approved',chargedBP:40,reviewedBy:'parent',updatedAt:serverTimestamp()});}));
+ const parentDb=db('parent');await assertSucceeds(runTransaction(parentDb,async tx=>{const user=doc(parentDb,'homeSchool/data/users/marks'),reward=doc(parentDb,'homeSchool/data/rewardRequests/reward');await tx.get(user);await tx.get(reward);tx.update(user,{spentBP:40});tx.update(reward,{status:'approved',chargedBP:40,reviewedBy:'parent',updatedAt:serverTimestamp()});}));
 });
