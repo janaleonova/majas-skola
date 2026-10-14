@@ -54,8 +54,19 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   if(!subjects.has(day))subjects.set(day,new Set());
   const set=subjects.get(day),before=set.size;set.add(d.subjectId);const dailyBonus=before<3&&set.size===3?10:0;
   let missionBonus=0;
-  for(const [key,label,threshold,bonus] of [['split','Kristālu kalve',85,10],['sentence','Teikumu pūķa akadēmija',85,10],['poetry','Dzejas superizaicinājums',85,20],['addition','Saskaitīšanas pērles',80,15]])
+  for(const [key,label,threshold,bonus] of [['split','Kristālu kalve',85,10],['sentence','Teikumu pūķa akadēmija',85,10],['poetry','Dzejas superizaicinājums',85,day<'2026-10-14'?20:15],['addition','Saskaitīšanas pērles',80,15]])
    if(String(row.activityType||'').startsWith(label)&&independent&&percent>=threshold&&!special.has(key)){special.add(key);missionBonus+=bonus;}
+  // Marka trīs mācību misiju papildu BP: tikai norādītajā dienā,
+  // tikai par patstāvīgu pārbaudi, vienu reizi katrā misijā.
+  if(role==='marks'&&independent&&day>='2026-10-14'&&day<='2026-10-15'&&d.mode==='exam'&&
+     d.topicId==='morfemas'&&d.subjectId==='language'&&percent>=85&&!special.has('npd-morfemas')){
+    special.add('npd-morfemas');missionBonus+=15;
+  }
+  if(role==='marks'&&day==='2026-10-14'&&independent&&d.mode==='exam'&&
+     (d.topicId==='family'||String(row.activityType||'').startsWith('family ·'))&&d.subjectId==='math'&&
+     percent>=80&&!special.has('daily-family')){
+    special.add('daily-family');missionBonus+=5;
+  }
   let assignedBonus=0;if(row.taskId&&row.taskQualified===true&&!taskBonuses.has(row.taskId)&&Number.isInteger(row.taskBonus)&&row.taskBonus>=0&&row.taskBonus<=30){assignedBonus=row.taskBonus;taskBonuses.add(row.taskId);}
   const earned=mastery+effort+dailyBonus+missionBonus+assignedBonus;totalEarned+=earned;if(day===today)todayEarned+=earned;activityCount++;
   events.push({attemptId:attempt,day,topicId:d.topicId,mastery,effort,dailyBonus,missionBonus,assignedBonus,earned,balance:totalEarned});
