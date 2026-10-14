@@ -59,7 +59,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   submitted=false;saving=false;writingAnswers=[];heading('Literatūra · Gatavojamies NPD');
   const note=el('div','','sentence-tip');note.append(el('strong','Šīs misijas mērķis'));
   note.append(el('p','Atpazīsti dzejoļa tēmu, noskaņu, tēlus, atskaņas, salīdzini Raini un Juri Kronbergu un veido savas rindiņas. Autoru fragmenti ir īsi un pārbaudīti. Citi uzdevumi ir mūsu pašu sacerēti.'));
-  note.append(el('p','🌱 20 mācību jautājumi ar palīdzību, pēc tam 🏆 30 pārbaudes jautājumi (26/30 = vismaz 85%). Vienreizējs +20 provizorisko BP superbonuss.'));
+  note.append(el('p','🌱 20 mācību jautājumi ar palīdzību, pēc tam 🏆 30 pārbaudes jautājumi (26/30 = vismaz 85%). Vienreizējs +15 provizorisko BP superbonuss.'));
   host.append(note);
 
   const stories=el('section','','sentence-tip');
@@ -137,7 +137,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   heading('🏆 Mācību daļa pabeigta');
   const card=el('section','','poetry-question');
   card.append(el('h3','Tagad 30 patstāvīgi jautājumi'));
-  card.append(el('p','Mācību daļā tu saņēmi skaidrojumus un pavedienus. Testā atbildēsi patstāvīgi. No 30 jautājumiem vismaz 26 jāatbild pareizi, lai saņemtu īpašo vienreizējo +20 BP bonusu.'));
+  card.append(el('p','Mācību daļā tu saņēmi skaidrojumus un pavedienus. Testā atbildēsi patstāvīgi. No 30 jautājumiem vismaz 26 jāatbild pareizi, lai saņemtu īpašo vienreizējo +15 BP bonusu.'));
   host.append(card);
   btn(host,'⚔️ Sākt 30 jautājumu testu',()=>{
    mode='exam';items=shuffle(fullBank.filter(q=>q.kind!=='open')).slice(0,30);i=points=0;step();
@@ -161,7 +161,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   const save=btn(host,'✅ Esmu apmierināts — saglabāt',async()=>{
    if(saving||submitted)return;if(!canSubmit){status.textContent='Vecāka priekšskatījumā nesaglabā.';return;}
    saving=true;save.disabled=true;
-   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,writingAnswers,mode:'exam',childConfirmed:true,masteryBonusEligible:qualified,bonus:20,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
+   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,writingAnswers,mode:'exam',childConfirmed:true,masteryBonusEligible:qualified,bonus:15,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
    catch(e){status.textContent='⚠️ Neizdevās saglabāt: '+(e.message||'pārbaudi savienojumu');save.disabled=false;}finally{saving=false;}
   });
   btn(host,'🔁 Vēlreiz ar mainītu jautājumu secību',intro);
