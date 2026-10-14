@@ -91,19 +91,29 @@ function renderDashboard(role){
  const dailyModule=CATALOG[role][Math.floor(Date.parse(state.day+'T00:00:00Z')/86400000)%CATALOG[role].length];
  const daily=E('section','','module daily-task');daily.append(E('span','ŠODIENAS TĒMA','eyebrow'));
  if(role==='marks'&&['2026-10-14','2026-10-15'].includes(state.day)){
-  const poetry=E('article','','card task-card');
-  poetry.append(E('h3','📖 Literatūra — Rainis un Juris Kronbergs'),E('p','Izlasi vai noklausies abus pārbaudītos autoru stāstus. Pēc tam izpildi 20 mācību jautājumus un 30 patstāvīgos pārbaudes jautājumus. Rakstiskie pamatojumi palīdz sagatavoties NPD.'));
-  poetry.append(E('p','Īpašais vienreizējais bonuss: +20 BP pie vismaz 85% pārbaudē. Darbu vari pabeigt arī 15. oktobrī.'));
-  button(poetry,'Atvērt literatūras superizaicinājumu →',()=>openModule(role,'dzeja'));
-  daily.append(poetry);
+  const list=E('div','','today-missions');
+  const mission=(heading,detail,bonus,label,action)=>{
+   const card=E('article','','card task-card');
+   card.append(E('h3',heading),E('p',detail),E('p',bonus));
+   button(card,label,action);
+   list.append(card);
+  };
+  mission('📖 1. Literatūra — Rainis un Juris Kronbergs',
+    'Izlasi vai noklausies autoru dzīvesstāstus, analizē dzejas fragmentus, izpildi 20 mācību jautājumus un 30 patstāvīgos pārbaudes jautājumus. Rakstiskos pamatojumus pārskata vecāks.',
+    'Īpašais bonuss: +20 BP vienu reizi, sasniedzot vismaz 85% patstāvīgajā pārbaudē. Darbu drīkst pabeigt 15. oktobrī.',
+    'Atvērt literatūras superizaicinājumu →',()=>openModule(role,'dzeja'));
+  mission('✍️ 2. Latviešu valoda — vārda sastāvs un vārddarināšana',
+    'NPD sagatavošanās: sakne, priedēklis, piedēklis, galotne, izskaņa, pirmatnīgi un atvasināti vārdi, radniecīgu vārdu saimes, salikteņi, priedēkļu lietojums un vārdu darināšana ar izskaņām.',
+    'Ierastie BP par meistarību un centību; atsevišķs papildu bonuss nav piešķirts.',
+    'Sākt latviešu valodas NPD treniņu →',()=>openModule(role,'latviesu',null,false,'morfemas'));
   if(state.day==='2026-10-14'){
-   const math=E('article','','card task-card');
-   math.append(E('h3','🔗 Šodienas matemātika — saistītais pieraksts'),E('p','Atkārto saistīto pierakstu, darbību secību un iekavas. Sāc režīmā “Mācos”, pēc tam trenējies un pārbaudi sevi.'));
-   math.append(E('p','BP tiek aprēķināti pēc vienotās meistarības un centības politikas; šim darbam nav izdomāta atsevišķa bonusa.'));
-   button(math,'Sākt saistīto pierakstu →',()=>openModule(role,'matematika',null,false,'family'));
-   daily.append(math);
+   mission('🧮 3. Matemātika — saistītais pieraksts',
+    'Nostiprini saistīto pierakstu, darbību secību un iekavas. Vispirms mācies, tad trenējies un pārbaudi sevi.',
+    'Ierastie BP par meistarību un centību; atsevišķs papildu bonuss nav piešķirts.',
+    'Sākt saistīto pierakstu →',()=>openModule(role,'matematika',null,false,'family'));
   }
-  if(assigned){const moreAssigned=E('section','','daily-assigned');moreAssigned.append(E('h3','Vecāka piešķirtais uzdevums'));taskCard(moreAssigned,assigned,role);daily.append(moreAssigned);}
+  daily.append(list);
+  if(assigned){const block=E('section','','daily-assigned');block.append(E('h3','Papildu vecāka piešķirtais uzdevums'));taskCard(block,assigned,role);daily.append(block);}
  }
  else if(assigned)taskCard(daily,assigned,role);
  else {
@@ -171,7 +181,7 @@ function openModule(role,id,task=null,resume=false,initialTopic=null){
  const api=async(path,payload)=>{const token=await state.user.getIdToken();const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw Error(data.error||'Servera kļūda');return data;};
  try{
   if(id==='diagnostic')renderFirstDiagnostic(trainer,{...options,role,alreadyCompleted:state.progress.some(r=>r.studentUid===uidFor(role)&&r.activityType===DIAGNOSTIC_VERSION),onBack:()=>leave(()=>renderDashboard(role))});
-  else if(role==='marks'&&id==='latviesu')renderLatvianSchool(trainer,{...options,askAI:async payload=>(await api('/api/marka-ai',payload)).reply});
+  else if(role==='marks'&&id==='latviesu')renderLatvianSchool(trainer,{...options,initialTopic,askAI:async payload=>(await api('/api/marka-ai',payload)).reply});
   else if(role==='marks'&&id==='matematika')renderMarksMath(trainer,{...options,initialTopic,startVerifiedSession:async(topic,mode)=>api('/api/math/session',{topic,mode}),gradeVerifiedSession:async(token,answers)=>api('/api/math/grade',{token,answers})});
   else if(role==='marks'&&id==='teikumi')renderMarksSentenceMission(trainer,options);
   else if(role==='marks'&&id==='dzeja')renderMarksPoetryMission(trainer,options);
