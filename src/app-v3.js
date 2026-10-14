@@ -100,16 +100,16 @@ function renderDashboard(role){
   };
   mission('📖 1. Literatūra — Rainis un Juris Kronbergs',
     'Izlasi vai noklausies autoru dzīvesstāstus, analizē dzejas fragmentus, izpildi 20 mācību jautājumus un 30 patstāvīgos pārbaudes jautājumus. Rakstiskos pamatojumus pārskata vecāks.',
-    'Īpašais bonuss: +20 BP vienu reizi, sasniedzot vismaz 85% patstāvīgajā pārbaudē. Darbu drīkst pabeigt 15. oktobrī.',
+    'Īpašais bonuss: +15 BP vienu reizi, sasniedzot vismaz 85% patstāvīgajā pārbaudē. Darbu drīkst pabeigt 15. oktobrī.',
     'Atvērt literatūras superizaicinājumu →',()=>openModule(role,'dzeja'));
   mission('✍️ 2. Latviešu valoda — vārda sastāvs un vārddarināšana',
     'NPD sagatavošanās: sakne, priedēklis, piedēklis, galotne, izskaņa, pirmatnīgi un atvasināti vārdi, radniecīgu vārdu saimes, salikteņi, priedēkļu lietojums un vārdu darināšana ar izskaņām.',
-    'Ierastie BP par meistarību un centību; atsevišķs papildu bonuss nav piešķirts.',
+    'Papildu +15 BP vienu reizi pie vismaz 85% patstāvīgajā pārbaudē 14.–15. oktobrī.',
     'Sākt latviešu valodas NPD treniņu →',()=>openModule(role,'latviesu',null,false,'morfemas'));
   if(state.day==='2026-10-14'){
    mission('🧮 3. Matemātika — saistītais pieraksts',
     'Nostiprini saistīto pierakstu, darbību secību un iekavas. Vispirms mācies, tad trenējies un pārbaudi sevi.',
-    'Ierastie BP par meistarību un centību; atsevišķs papildu bonuss nav piešķirts.',
+    'Papildu +5 BP vienu reizi pie vismaz 80% patstāvīgajā pārbaudē 14. oktobrī.',
     'Sākt saistīto pierakstu →',()=>openModule(role,'matematika',null,false,'family'));
   }
   daily.append(list);
