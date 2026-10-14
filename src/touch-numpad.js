@@ -1,10 +1,10 @@
 // Mobilā ekrāna ciparnīca (Touch Numpad) matemātikas un skaitļu ievadei
 export function attachTouchNumpad(container, inputElement, { onSubmit, onInput } = {}) {
   // Disable the phone's software keyboard when using the in-app keypad.
-  inputElement.readOnly = true;
-  inputElement.setAttribute('aria-label', 'Atbilde — izmanto ekrāna ciparnīcu');
+  inputElement.readOnly = false;
+  if(!inputElement.hasAttribute('aria-label'))inputElement.setAttribute('aria-label','Tava atbilde');
   inputElement.setAttribute('enterkeyhint', 'done');
-  inputElement.setAttribute('inputmode', 'none');
+  inputElement.setAttribute('inputmode', 'numeric');
   const pad = document.createElement('div');
   pad.className = 'touch-numpad';
   pad.setAttribute('role', 'group');

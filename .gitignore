@@ -4,3 +4,5 @@ bun.lockb
 .env
 dist/
 .DS_Store
+
+public/*.map

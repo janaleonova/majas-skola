@@ -32,14 +32,14 @@ const writingTasks=[{"kind":"writing","question":"Izdomā divus vārdus, kas ats
  {kind:'writing',question:'Uzraksti, kas kopīgs abu autoru fragmentiem, un pamato ar piemēru.',hint:'Abos fragmentos lietotas tēlainas izteiksmes. Nosauc piemēru no katra.',example:'Abi autori izmanto tēlainu valodu. Rainis saulīti sauc par māmiņu, savukārt Kronbergs zilbei piedēvē darbību.'}
 ];
 
-export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
+export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{},initialState=null,onCheckpoint=()=>{}}={}){
  const host=el('section','','module learning-hub poetry-mission');root.append(host);
- let items=[],i=0,points=0,complete=false,saving=false,submitted=false,mode='learning';
+ let writingAnswers=[],items=[],i=0,points=0,complete=false,saving=false,submitted=false,mode='learning';
  const btn=(parent,text,cb,cls='action-button')=>{const b=el('button',text,cls);b.type='button';b.onclick=cb;parent.append(b);return b;};
  const heading=(subtitle)=>{host.replaceChildren();host.append(el('h2','🐉 Dzejas superizaicinājums'),el('p',subtitle));};
  const source=(id,hideAuthor=false)=>{const d=texts[id];const block=el('blockquote','','poetry-quote');block.append(el('strong',hideAuthor?'📜 Uzmini autoru no fragmenta':d.author+' — '+d.title));for(const line of d.lines)block.append(el('p',line));const a=el('a','📖 Pārbaudīts avots');a.href=d.source;a.target='_blank';a.rel='noopener noreferrer';if(!hideAuthor)block.append(a);host.append(block);};
  const intro=()=>{
-  heading('Literatūra · Gatavojamies NPD');
+  submitted=false;saving=false;writingAnswers=[];heading('Literatūra · Gatavojamies NPD');
   const note=el('div','','sentence-tip');note.append(el('strong','Šīs misijas mērķis'));
   note.append(el('p','Atpazīsti dzejoļa tēmu, noskaņu, tēlus, atskaņas, salīdzini Raini un Juri Kronbergu un veido savas rindiņas. Autoru fragmenti ir īsi un pārbaudīti. Citi uzdevumi ir mūsu pašu sacerēti.'));
   note.append(el('p','🌱 20 mācību jautājumi ar palīdzību, pēc tam 🏆 30 pārbaudes jautājumi (26/30 = vismaz 85%). Vienreizējs +20 provizorisko BP superbonuss.'));
@@ -49,8 +49,8 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   },'quiet-button');
   btn(host,'🌱 Sākt 20 mācību jautājumus',()=>{items=[...shuffle(fullBank.filter(q=>q.kind!=='open')).slice(0,15),...shuffle(writingTasks)];mode='learning';i=points=0;complete=false;step();});
  };
- const step=()=>{
-  if(i>=items.length){if(mode==='learning'){ready();return;}finish();return;}
+ const step=()=>{onCheckpoint({items,i,points,mode,writingAnswers});
+  if(i>=items.length){if(mode==='learning'){ready();return;}independentWriting();return;}
   const q=items[i];heading((mode==='learning'?'🌱 Mācību jautājums ':'🏆 Tests ')+(i+1)+' / '+items.length);
   if(q.kind==='source')source(q.source,q.question.startsWith('Kurš autors'));
   if(q.kind==='writing'&&typeof q.source==='number')source(q.source);
@@ -83,7 +83,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
    btn(card,'📖 Apskatīt atbildes paraugu',()=>{hintPanel.hidden=false;hintText.textContent='Parauga atbilde: '+q.example;},'quiet-button');
    btn(card,'✅ Esmu uzrakstījis un sapratis',()=>{
     if(ta.value.trim().length<25){feedback.textContent='Pamēģini izveidot vismaz vienu pilnu teikumu ar pamatojumu.';return;}
-    answer(true,'Labi! Salīdzini savu atbildi ar paraugu un pārrunā, vai to pamato teksta vārdi.');
+    writingAnswers.push({question:q.question,answer:ta.value.trim()});answer(true,'Labi! Salīdzini savu atbildi ar paraugu un pārrunā, vai to pamato teksta vārdi.');
    });
   }else if(q.kind==='open'){
    const ta=el('textarea','','poetry-input');ta.rows=3;ta.placeholder='Uzraksti savu dzejas rindu vai nelielu divrindi…';card.append(ta);
@@ -105,19 +105,27 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   });
   btn(host,'🔁 Vēlreiz 20 mācību jautājumi',intro,'quiet-button');
  };
+ const independentWriting=()=>{
+  heading('Patstāvīgi pamato ar tekstu');source(0);source(1);
+  host.append(el('p','Izvēļu jautājumu rezultāts ir saglabāts šī mēģinājuma atmiņā. Tagad uzraksti savas atbildes. Programma tās neatzīmē kā pareizas — tās redzēs vecāks.'));
+  const form=el('form');host.append(form);const fields=[];
+  for(const question of ['Raksturo Raiņa fragmenta noskaņu un pamato ar vismaz vienu teksta vārdu.','Ko Kronberga fragmentā nozīmē neparastā zilbes darbība? Pamato savu domu.','Nosauc vienu līdzību un vienu atšķirību starp fragmentiem.']){const label=el('label',question),input=el('textarea','','poetry-input');input.required=true;input.minLength=25;input.maxLength=2000;input.rows=3;label.append(input);form.append(label);fields.push({question,input});}
+  const submit=el('button','Saglabāt atbildes un skatīt rezultātu','action-button');submit.type='submit';form.append(submit);
+  form.onsubmit=e=>{e.preventDefault();if(fields.some(x=>x.input.value.trim().length<25))return;writingAnswers.push(...fields.map(x=>({question:x.question,answer:x.input.value.trim(),independent:true})));finish();};
+ };
  const finish=()=>{
   complete=true;heading('🏆 Superizaicinājums pabeigts!');
   const percent=Math.round(points/items.length*100),qualified=percent>=85;
   host.append(el('div',percent+'%','result-hero'),el('p','Pareizi: '+points+' / '+items.length+'.'));
-  host.append(el('p',qualified?'💎 Esi sasniedzis meistarības mērķi!':'💪 Patrenējies un izmēģini jaunu jautājumu secību.'));
+  host.append(el('p',qualified?'💎 Izvēļu uzdevumu mērķis sasniegts! Rakstisko pamatojumu pārskatīs vecāks.':'💪 Patrenējies un izmēģini jaunu jautājumu secību.'));
   const status=el('p','Rezultāts nav saglabāts — tu pats izvēlies.');status.setAttribute('role','status');host.append(status);
   const save=btn(host,'✅ Esmu apmierināts — saglabāt',async()=>{
    if(saving||submitted)return;if(!canSubmit){status.textContent='Vecāka priekšskatījumā nesaglabā.';return;}
    saving=true;save.disabled=true;
-   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,childConfirmed:true,masteryBonusEligible:qualified,bonus:20,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
+   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,writingAnswers,mode:'exam',childConfirmed:true,masteryBonusEligible:qualified,bonus:20,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
    catch(e){status.textContent='⚠️ Neizdevās saglabāt: '+(e.message||'pārbaudi savienojumu');save.disabled=false;}finally{saving=false;}
   });
   btn(host,'🔁 Vēlreiz ar mainītu jautājumu secību',intro);
  };
- intro();
+ if(initialState){({items,i,points,mode,writingAnswers}=initialState);step();}else intro();
 }

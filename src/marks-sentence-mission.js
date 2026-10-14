@@ -61,12 +61,12 @@ const tokenize=s=>normal(s).split(' ');
 const parseAnswer=(s)=>normal(s).split(/[,;+\s]+/).filter(Boolean);
 const toSentence=(subject,verb)=>subject.charAt(0).toLocaleUpperCase('lv-LV')+subject.slice(1)+' '+verb+'.';
 
-export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
+export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{},initialState=null,onCheckpoint=()=>{}}={}){
  const host=el('section','','module learning-hub sentence-mission');root.append(host);
- let stage='intro',practice=[],exam=[],underlineRound=[],position=0,score=0,submitted=false,saving=false,prevSet=new Set();
+ let writtenAnswers=[],stage='intro',practice=[],exam=[],underlineRound=[],position=0,score=0,submitted=false,saving=false,prevSet=new Set();
  const create=(kind)=>{let bank=kind==='word'?words:sentences;let options=shuffle(bank.filter(i=>!prevSet.has(i.word||i.sentence)));if(options.length<8)options=shuffle(bank);return options;};
  const button=(parent,text,handler,cls='action-button')=>{const b=el('button',text,cls);b.type='button';b.onclick=handler;parent.append(b);return b;};
- const head=(sub)=>{host.replaceChildren();host.append(el('h2','🐉 Teikumu pūķa akadēmija'),el('p',sub,'sentence-subtitle'));};
+ const head=(sub)=>{if(stage!=='intro')onCheckpoint({stage,practice,exam,underlineRound,position,score,prevSet:[...prevSet],writtenAnswers});host.replaceChildren();host.append(el('h2','🐉 Teikumu pūķa akadēmija'),el('p',sub,'sentence-subtitle'));};
  const explain=(title,body)=>{const box=el('div','','sentence-tip');box.append(el('strong',title),el('p',body));host.append(box);};
  const choices=(question,items,correct,after,{hint='',independent=false,help=[]}={})=>{
   const box=el('section','','sentence-question');box.append(el('h3',question));host.append(box);
@@ -90,7 +90,7 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
    if(!independent&&!ok){feedback.textContent='Vēl ne. Padomā, uz kādu jautājumu šis vārds atbild. '+(help[0]||'')+' Mēģini vēlreiz.';feedback.style.color='#a53b34';return;}
    done=true;[...options.querySelectorAll('button')].forEach(x=>x.disabled=true);
    if(independent)score+=Number(ok);
-   feedback.textContent=ok?'✨ Pareizi! '+(!independent?hint:''):independent?'Pareizā atbilde: '+correct+'. '+hint:'✅ Pareizi! '+hint;
+   feedback.textContent=independent?'Atbilde pieņemta.':ok?'✨ Pareizi! '+hint:'Pamēģini vēlreiz.';
    const next=button(box,'➡️ '+(after.label||'Turpināt'),after.action,'action-button sentence-next');next.focus({preventScroll:true});
   },'quiet-button');
  };
@@ -123,7 +123,7 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
   button(host,'🌱 Vispirms patrenēties →',()=>{practice=shuffle(words).slice(0,8);position=0;wordPractice();});
  };
  const wordPractice=()=>{
-  stage='practice';if(position>=practice.length){position=0;grammarPractice();return;}
+  stage='word';if(position>=practice.length){position=0;grammarPractice();return;}
   head('1/3 · Vārdšķiru treniņš · '+(position+1)+'/'+practice.length);
   const w=practice[position];explain('Vārds teikumā',wordContexts[w.word]||w.word);
   choices('Kāda vārdšķira ir vārdam “'+w.word+'”?',['Lietvārds','Darbības vārds','Īpašības vārds','Apstākļa vārds'],w.answer,
@@ -158,21 +158,22 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
    });
    if(!independent&&!correct){status.textContent='Vēl ne. Atceries: par ko ir teikums, un ko tas dara? Vari mainīt pasvītrojumu.';return;}
    complete=true;if(independent)score+=Number(correct);
-   status.textContent=correct?'✨ Pareizi! Viena svītra — '+item.center[0]+', divas svītras — '+item.center[1]+'.':'Šoreiz pareizi ir: viena svītra — '+item.center[0]+', divas svītras — '+item.center[1]+'.';
+   status.textContent=independent?'Atbilde pieņemta.':correct?'✨ Pareizi! Viena svītra — '+item.center[0]+', divas svītras — '+item.center[1]+'.':'Šoreiz pareizi ir: viena svītra — '+item.center[0]+', divas svītras — '+item.center[1]+'.';
    button(section,'➡️ Nākamais teikums',after.action,'action-button sentence-next');
   });
   host.append(section);
  };
  const grammarPractice=()=>{
-  stage='practice';const list=underlineRound.length?underlineRound:(underlineRound=shuffle(underlineBank).slice(0,15));if(position>=15){position=0;transformPractice();return;}
+  stage='grammar';const list=underlineRound.length?underlineRound:(underlineRound=shuffle(underlineBank).slice(0,15));if(position>=15){position=0;transformPractice();return;}
   const item=list[position];head('2/3 · Teikuma centrs · '+(position+1)+'/15');
   underlineQuestion(item,{action:()=>{position++;grammarPractice();}});
  };
  const transformPractice=()=>{
+  stage='transform';
   head('3/3 · Pārveido teikumu');
   explain('Pūķa piemērs','Suņi lec. → Mazie suņi jautri lec. Pievienotie vārdi paskaidro, kādi suņi un kā tie lec.');
   inputQuestion('Paplašini teikumu “Kaķis ņaud.”','Ieraksti savu paplašināto teikumu. Saglabā kaķi un ņaudēšanu, pievieno vismaz vienu teikuma locekli.',
-   answer=>{const text=tokenize(answer);const ok=text.includes('kaķis')&&text.includes('ņaud')&&text.length>2;return {ok,feedback:'Atstāj vārdus “kaķis” un “ņaud”, pievieno paskaidrojošus vārdus. Piemēram: Melns kaķis skaļi ņaud.'};},
+   answer=>{const text=tokenize(answer);const ok=text.includes('kaķis')&&text.includes('ņaud')&&text.length>2;if(ok)writtenAnswers.push({question:'Paplašini teikumu Kaķis ņaud.',answer});return {ok,feedback:'Atstāj vārdus “kaķis” un “ņaud”, pievieno paskaidrojošus vārdus. Piemēram: Melns kaķis skaļi ņaud.'};},
    {label:'Doties uz pārbaudījumu',action:ready},{hints:['Kāds kaķis? Kur tas atrodas? Kā tas ņaud?','Piemērs: Melns kaķis skaļi ņaud.']});
  };
  const ready=()=>{
@@ -200,11 +201,11 @@ export function renderMarksSentenceMission(root,{canSubmit=false,alreadyEarnedBo
    if(saving||submitted)return;
    if(!canSubmit){notice.textContent='Vecāka priekšskatījums — rezultātu nesaglabā.';return;}
    saving=true;confirm.disabled=true;
-   try{const id=await saveProgress({studentRole:'marks',subject:'Latviešu valoda',activityType:TYPE,score:pct,notes:JSON.stringify({correct:score,total:30,childConfirmed:true,masteryBonusEligible:qualified,spendableBP:0,serverVerified:false})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;notice.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'Vienreizējais +10 provizorisko BP bonuss nopelnīts.':'');}
+   try{const id=await saveProgress({studentRole:'marks',subject:'Latviešu valoda',activityType:TYPE,score:pct,notes:JSON.stringify({correct:score,total:30,writingAnswers:writtenAnswers,mode:'exam',childConfirmed:true,masteryBonusEligible:qualified,spendableBP:0,serverVerified:false})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;notice.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'Vienreizējais +10 provizorisko BP bonuss nopelnīts.':'');}
    catch(err){notice.textContent='⚠️ Neizdevās saglabāt: '+(err.message||'savienojuma kļūda');confirm.disabled=false;}
    finally{saving=false;}
   });
-  button(host,'🔄 Trenēties vēlreiz ar citiem jautājumiem',()=>{submitted=false;practice=create('word').slice(0,4);position=0;wordPractice();});
+  button(host,'🔄 Trenēties vēlreiz ar citiem jautājumiem',()=>{submitted=false;underlineRound=[];practice=create('word').slice(0,4);position=0;wordPractice();});
  };
- intro();
+ if(initialState){({stage,practice,exam,underlineRound,position,score,writtenAnswers=[]}=initialState);prevSet=new Set(initialState.prevSet);({word:wordPractice,grammar:grammarPractice,transform:transformPractice,ready,exam:examStep,results}[stage]||intro)();}else intro();
 }

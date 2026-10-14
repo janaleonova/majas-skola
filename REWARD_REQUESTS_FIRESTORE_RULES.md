@@ -1,3 +1,5 @@
+> Vēsturisks dokuments. Aktuālais v3 apraksts: DEPLOYMENT_V3.md, POINTS_POLICY.md un firestore.home-school.rules.
+
 # Mājas skola — balvu vēlmju Firestore piekļuve
 **Svarīgi:** šo noteikumu pievienošana GitHub pati par sevi NEAKTIVIZĒ tos Firebase. Jāpārbauda esošie noteikumi un jāievieto tikai zem esošā `match /homeSchool/{document=**}` atbilstošā `homeSchool/data` mezgla. Neaizstāt Datorika HUB noteikumus.
 

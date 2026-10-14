@@ -27,7 +27,7 @@ export function installChildGuide({role,getSubject=()=>'',getCrystals=()=>0}){
  },15000);
  const onVisibility=()=>{if(document.visibilityState!=='visible')guide.hidden=true;launcher.hidden=!active();};
  document.addEventListener('visibilitychange',onVisibility);
- const showWelcome=()=>{launcher.hidden=!active();say(fairy?'Sveika! Izvēlies, kuru kristālu šodien audzēsim.':'Sveiks! Kurš kristāls būs tavs nākamais izaicinājums?');};
+ const showWelcome=()=>{launcher.hidden=!active();/* Welcome help opens only when requested. */};
  setTimeout(showWelcome,900);
  return {open:()=>launcher.click(),announce:message=>say(message),stop:()=>{disposed=true;clearInterval(timer);guide.remove();launcher.remove();document.removeEventListener('visibilitychange',onVisibility);for(const event of ['pointerdown','keydown','touchstart'])document.removeEventListener(event,userAction);}};
 }

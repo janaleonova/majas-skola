@@ -44,7 +44,7 @@ export function analyzeDiagnostic(role,answers,times=[]){
  }
  return {version:DIAGNOSTIC_VERSION,correct:Object.values(sections).reduce((a,x)=>a+x.correct,0),total:questions.length,sections,skills};
 }
-export function renderFirstDiagnostic(container,{role,canSubmit=false,alreadyCompleted=false,saveProgress=async()=>{},onBack=()=>{}}={}){
+export function renderFirstDiagnostic(container,{role,canSubmit=false,alreadyCompleted=false,saveProgress=async()=>{},onBack=()=>{},initialState=null,onCheckpoint=()=>{}}={}){
  const questions=DIAGNOSTICS[role],root=E('section');root.className='module learning-hub';
  container.replaceChildren(root);if(!questions)return;
  let position=0,answers=[],times=[],shownAt=0,busy=false;
@@ -58,7 +58,7 @@ export function renderFirstDiagnostic(container,{role,canSubmit=false,alreadyCom
   root.append(button('Sākt misiju →',()=>{position=0;answers=[];times=[];question();}));
   root.append(button('← Atpakaļ',onBack));
  }
- function question(){
+ function question(){onCheckpoint({position,answers,times});
   const x=questions[position];shownAt=performance.now();
   root.replaceChildren(E('h2','Uzdevums '+(position+1)+' no '+questions.length));
   const p=E('p',x.prompt);p.style.cssText='font-size:clamp(1.25rem,3vw,1.8rem);line-height:1.65;font-weight:650;white-space:pre-wrap;';root.append(p);
@@ -92,5 +92,5 @@ export function renderFirstDiagnostic(container,{role,canSubmit=false,alreadyCom
   prize.append(E('p','Par drosmi sākt un izpildīt visus uzdevumus vari kopā ar vecāku izvēlēties mazu prieku, piemēram, popkornu nākamajā filmu vakarā vai kopīgu galda spēli. Vecāks izlemj un sarunā, kad to īstenos. Šī nav automātiska BP balva.'));
   root.append(prize,button('← Uz priekšmetiem',onBack));busy=false;
  }
- intro();
+ if(initialState){({position,answers,times}=initialState);if(position>=questions.length)void finish();else question();}else intro();
 }

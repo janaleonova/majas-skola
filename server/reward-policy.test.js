@@ -6,7 +6,7 @@ test('Perfect 20-answer streak earns at most 20 BP',()=>{
  const r=scoreVerifiedAttempt({answers:keys,correctAnswers:keys,mode:'exam'});
  assert.equal(r.percent,100);assert.equal(r.maxStreak,20);assert.equal(r.potential,20);
 });
-test('Learning mode earns zero',()=>assert.equal(scoreVerifiedAttempt({answers:[1,2],correctAnswers:[1,2],mode:'learn'}).potential,0));
+test('Learning mode grants zero mastery; ledger grants bounded effort',()=>assert.equal(scoreVerifiedAttempt({answers:[1,2],correctAnswers:[1,2],mode:'learn'}).potential,0));
 test('Repeat cannot award again',()=>assert.deepEqual(calculateImprovement(20,20),{earned:0,best:20}));
 test('Worse result cannot subtract points',()=>assert.deepEqual(calculateImprovement(18,5),{earned:0,best:18}));
 test('Only improvement earns extra points',()=>assert.deepEqual(calculateImprovement(16,20),{earned:4,best:20}));

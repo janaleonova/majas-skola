@@ -7,16 +7,17 @@ export function isCorrectEnglishAnswer(question,input){const value=normalizeAnsw
 export function makeEnglishBank(){let bank=[];for(const [topic,pairs] of Object.entries(words)){pairs.forEach(([en,lv],i)=>{bank.push({id:topic+'-en-'+i,topic,q:'Iztulko angliski: '+lv,a:en,hint:'Atceries nosaukumu angļu valodā.'},{id:topic+'-lv-'+i,topic,q:'Iztulko latviski: '+en,a:lv,accepted:en.toLowerCase()==='autumn'?['rudens']:undefined,hint:'Atceries tulkojumu.'},{id:topic+'-order-'+i,topic,q:'Kurš nosaukums nāk pēc '+en+'?',a:pairs[(i+1)%pairs.length][0],hint:'Padomā par secību.'});});}
 pronouns.forEach(([en,lv],i)=>bank.push({id:'pronoun-'+i,topic:'pronouns',q:'Iztulko angliski: '+lv,a:en,hint:'I, you, he, she, it, we, they.'}));
 [['Anna is my friend. ___ is kind.','she'],['Dad is tall. ___ is strong.','he'],['Tom and I are friends. ___ play.','we'],['The cats are hungry. ___ want food.','they'],['This is a dog. ___ is happy.','it'],['___ am at school.','I'],['Are ___ ready?','you'],['Marta and Lisa sing. ___ sing well.','they'],['Mother reads. ___ likes books.','she'],['The boy runs. ___ is fast.','he']].forEach(([q,a],i)=>bank.push({id:'usage-'+i,topic:'pronouns',q,a,hint:'Nosaki, par kuru personu vai lietu ir runa.'}));return bank;}
-export function renderMarksEnglish(root,{canSubmit=false,saveProgress=async()=>{}}={}){
+export function renderMarksEnglish(root,{canSubmit=false,saveProgress=async()=>{},initialState=null,onCheckpoint=()=>{}}={}){
  const host=document.createElement('section');host.className='module learning-hub';root.append(host);const bank=makeEnglishBank();
  const topics=[['days','📅 Nedēļas dienas'],['months','🗓️ Mēneši'],['seasons','🍁 Gadalaiki'],['pronouns','🧑 Personu vietniekvārdi']];
  let topic=null,items=[],index=0,correct=0,mode='practice',streak=0,best=0,misses=[];
  const el=(tag,text)=>{let n=document.createElement(tag);if(text)n.textContent=text;return n};
  const button=(title,fn)=>{let b=el('button',title);b.type='button';b.className='action-button';b.onclick=fn;host.append(b);return b};
  function home(){host.replaceChildren();host.append(el('h2','🌍 Angļu valodas piedzīvojums'),el('p','Dienas, mēneši, gadalaiki un vietniekvārdi.'));topics.forEach(([id,title])=>button(title,()=>choose(id)));}
- function choose(id){topic=id;host.replaceChildren();host.append(el('h2',topics.find(t=>t[0]===id)[1]));button('🌱 Mācos · 8',()=>start('learn'));button('🎯 Trenējos · 12',()=>start('practice'));button('🏆 Pārbaudu sevi · 20',()=>start('exam'));button('← Priekšmeta tēmas',home);}
+ function choose(id){topic=id;host.replaceChildren();host.append(el('h2',topics.find(t=>t[0]===id)[1]));button('🌱 Mācos · 8',()=>start('learn'));button('🎯 Trenējos · 12',()=>start('practice'));button('🏆 Pārbaudu sevi · '+Math.min(20,bank.filter(q=>q.topic===id).length),()=>start('exam'));button('← Priekšmeta tēmas',home);}
  function start(m){mode=m;items=shuffle(bank.filter(q=>q.topic===topic)).slice(0,m==='learn'?8:m==='exam'?20:12);index=correct=streak=best=0;misses=[];step();}
  function step(){
+  onCheckpoint({topic,items,index,correct,mode,streak,best,misses});
   if(index>=items.length){void finish();return;}
   host.replaceChildren();const q=items[index];
   host.append(el('h2','Jautājums '+(index+1)+' / '+items.length));
@@ -49,5 +50,5 @@ export function renderMarksEnglish(root,{canSubmit=false,saveProgress=async()=>{
   });
  }
  async function finish(){let percent=Math.round(correct/items.length*100);host.replaceChildren();host.append(el('h2','Rezultāts: '+percent+'%'),el('p','Pareizi '+correct+' no '+items.length+' · Garākā sērija: '+best));if(misses.length){const review=el('div');review.className='soft-notice';review.append(el('h3','Pareizās atbildes'));for(const miss of misses)review.append(el('p',miss.question+' → '+miss.answer));host.append(review);}let stat=el('p');host.append(stat);if(canSubmit)try{const id=await saveProgress({studentRole:'marks',subject:'Angļu valoda',activityType:topic+' · '+mode,score:percent,notes:JSON.stringify({correct,total:items.length,streak:best})});stat.textContent=id?'✅ Saglabāts Firebase':'⚠️ Nav apstiprināta saglabāšana';}catch{stat.textContent='⚠️ Saglabāšana neizdevās';}button('Atkārtot',()=>start(mode));button('← Tēmas',home);}
- home();
+ if(initialState){({topic,items,index,correct,mode,streak,best,misses}=initialState);step();}else home();
 }

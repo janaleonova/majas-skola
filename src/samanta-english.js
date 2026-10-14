@@ -102,7 +102,7 @@ export function makeSamantaEnglishBank(topicKey) {
   return shuffle(questions);
 }
 
-export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = async () => {} } = {}) {
+export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = async () => {}, initialState=null, onCheckpoint=()=>{} } = {}) {
   const host = document.createElement('section');
   host.className = 'module learning-hub samanta-english';
   root.append(host);
@@ -202,7 +202,7 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
     bLearn.onclick = () => start('learn');
     const bPrac = el('button', '🎯 Trenējos · 12 uzdevumi', 'action-button');
     bPrac.onclick = () => start('practice');
-    const bExam = el('button', '🏆 Pārbaudu sevi · 20 uzdevumi', 'action-button');
+    const bExam = el('button', '🏆 Pārbaudu sevi · '+Math.min(20,makeSamantaEnglishBank(tKey).length)+' uzdevumi', 'action-button');
     bExam.onclick = () => start('exam');
     cluster.append(bLearn, bPrac, bExam);
     host.append(cluster);
@@ -221,10 +221,12 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
       questions = shuffle(all).slice(0, m === 'learn' ? 8 : m === 'exam' ? 20 : 12);
     }
     index = correct = streak = maxStreak = 0;
+    mistakes=[];
     step();
   }
 
   function step() {
+    onCheckpoint({currentTopic,mode,questions,index,correct,streak,maxStreak,mistakes});
     if ('speechSynthesis' in window) window.speechSynthesis.cancel();
     if (index >= questions.length) {
       void finish();
@@ -273,11 +275,11 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
       engPrompt.style.fontSize = 'clamp(2rem, 4vw, 2.8rem)';
       engPrompt.style.color = '#382b6b';
       engPrompt.style.margin = '10px 0 6px';
-      centerDisplay.append(engPrompt);
+      if(mode!=='exam')centerDisplay.append(engPrompt);
     }
 
     const audioRow = el('div', undefined, 'reading-controls');
-    const bListen = el('button', '🔊 Klausīties izrunu (“' + q.speechText + '”)', 'reading-listen');
+    const bListen = el('button', '🔊 Klausīties izrunu', 'reading-listen');
     bListen.onclick = () => speakEnglish(q.speechText, bListen);
     const bStop = el('button', '⏹ Apturēt', 'reading-stop');
     bStop.onclick = () => {
@@ -285,7 +287,7 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
       bListen.classList.remove('audio-playing');
     };
     audioRow.append(bListen, bStop);
-    centerDisplay.append(audioRow);
+    if(mode!=='exam'||q.type==='listen-choice')centerDisplay.append(audioRow);
     card.append(centerDisplay);
 
     // Audio plays automatically once on question render in learning mode
@@ -329,15 +331,15 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
 
         if (!isGood) {
           mistakes.push(q);
-          optBtn.style.borderColor = '#e57373';
-          optBtn.style.background = '#ffebee';
-          optBtn.style.color = '#c62828';
+          optBtn.style.borderColor = mode==='exam'?'#64748b':'#e57373';
+          optBtn.style.background = mode==='exam'?'#eef2ff':'#ffebee';
+          optBtn.style.color = mode==='exam'?'#243568':'#c62828';
         }
 
         // Highlight correct
         optionsGrid.querySelectorAll('button').forEach(b => {
           b.disabled = true;
-          if (b.textContent.toLowerCase() === q.correctAnswer.toLowerCase()) {
+          if (mode!=='exam'&&b.textContent.toLowerCase() === q.correctAnswer.toLowerCase()) {
             b.style.borderColor = '#48bb78';
             b.style.background = '#e6fffa';
             b.style.color = '#1b7454';
@@ -351,7 +353,7 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
             : `🔍 Pareizā atbilde ir “${q.correctAnswer}”. ${q.hint}`;
 
         // Also pronounce the word upon answer
-        speakEnglish(q.speechText);
+        if(mode!=='exam')speakEnglish(q.speechText);
 
         const nextBtn = el('button', index + 1 === questions.length ? 'Skatīt rezultātu →' : 'Nākamais vārds →', 'action-button');
         nextBtn.style.marginTop = '15px';
@@ -393,17 +395,6 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
     const summary = el('p', `Pareizi ${correct} no ${questions.length} vārdiem (${pct}%) · Garākā pareizo sērija: ${maxStreak}`, 'result-subtitle');
     host.append(scoreCard, summary);
 
-    const policy = calculatePracticePoints({ correct, total: questions.length, maxStreak, mode });
-    const award = previewImprovement(0, policy.potential);
-
-    const pts = el('div', undefined, 'soft-notice');
-    pts.style.cssText = 'background:linear-gradient(135deg,#fdf2f8,#f5f3ff);border:2px solid #a855f7;padding:16px;border-radius:18px;margin:12px 0;text-align:center';
-    pts.innerHTML = `
-      <div style="font-size:1.55rem;font-weight:900;color:#7c3aed;margin-bottom:4px">🌟 +${award.earned} BP nopelnīti!</div>
-      <div style="font-size:0.92rem;color:#4b5563">Tēmas meistarība: ${award.best}/20 · Sērijas bonuss: +${policy.streakBonus} BP · Pasaules kristāls iegūts!</div>
-    `;
-    host.append(pts);
-
     const saveNotice = el('p', '', 'save-status');
     host.append(saveNotice);
 
@@ -414,9 +405,9 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
           subject: 'Angļu valoda',
           activityType: `${topics.find(x => x[0] === currentTopic)?.[1] || currentTopic} · ${mode}`,
           score: pct,
-          notes: JSON.stringify({ correct, total: questions.length, maxStreak, pointsPreview: award.earned })
+          notes: JSON.stringify({ correct, total: questions.length, maxStreak, mode })
         });
-        saveNotice.textContent = id ? '✅ Rezultāts un punkti saglabāti!' : '⚠️ Saglabāšana nav apstiprināta.';
+        saveNotice.textContent = id ? '✅ Rezultāts saglabāts.' : '⚠️ Saglabāšana nav apstiprināta.';
       } catch {
         saveNotice.textContent = '⚠️ Saglabāšana Firebase neizdevās.';
       }
@@ -440,5 +431,5 @@ export function renderSamantaEnglish(root, { canSubmit = false, saveProgress = a
     host.append(actions);
   }
 
-  viewTopics();
+  if(initialState){({currentTopic,mode,questions,index,correct,streak,maxStreak,mistakes}=initialState);step();}else viewTopics();
 }

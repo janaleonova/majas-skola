@@ -95,7 +95,7 @@ export function makeSamantaLatvianBank() {
   return bank;
 }
 
-export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '', saveProgress = async () => {} } = {}) {
+export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '', saveProgress = async () => {}, initialState=null, onCheckpoint=()=>{} } = {}) {
   const host = document.createElement('section');
   host.className = 'module learning-hub samanta-reading';
   root.append(host);
@@ -115,6 +115,7 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
   let streak = 0;
   let maxStreak = 0;
   let showSyllables = true;
+  const answeredQuestions=new Set();
 
   const el = (tag, text, cls) => {
     const n = document.createElement(tag);
@@ -191,6 +192,7 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
     const count = m === 'learn' ? 8 : m === 'exam' ? 16 : 12;
     questions = shuffle(pool).slice(0, count);
     index = correct = streak = maxStreak = 0;
+    answeredQuestions.clear();
     step();
   }
 
@@ -208,6 +210,7 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
   }
 
   function step() {
+    onCheckpoint({topic,mode,questions,index,correct,streak,maxStreak,showSyllables});
     if (index >= questions.length) {
       void finish();
       return;
@@ -223,7 +226,7 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
     sylBtn.type = 'button';
     sylBtn.onclick = () => {
       showSyllables = !showSyllables;
-      step();
+      if(showSyllables&&q.syllablesText)taskText.innerHTML=renderSyllableHtml(q.syllablesText);else taskText.textContent=q.prompt;
     };
     topBar.append(sylBtn);
     host.append(topBar);
@@ -289,6 +292,7 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
       const optBtn = el('button', optionText, 'galotnes-btn');
       optBtn.type = 'button';
       optBtn.onclick = () => {
+        if(answeredQuestions.has(index))return;answeredQuestions.add(index);
         optionsContainer.querySelectorAll('button').forEach(b => b.disabled = true);
         const isGood = optionText.trim().toLowerCase() === q.answer.trim().toLowerCase();
         correct += Number(isGood);
@@ -296,15 +300,15 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
         maxStreak = Math.max(streak, maxStreak);
 
         if (isGood) {
-          optBtn.style.background = '#dcfce7';
-          optBtn.style.borderColor = '#16a34a';
+          optBtn.style.background = mode==='exam'?'#eef2ff':'#dcfce7';
+          optBtn.style.borderColor = mode==='exam'?'#64748b':'#16a34a';
           status.textContent = mode === 'exam' ? 'Atbilde pieņemta!' : '🎉 Pareizi! Lieliski izlasīts!';
-          status.className = 'reading-feedback answer-feedback-good';
+          status.className = mode==='exam'?'reading-feedback':'reading-feedback answer-feedback-good';
         } else {
-          optBtn.style.background = '#fee2e2';
-          optBtn.style.borderColor = '#dc2626';
+          optBtn.style.background = mode==='exam'?'#eef2ff':'#fee2e2';
+          optBtn.style.borderColor = mode==='exam'?'#64748b':'#dc2626';
           status.textContent = mode === 'exam' ? 'Atbilde pieņemta.' : '🔎 Pareizā atbilde bija: ' + q.answer + '. ' + (q.hint || '');
-          status.className = 'reading-feedback answer-feedback-error';
+          status.className = mode==='exam'?'reading-feedback':'reading-feedback answer-feedback-error';
         }
 
         const nextBtn = btn('Nākamais uzdevums →', () => {
@@ -341,17 +345,6 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
     );
     host.append(heading);
 
-    const policy = calculatePracticePoints({ correct, total: questions.length, maxStreak, mode });
-    const award = previewImprovement(0, policy.potential);
-
-    const pts = el('div', undefined, 'soft-notice');
-    pts.style.cssText = 'background:linear-gradient(135deg,#fdf2f8,#f5f3ff);border:2px solid #a855f7;padding:16px;border-radius:18px;margin:12px 0;text-align:center';
-    pts.innerHTML = `
-      <div style="font-size:1.55rem;font-weight:900;color:#7c3aed;margin-bottom:4px">🌟 +${award.earned} BP nopelnīti!</div>
-      <div style="font-size:0.92rem;color:#4b5563">Tēmas meistarība: ${award.best}/20 · Sērijas bonuss: +${policy.streakBonus} BP · Valodas kristāls iegūts!</div>
-    `;
-    host.append(pts);
-
     const status = el('p', undefined, 'reading-feedback');
     host.append(status);
 
@@ -362,9 +355,9 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
           subject: 'Latviešu valoda',
           activityType: topic + ' · ' + mode,
           score: pct,
-          notes: JSON.stringify({ correct, total: questions.length, maxStreak, dyslexiaMode: showSyllables, pointsPreview: award.earned })
+          notes: JSON.stringify({ correct, total: questions.length, maxStreak, dyslexiaMode: showSyllables, mode })
         });
-        status.textContent = id ? '✅ Rezultāts un punkti saglabāti!' : '⚠️ Saglabāšana nav apstiprināta.';
+        status.textContent = id ? '✅ Rezultāts saglabāts.' : '⚠️ Saglabāšana nav apstiprināta.';
       } catch {
         status.textContent = '⚠️ Rezultāta saglabāšana neizdevās.';
       }
@@ -378,5 +371,5 @@ export function renderSamantaLatvian(root, { canSubmit = false, currentUid = '',
     host.append(actions);
   }
 
-  view();
+  if(initialState){({topic,mode,questions,index,correct,streak,maxStreak,showSyllables}=initialState);step();}else view();
 }

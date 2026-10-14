@@ -1,3 +1,5 @@
+> Vēsturisks dokuments. Aktuālais v3 apraksts: DEPLOYMENT_V3.md, POINTS_POLICY.md un firestore.home-school.rules.
+
 # Mājas skola — Firebase drošības un datu struktūras audita ziņojums
 
 **Datums:** 2026-10-08  

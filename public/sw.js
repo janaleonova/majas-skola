@@ -1,5 +1,5 @@
 // Mājas skola — Service Worker pamats (PWA atbalsts)
-const CACHE_NAME = 'majas-skola-shell-v49';
+const CACHE_NAME = 'majas-skola-shell-v50';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -13,9 +13,7 @@ const PRECACHE_URLS = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => {
-      return cache.addAll(PRECACHE_URLS).catch(err => {
-        console.warn('[SW] Precache daļa resursu vēl nav gatava:', err);
-      });
+      return cache.addAll(PRECACHE_URLS);
     }).then(() => self.skipWaiting())
   );
 });
@@ -24,7 +22,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => {
       return Promise.all(
-        keys.filter(k => k !== CACHE_NAME).map(k => caches.delete(k))
+        keys.filter(k => k.startsWith('majas-skola-shell-') && k !== CACHE_NAME).map(k => caches.delete(k))
       );
     }).then(() => self.clients.claim())
   );
@@ -32,11 +30,15 @@ self.addEventListener('activate', event => {
 
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
+  if(event.request.method!=='GET'||url.origin!==self.location.origin)return;
+  if(url.pathname==='/api/firebase-config'){
+   event.respondWith(fetch(event.request).then(response=>{if(response.ok){const copy=response.clone();event.waitUntil(caches.open(CACHE_NAME).then(c=>c.put(event.request,copy)));}return response;}).catch(async()=>await caches.match(event.request)||new Response(JSON.stringify({error:'Nav savienojuma'}),{status:503,headers:{'Content-Type':'application/json'}})));return;
+  }
 
   // Network-first for API requests, Firebase identity and auth requests
   if (url.pathname.startsWith('/api/') || url.origin.includes('googleapis.com') || url.origin.includes('firebaseio.com')) {
     event.respondWith(
-      fetch(event.request).catch(() => caches.match(event.request))
+      fetch(event.request).catch(() => new Response(JSON.stringify({error:'Nav interneta savienojuma. Rezultāts paliks rezerves atmiņā.'}),{status:503,headers:{'Content-Type':'application/json'}}))
     );
     return;
   }

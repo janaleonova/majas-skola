@@ -191,8 +191,12 @@ export function renderSamantaAdditionGame(container, {
   canSubmit = false,
   currentUid = '',
   alreadyEarnedBonus = false,
-  saveProgress = async () => {}
+  saveProgress = async () => {}, initialState=null, onCheckpoint=()=>{}
 } = {}) {
+  let restoring=initialState;
+  let timers=new Set(),generation=0;
+  const later=(fn,ms)=>{const g=generation;const timer=setTimeout(()=>{timers.delete(timer);if(g===generation&&host.isConnected)fn();},ms);timers.add(timer);return timer;};
+  const stopTimers=()=>{generation++;for(const timer of timers)clearTimeout(timer);timers.clear();stopSpeaking();};
   const host = document.createElement('section');
   host.className = 'module learning-hub samanta-sum-hub';
   host.style.gridColumn = '1/-1';
@@ -200,7 +204,7 @@ export function renderSamantaAdditionGame(container, {
 
   const storageKey = currentUid ? `majas-skola:${currentUid}:samanta-sum:history` : 'majas-skola:guest:samanta-sum';
   function getHistory() {
-    try { return JSON.parse(localStorage.getItem(storageKey) || '[]'); } catch { return []; }
+    try { const r=JSON.parse(localStorage.getItem(storageKey)||'[]');return Array.isArray(r)?r:[]; } catch { return []; }
   }
   function saveHistoryRecord(r) {
     try { localStorage.setItem(storageKey, JSON.stringify([...getHistory(), r].slice(-30))); } catch {}
@@ -221,7 +225,7 @@ export function renderSamantaAdditionGame(container, {
   };
 
   function header(title, subtitle) {
-    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    stopTimers();
     host.replaceChildren();
     const head = el('div', 'learning-heading');
     head.append(
@@ -234,6 +238,7 @@ export function renderSamantaAdditionGame(container, {
 
   // SĀKUMA IZVĒLE
   function home() {
+    stopTimers();
     header('Saskaitīšanas pērles 🌸', 'Iemācies saskaitīt 100 apjomā ātri, viegli un ar prieku!');
 
     // Bonusa uzsaukums
@@ -352,10 +357,11 @@ export function renderSamantaAdditionGame(container, {
       }
     ];
 
-    let currentMethodIndex = 0;
-    let stepIndex = 0;
+    let currentMethodIndex=restoring?.kind==='workshop'?restoring.method:0;
+    let stepIndex=restoring?.kind==='workshop'?restoring.step:0;restoring=null;
 
     function renderMethodView() {
+      onCheckpoint({kind:'workshop',method:currentMethodIndex,step:stepIndex});
       displayArea.replaceChildren();
       const m = methods[currentMethodIndex];
 
@@ -422,6 +428,7 @@ export function renderSamantaAdditionGame(container, {
           renderMethodView();
         });
       } else {
+        if(canSubmit)button(controls,'Saglabāt apgūto paņēmienu',async()=>{try{await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Saskaitīšanas pērles · '+m.id+' · learn',score:100,notes:JSON.stringify({mode:'learn',correct:4,total:4})});controls.append(el('p','','Paņēmiens saglabāts.'));}catch(e){controls.append(el('p','',e.message));}});
         button(controls, '✨ Viss skaidrs! Sākt no jauna 🔄', () => {
           stepIndex = 0;
           renderMethodView();
@@ -494,9 +501,10 @@ export function renderSamantaAdditionGame(container, {
       }
     ];
 
-    let problemIndex = 0;
+    let problemIndex=restoring?.kind==='builder'?restoring.problemIndex:0;restoring=null;
 
     function renderProblem() {
+      onCheckpoint({kind:'builder',problemIndex});
       host.replaceChildren();
       const p = problems[problemIndex];
 
@@ -591,6 +599,7 @@ export function renderSamantaAdditionGame(container, {
               renderProblem();
             });
           } else {
+            if(canSubmit)button(nextCluster,'Saglabāt pabeigto konstruktoru',async()=>{try{await saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Saskaitīšanas pērles · konstruktors · learn',score:100,notes:JSON.stringify({mode:'learn',correct:4,total:4})});nextCluster.append(el('p','','Konstruktors saglabāts.'));}catch(e){nextCluster.append(el('p','',e.message));}});
             button(nextCluster, '🌸 Sākt lielo 12 uzdevumu izaicinājumu (+15 BP) ➔', startChallenge);
             button(nextCluster, 'Uz sākumu', home, 'quiet-button');
           }
@@ -619,17 +628,16 @@ export function renderSamantaAdditionGame(container, {
 
   // 3. REŽĪMS: LIELAIS PĒRĻU DĀRZA PĀRBAUDĪJUMS (12 uzdevumi · +15 BP bonuss)
   function startChallenge() {
+    const restored=restoring?.kind==='challenge'?restoring:null;restoring=null;
     const all = makeAdditionChallengeBank();
-    const items = shuffle(all).slice(0, 12);
+    const items = restored?.items||shuffle(all).slice(0, 12);
 
-    let index = 0;
-    let correct = 0;
-    let streak = 0;
-    let maxStreak = 0;
-    const misses = [];
+    let index=restored?.index||0,correct=restored?.correct||0,streak=restored?.streak||0,maxStreak=restored?.maxStreak||0;
+    const misses=restored?.misses||[];
     let answerTimer = null;
 
     function renderQuestion() {
+      onCheckpoint({kind:'challenge',items,index,correct,streak,maxStreak,misses});
       if (answerTimer) { clearTimeout(answerTimer); answerTimer = null; }
       if (index >= items.length) {
         void finishChallenge();
@@ -743,13 +751,13 @@ export function renderSamantaAdditionGame(container, {
 
         const continueBtn = button(card, index + 1 === items.length ? 'Skatīt rezultātu ➔' : 'Nākamais uzdevums ➔', advance);
         continueBtn.style.marginTop = '12px';
-        answerTimer = setTimeout(advance, isGood ? 1300 : 3500);
+        // Continue when the pupil has read the explanation.
       };
     }
 
     async function finishChallenge() {
       const pct = Math.round((correct / items.length) * 100);
-      const isBonusWon = pct >= 80;
+      const isBonusWon = pct >= 80 && !alreadyEarnedBonus;
 
       header('Tavs ziedu dārza rezultāts 🌸', pct >= 80 ? '🎉 Izcili, Samanta! Ziedu pļava pilnībā saziedējusi!' : '👍 Lielisks treniņš! Katrs solis tevi stiprina.');
 
@@ -759,7 +767,7 @@ export function renderSamantaAdditionGame(container, {
 
       if (isBonusWon) playSound('bonus');
 
-      // Bonusa un punktu paziņojums
+      /* Bonusa un punktu paziņojums
       const policy = calculatePracticePoints({ correct, total: items.length, maxStreak, mode: 'practice' });
       const ptsBox = el('div', 'soft-notice');
       ptsBox.style.cssText = 'background:linear-gradient(135deg,#fdf2f8,#faf5ff);border:3px solid #ec4899;border-radius:22px;padding:20px;margin:16px 0;text-align:center';
@@ -775,7 +783,7 @@ export function renderSamantaAdditionGame(container, {
           Sērijas bonuss: +${policy.streakBonus} BP · Lielisks ieguldījums ceļā uz kino vakaru un gardumiem! 🍿
         </div>
       `;
-      host.append(ptsBox);
+      host.append(ptsBox); */
 
       // Kļūdu apskats, ja tādas bija
       if (misses.length) {
@@ -801,7 +809,7 @@ export function renderSamantaAdditionGame(container, {
         correct,
         total: items.length,
         maxStreak,
-        bonusWon: isBonusWon
+        bonusWon:isBonusWon,mode:'exam'
       };
       saveHistoryRecord(record);
 
@@ -816,7 +824,7 @@ export function renderSamantaAdditionGame(container, {
             notes: JSON.stringify(record)
           });
           if (savedId) {
-            status.textContent = '✅ Rezultāts un BP punkti sekmīgi ieskaitīti tavā profilā!';
+            status.textContent = '✅ Rezultāts saglabāts.';
             status.style.color = '#15803d';
           } else {
             status.textContent = '⚠️ Rezultāts saglabāts vietējā ierīces atmiņā.';
@@ -841,6 +849,7 @@ export function renderSamantaAdditionGame(container, {
 
   // 4. REŽĪMS: PĒRĻU ĶĒRĀJS (Catch the Sum / Ātrā bonusa mini-spēle)
   function startCatcher() {
+    stopTimers();
     header('Mini-spēle: Pērļu ķērājs ⚡', 'Atrodi divus ziedus, kas kopā veido prasīto mērķa summu!');
 
     const rounds = [
@@ -851,14 +860,16 @@ export function renderSamantaAdditionGame(container, {
       { target: 100, pairs: [[65, 35], [48, 52], [73, 27]], distractors: [38, 45, 62] }
     ];
 
-    let roundIndex = 0;
-    let score = 0;
+    let roundIndex=restoring?.kind==='catcher'?restoring.roundIndex:0;
+    let score=restoring?.kind==='catcher'?restoring.score:0;restoring=null;
 
     function renderRound() {
+      onCheckpoint({kind:'catcher',roundIndex,score});
       host.replaceChildren();
       if (roundIndex >= rounds.length) {
         header('Spēle pabeigta! 🎉', `Tu veiksmīgi noķēri pērļu pārus! Punkti: ${score} no ${rounds.length}`);
         playSound('bonus');
+        if(canSubmit)void saveProgress({studentRole:'samanta',subject:'Matemātika',activityType:'Saskaitīšanas pērles · catcher · learn',score:Math.round(score/rounds.length*100),notes:JSON.stringify({mode:'learn',correct:score,total:rounds.length})}).catch(()=>{});
         const doneBox = el('div', 'soft-notice');
         doneBox.style.cssText = 'background:linear-gradient(135deg,#fdf2f8,#faf5ff);border:2px solid #ec4899;border-radius:20px;padding:24px;text-align:center;margin:16px 0';
         doneBox.innerHTML = `
@@ -934,14 +945,14 @@ export function renderSamantaAdditionGame(container, {
               feedback.textContent = `🎉 Pareizi! ${v1} + ${v2} = ${r.target}! Pērle noķerta!`;
               feedback.className = 'answer-feedback answer-feedback-good';
               buttons.forEach(b => { b.btn.disabled = true; });
-              setTimeout(() => {
+              later(() => {
                 roundIndex++;
                 renderRound();
               }, 1200);
             } else {
               feedback.textContent = `💡 ${v1} + ${v2} = ${sum}. Mēģini citu pāri!`;
               feedback.className = 'answer-feedback answer-feedback-error';
-              setTimeout(() => {
+              later(() => {
                 buttons.forEach(b => {
                   b.btn.style.borderColor = '#f472b6';
                   b.btn.style.background = 'linear-gradient(135deg,#ffffff,#fce7f3)';
@@ -964,5 +975,5 @@ export function renderSamantaAdditionGame(container, {
     renderRound();
   }
 
-  home();
+  if(restoring)({workshop:startWorkshop,builder:startBuilder,challenge:startChallenge,catcher:startCatcher}[restoring.kind]||home)();else home();
 }

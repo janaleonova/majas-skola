@@ -25,12 +25,12 @@ const parseEquation=(raw,operation)=>{
 const unorderedPair=(actual,expected)=>actual[0]===expected[0]&&actual[1]===expected[1]||actual[0]===expected[1]&&actual[1]===expected[0];
 const TOTAL=24; // Four independently completed answers in each of six problems.
 
-export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{}}={}){
+export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=false,saveProgress=async()=>{},initialState=null,onCheckpoint=()=>{}}={}){
  const host=el('section','','module learning-hub dragon-split');root.append(host);
  let used=new Set(),examples=[],idx=0,earned=0,submitted=false,saving=false,view='intro',errorAttempts=0;
  const choose=()=>{const arr=shuffled(bank().filter(q=>!used.has(q.n+'x'+q.k))).slice(0,8);used=new Set(arr.map(q=>q.n+'x'+q.k));return arr;};
  const btn=(parent,label,onClick,cls='action-button')=>{const b=el('button',label,cls);b.type='button';b.addEventListener('click',onClick);parent.append(b);return b;};
- const title=(text)=>{host.append(el('h2','🐉 Kristālu kalve'),el('p',text));};
+ const title=(text)=>{if(view!=='intro')onCheckpoint({used:[...used],examples,idx,earned,view,errorAttempts});host.append(el('h2','🐉 Kristālu kalve'),el('p',text));};
  const math=(text)=>{const block=el('div',text,'math-expression');block.style.cssText='text-align:center;font-size:clamp(2rem,6vw,3.6rem);margin:14px 0;color:#203470;font-weight:900';host.append(block);};
  const panel=(heading,lines)=>{const box=el('div','','split-instruction');box.append(el('strong',heading));for(const line of lines)box.append(el('p',line));host.append(box);return box;};
  const field=(holder,label)=>{const wrap=el('label','','split-answer-field');wrap.style.cssText='display:flex;flex-direction:column;gap:6px;font-size:1rem;font-weight:800;min-width:0;flex:1';wrap.append(el('span',label));const input=el('input','','big-number-input');input.type='number';input.inputMode='numeric';input.min='0';input.max='999';input.step='1';input.required=true;input.autocomplete='off';input.style.cssText='width:100%!important;max-width:100%!important;min-height:54px!important;color:#243568!important;font-size:1.4rem!important';input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();input.blur();}});wrap.append(input);holder.append(wrap);return input;};
@@ -190,8 +190,8 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
    const pairOK=(firstT&&secondU)||(firstU&&secondT);
    const checks=[
     {label:'1. Skaitļa sadalījums',ok:splitCorrect,element:split,expected:q.n+' = '+q.t+' + '+q.u},
-    {label:'2. Pirmās daļas reizināšana',ok:pairOK,element:multA,expected:q.t+' × '+q.k+' = '+q.t*q.k},
-    {label:'3. Otrās daļas reizināšana',ok:pairOK,element:multB,expected:q.u+' × '+q.k+' = '+q.u*q.k},
+    {label:'2. Pirmās daļas reizināšana',ok:firstT||firstU,element:multA,expected:q.t+' × '+q.k+' = '+q.t*q.k},
+    {label:'3. Otrās daļas reizināšana',ok:(firstT?secondU:firstU?secondT:secondT||secondU),element:multB,expected:q.u+' × '+q.k+' = '+q.u*q.k},
     {label:'4. Saskaitīšana',ok:ad.valid&&ad.result===q.n*q.k&&unorderedPair(ad.terms,[q.t*q.k,q.u*q.k]),element:addition,expected:q.t*q.k+' + '+q.u*q.k+' = '+q.n*q.k}
    ];
    const points=checks.filter(c=>c.ok).length;earned+=points;errorAttempts+=4-points;
@@ -229,5 +229,5 @@ export function renderDragonSplitMath(root,{canSubmit=false,alreadyEarnedBonus=f
   });
   btn(host,'🔄 Trenēties vēlreiz ar jauniem piemēriem',()=>{if(saving)return;examples=choose();guided();});
  }
- examples=choose();intro();
+ if(initialState){({examples,idx,earned,view,errorAttempts}=initialState);used=new Set(initialState.used);({mistake,guided,ready,challenge,results}[view]||intro)();}else{examples=choose();intro();}
 }
