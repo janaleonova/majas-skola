@@ -1,5 +1,8 @@
 # Mājas skola
 
+**Aktuālā versija: v3.** Dienas uzdevumi, vienota BP politika un balvu noraksti: [palaišana un Firebase noteikumu integrācija](DEPLOYMENT_V3.md), [punktu metodika](POINTS_POLICY.md). Vēsturiskie drošības priekšlikumi nav publicējami noteikumi.
+
+
 Vienas ģimenes mācību lietotne diviem bērniem — **Markam** un **Samantai** — ar personalizētu saturu, atšķirīgām vizuālajām pasaulēm un kopīgu **Vecāka pārvaldības paneli**.
 
 ## 📖 Projekta dokumentācija

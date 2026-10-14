@@ -7,8 +7,8 @@ const base=()=>collection(db,'homeSchool','data','activityPresence');
 const ref=(uid,date)=>doc(base(),uid+'_'+date);
 const capped=(n,min,max)=>Math.min(max,Math.max(min,n));
 
-export function startChildPresence({role,activity=()=> 'Sākumekrāns',onError=()=>{}}={}){
- const uid=uidByRole[role];
+export function startChildPresence({role,uid:configuredUid,activity=()=> 'Sākumekrāns',onError=()=>{}}={}){
+ const uid=configuredUid||uidByRole[role];
  if(!uid||!db||auth.currentUser?.uid!==uid)return ()=>{};
  const sessionId=(crypto.randomUUID?.()||String(Date.now())+Math.random());
  let lastTick=Date.now(),lastInteraction=Date.now(),disposed=false,busy=false,day=today();
@@ -54,33 +54,33 @@ export function startChildPresence({role,activity=()=> 'Sākumekrāns',onError=(
  return ()=>{disposed=true;clearInterval(interval);document.removeEventListener('visibilitychange',onVisibility);window.removeEventListener('pagehide',onPageHide);for(const type of ['pointerdown','keydown','touchstart'])document.removeEventListener(type,touch);};
 }
 
-export function renderParentPresence(container){
+export function renderParentPresence(container,identities=uidByRole){
  const panel=document.createElement('section');panel.className='module';panel.style.gridColumn='1/-1';
  const h=document.createElement('h2');h.textContent='🟢 Bērnu aktivitāte šobrīd';panel.append(h);
  const info=document.createElement('p');info.textContent='Aktīvās minūtes skaita tikai tad, kad lietotne ir priekšplānā un bērns nesen ar to darbojies. Atjaunojas aptuveni ik pēc 15 sekundēm.';panel.append(info);
  const body=document.createElement('div');body.style.cssText='display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px';panel.append(body);container.append(panel);
- let unsubscribe=[],currentDate='';
+ let unsubscribe=[],statusRefresh=new Map(),currentDate='';
  function attach(){
-  unsubscribe.forEach(fn=>fn());unsubscribe=[];body.replaceChildren();
+  unsubscribe.forEach(fn=>fn());unsubscribe=[];statusRefresh=new Map();body.replaceChildren();
   currentDate=today();
   for(const [role,name] of [['marks','Marks'],['samanta','Samanta']]){
    const box=document.createElement('div');box.className='card';box.style.padding='15px';body.append(box);
    const title=document.createElement('h3');title.textContent=name;box.append(title);
    const status=document.createElement('p');status.setAttribute('role','status');status.textContent='Ielādē…';box.append(status);
-   const stop=onSnapshot(ref(uidByRole[role],currentDate),snap=>{
+   const stop=onSnapshot(ref(identities[role]||uidByRole[role],currentDate),snap=>{
     const row=snap.data();
     if(!row){status.textContent='Šodien vēl nav reģistrētas aktivitātes.';return;}
-    const fresh=row.updatedAt?.toMillis&&Date.now()-row.updatedAt.toMillis()<45000;
+    const refresh=()=>{const fresh=row.updatedAt?.toMillis&&Date.now()-row.updatedAt.toMillis()<45000;
     const online=Boolean(row.isActive&&fresh);
     const minutes=Math.floor((Number(row.activeSeconds)||0)/60);
     const seconds=(Number(row.activeSeconds)||0)%60;
     status.textContent=(online?'🟢 Aktīvs: ':'⚪ Nav aktīvs · Pēdējā aktivitāte: ')+(row.activity||'—')+'\nŠodien ekrānā: '+minutes+' min '+seconds+' s';
-    status.style.whiteSpace='pre-line';
+    status.style.whiteSpace='pre-line';};refresh();statusRefresh.set(role,refresh);
    },err=>{status.textContent='Datu piekļuve liegta vai nav konfigurēta: '+(err.code||err.message);});
    unsubscribe.push(stop);
   }
  }
  attach();
- const dateTimer=setInterval(()=>{if(today()!==currentDate)attach();},60000);
+ const dateTimer=setInterval(()=>{if(today()!==currentDate)attach();else statusRefresh.forEach(fn=>fn());},15000);
  return ()=>{clearInterval(dateTimer);unsubscribe.forEach(fn=>fn());};
 }

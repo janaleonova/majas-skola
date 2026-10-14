@@ -897,6 +897,26 @@ html[data-school-theme="marks"] #school .eyebrow{color:#163650!important;backgro
 .order-numpad-slot{margin-top:14px}
 @keyframes orderShake{0%,100%{transform:translateX(0)}20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
 @media(max-width:600px){.order-choice-grid{grid-template-columns:1fr}.order-step-form{flex-direction:column}.order-step-form .big-number-input{width:100%!important}.order-step-form .action-button{width:100%!important}}
+
+/* Unified dashboard v3: one plan before the catalogue. */
+html[data-app-version="v3"] #modules{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:18px!important}
+html[data-app-version="v3"] #modules>.module{grid-column:1/-1!important;background:#fff!important;color:#203252!important;border:1px solid #c8d2e6;border-radius:20px;padding:22px!important}
+html[data-app-version="v3"] #modules>.module h2,html[data-app-version="v3"] #modules>.module h3{color:#203252!important}
+html[data-app-version="v3"] #modules>.daily-task{border:3px solid #7c61d9!important;background:#f8f5ff!important}
+html[data-app-version="v3"] .compact-progress h2{font-size:1.35rem;margin:0 0 10px}
+html[data-app-version="v3"] .crystal-slots{display:flex;flex-wrap:wrap;gap:12px;font-size:1rem}
+html[data-app-version="v3"] .subject-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+html[data-app-version="v3"] .subject-grid>.card{background:#f5f7ff;color:#203252;box-shadow:none;padding:18px}
+html[data-app-version="v3"] .subject-grid button{display:block;width:100%;margin:10px 0;text-align:left;min-height:48px;white-space:normal}
+html[data-app-version="v3"] details.module>summary{font-weight:800;font-size:1.12rem;cursor:pointer;min-height:44px}
+html[data-app-version="v3"] .result-row{padding:12px 0;border-bottom:1px solid #ccd6e8;color:#203252;white-space:pre-wrap}
+html[data-app-version="v3"] form.module label{display:block;margin:12px 0;font-weight:700}
+html[data-app-version="v3"] form.module :is(input:not([type="checkbox"]),select){display:block;box-sizing:border-box;width:100%;padding:12px;border:1px solid #8596b3;border-radius:9px;color:#203252;background:#fff;margin:7px 0;min-height:46px}
+html[data-app-version="v3"] .bp-receipt{border:2px solid #16825f;background:#effcf6;color:#123d30;padding:18px;margin:16px 0}
+html[data-app-version="v3"] .bp-receipt h3{color:#123d30!important}
+html[data-app-version="v3"] .task-card{padding:16px;margin:10px 0;color:#203252;background:#fff;border:1px solid #b6c3db}
+html[data-app-version="v3"] :is(textarea,button,summary):focus-visible{outline:3px solid #7054c8;outline-offset:3px}
+@media(max-width:700px){html[data-app-version="v3"] .subject-grid{grid-template-columns:1fr}html[data-app-version="v3"] #modules>.module{padding:17px!important}html[data-app-version="v3"] .levelup-guide-launcher{min-height:44px;max-width:105px;font-size:14px}}
 </style>
 </head>
 <body>
@@ -924,7 +944,7 @@ html[data-school-theme="marks"] #school .eyebrow{color:#163650!important;backgro
 <div class="modules" id="modules"></div>
 <p><button class="back" id="back" type="button">← Atpakaļ uz sākumu</button></p>
 </section>
-<footer>Mājas skola ar Firebase integrāciju · Projekts: <code>datorika-hub</code> · Dati izolēti <code>homeSchool</code> struktūrā</footer>
+<footer>Mājas skola · Mācies savā tempā</footer>
 </main>
 <script>
 (function(){

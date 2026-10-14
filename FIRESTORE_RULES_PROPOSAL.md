@@ -1,3 +1,5 @@
+> Vēsturisks dokuments. Aktuālais v3 apraksts: DEPLOYMENT_V3.md, POINTS_POLICY.md un firestore.home-school.rules.
+
 # Firestore drošības noteikumu priekšlikums: Mājas skola (`homeSchool`)
 
 Šis priekšlikums ir izstrādāts, lai nodrošinātu **Zero-Trust piekļuves kontroli** Mājas skolas datiem, neietekmējot un nesabojājot esošā **Datorika HUB** projekta darbību.

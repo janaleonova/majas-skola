@@ -1,22 +1,13 @@
 // BP server-side policy. Pure functions; never trust client-supplied scores.
 // This module is not a bank: persisting awards requires an authenticated,
 // server-verified answer session and a Firestore transaction.
+import {calculatePracticePoints} from '../src/learning-policy.js';
 export const MAX_BP_PER_TOPIC=20;
-const BANDS=[[0,39,0,3],[40,59,4,7],[60,74,8,11],[75,89,12,15],[90,100,16,18]];
 export function scoreVerifiedAttempt({answers,correctAnswers,mode='practice'}){
  if(!Array.isArray(answers)||!Array.isArray(correctAnswers)||answers.length!==correctAnswers.length||answers.length<1||answers.length>40)throw Error('Nederīgs uzdevumu skaits');
  let correct=0,streak=0,maxStreak=0;
- for(let i=0;i<answers.length;i++){
-  const a=answers[i],key=correctAnswers[i];
-  if(!Number.isInteger(a)||!Number.isInteger(key))throw Error('Atbildēm jābūt veseliem skaitļiem');
-  const good=a===key;correct+=Number(good);streak=good?streak+1:0;maxStreak=Math.max(maxStreak,streak);
- }
- const total=answers.length,percent=Math.round(correct*100/total);
- if(!['practice','exam'].includes(mode))return {correct,total,percent,maxStreak,base:0,streakBonus:0,potential:0,eligible:false};
- const [lo,hi,low,high]=BANDS.find(([a,b])=>percent>=a&&percent<=b);
- const base=percent===0?0:Math.min(high,Math.floor(low+(percent-lo)*(high-low)/Math.max(1,hi-lo)));
- const streakBonus=Number(maxStreak>=5)+Number(maxStreak>=10);
- return {correct,total,percent,maxStreak,base,streakBonus,potential:Math.min(MAX_BP_PER_TOPIC,base+streakBonus),eligible:true};
+ for(let i=0;i<answers.length;i++){if(!Number.isInteger(answers[i])||!Number.isInteger(correctAnswers[i]))throw Error('Atbildēm jābūt veseliem skaitļiem');const good=answers[i]===correctAnswers[i];correct+=Number(good);streak=good?streak+1:0;maxStreak=Math.max(maxStreak,streak);}
+ return {correct,total:answers.length,maxStreak,...calculatePracticePoints({correct,total:answers.length,maxStreak,mode})};
 }
 export function calculateImprovement(previousBest,newPotential){
  if(!Number.isInteger(previousBest)||!Number.isInteger(newPotential)||previousBest<0||previousBest>MAX_BP_PER_TOPIC||newPotential<0||newPotential>MAX_BP_PER_TOPIC)throw Error('Nederīgs BP');

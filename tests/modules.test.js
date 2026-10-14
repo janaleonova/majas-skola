@@ -1,0 +1,25 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {parseHTML} from 'linkedom';
+import {renderSamantaLatvian,makeSamantaLatvianBank} from '../src/samanta-latvian.js';
+import {renderSamantaEnglish} from '../src/samanta-english.js';
+import {renderMarksMath} from '../src/marks-math.js';
+import {renderSamantaAdditionGame,makeAdditionChallengeBank} from '../src/samanta-sum-game.js';
+import {queueResult,flushResults,pendingResults} from '../src/progress-outbox.js';
+function setup(){const {document,window}=parseHTML('<html><body><div id="root"></div></body></html>');globalThis.document=document;globalThis.window=window;globalThis.localStorage={data:new Map(),getItem(k){return this.data.get(k)||null},setItem(k,v){this.data.set(k,v)}};return document.querySelector('#root');}
+const click=(r,pattern)=>{const b=[...r.querySelectorAll('button')].find(x=>typeof pattern==='string'?x.textContent===pattern:pattern.test(x.textContent));assert.ok(b,'Missing button '+pattern);b.click();return b;};
+test('syllable presentation cannot count a reading answer twice',async()=>{
+ const r=setup(),saved=[];renderSamantaLatvian(r,{canSubmit:true,saveProgress:async d=>{saved.push(d);return 'saved';}});click(r,/Vieglā lasīšana/);click(r,'🏆 Pārbaudu sevi · 16');
+ const bank=makeSamantaLatvianBank();const answer=()=>{const text=r.querySelector('.reading-prompt').textContent.replaceAll('·','').replaceAll('\n','');const q=bank.find(q=>[q.prompt,q.syllablesText.replaceAll('-','')].some(t=>t.replaceAll('\n','')===text));assert.ok(q);click(r,q.answer);};
+ answer();click(r,/Zilbju režīms/);answer();for(let i=0;i<16;i++){click(r,'Nākamais uzdevums →');if(i<15)answer();}await Promise.resolve();assert.equal(saved.length,1);assert.equal(saved[0].score,100);assert.ok(r.textContent.includes('16 no 16'));
+});
+test('order-of-operations choices have labels and clicking them never throws',()=>{
+ const r=setup();renderMarksMath(r);click(r,/Saistītais pieraksts/);click(r,'🌱 Mācos · 8');const buttons=[...r.querySelectorAll('.order-choice-btn')];assert.equal(buttons.length,2);assert.ok(buttons.every(b=>b.textContent!=='order-choice-btn'));buttons.forEach(b=>b.onclick());assert.ok(r.querySelector('.order-step-form'));
+});
+test('English exam contains no answer in pronunciation control',()=>{const r=setup();renderSamantaEnglish(r);click(r,/Krāsas/);click(r,/Pārbaudu sevi/);for(const b of r.querySelectorAll('.reading-listen'))assert.equal(b.textContent,'🔊 Klausīties izrunu');assert.ok(!r.querySelector('.english-target-word')?.textContent?.startsWith('“'));});
+test('all 42 addition bank answers are arithmetically correct and within 100',()=>{const bank=makeAdditionChallengeBank();assert.equal(bank.length,42);for(const q of bank){assert.equal(q.answer,q.a+q.b);assert.ok(q.answer<=100);}});
+test('leaving mini-game cancels old navigation timer',()=>{
+ const r=setup(),native=globalThis.setTimeout,nativeClear=globalThis.clearTimeout;const timers=new Map();let n=0;globalThis.setTimeout=fn=>{timers.set(++n,fn);return n};globalThis.clearTimeout=id=>timers.delete(id);
+ try{renderSamantaAdditionGame(r);click(r,/4. Mini-spēle/);const target=+r.querySelector('.math-expression').textContent.match(/\d+/)[0],buttons=[...r.querySelectorAll('.pearl-button')];let pair;for(let i=0;i<buttons.length;i++)for(let j=i+1;j<buttons.length;j++)if(+buttons[i].textContent + +buttons[j].textContent===target)pair=[buttons[i],buttons[j]];pair.forEach(b=>b.click());click(r,/Atpakaļ uz sākumu/);for(const fn of timers.values())fn();assert.equal(r.querySelector('h2').textContent,'Saskaitīšanas pērles 🌸');}finally{globalThis.setTimeout=native;globalThis.clearTimeout=nativeClear;}
+});
+test('outbox retains a failed result and retries the same ID exactly once',async()=>{setup();const row=queueResult('uid',{score:100});await assert.rejects(flushResults('uid',async()=>{throw Error('offline')}));assert.equal(pendingResults('uid')[0].attemptId,row.attemptId);await flushResults('uid',async d=>d.attemptId);assert.equal(pendingResults('uid').length,0);});

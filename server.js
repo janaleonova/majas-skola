@@ -8,13 +8,16 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const proxyHops=Number(process.env.TRUST_PROXY_HOPS||0);if(Number.isInteger(proxyHops)&&proxyHops>0)app.set('trust proxy',proxyHops);
 const port = process.env.PORT || 3000;
 
 // Serve public directory (compiled bundles, assets)
 app.use('/public', express.static(path.join(__dirname, 'public')));
 app.get('/sw.js', (req, res) => res.sendFile(path.join(__dirname, 'public', 'sw.js')));
 app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'public', 'manifest.json')));
-app.use(express.static(__dirname));
+app.disable('x-powered-by');
+app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');res.set('Referrer-Policy','same-origin');next();});
+const providerFetch=(url,options={})=>fetch(url,{...options,signal:AbortSignal.timeout(15000)});
 
 // Secure endpoint exposing Firebase client configuration from environment variables
 // Does not expose secret server keys; only client-safe Web App config
@@ -49,7 +52,7 @@ app.post('/api/password-login',async(req,res)=>{
   if(!apiKey||Object.values(accounts).some(x=>!x))return res.status(503).json({error:'Pieteikšanās vēl nav konfigurēta.'});
   try{
     for(const [role,email] of Object.entries(accounts)){
-      const response=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{
+      const response=await providerFetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{
         method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})
       });
       if(response.ok){return res.json({role,email})}
@@ -85,12 +88,12 @@ app.post('/api/marka-ai',express.json({limit:'8kb'}),async(req,res)=>{
  if(!token||token.length>5000)return res.status(401).json({error:'Nepieciešama pieteikšanās.'});
  // Firebase Identity Toolkit looks up an ID token and rejects invalid/expired tokens.
  try{
-  const verify=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(process.env.FIREBASE_API_KEY||''),{
+  const verify=await providerFetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(process.env.FIREBASE_API_KEY||''),{
    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:token})
   });
   if(!verify.ok)return res.status(401).json({error:'Pieteikšanās sesija ir beigusies.'});
   const identity=(await verify.json()).users?.[0];
-  if(!identity||identity.localId!=='w4nbeq1UguRFrvdwVSFOkk46zXA2')
+  if(!identity||identity.localId!==(process.env.MARKS_UID||'w4nbeq1UguRFrvdwVSFOkk46zXA2'))
    return res.status(403).json({error:'MI treneris pieejams Marka kontā.'});
   const now=Date.now(),id=identity.localId;const history=aiAttempts.get(id)||[];
   const recent=history.filter(t=>now-t<3600000);
@@ -107,7 +110,7 @@ app.post('/api/marka-ai',express.json({limit:'8kb'}),async(req,res)=>{
    ?`Uzdevums: ${question}\nBērna atbilde: ${answer}\nPārbaudīts skaidrojums: ${explanation}\nMēģinājums: ${attempt}. Paskaidro nākamo mazo soli.`
    :`Treniņa rezultāts: ${result??'nav zināms'}%. Tēma: ${skill}. Izveido īsu konstruktīvu ieteikumu.`;
   const model=process.env.GEMINI_MODEL||'gemini-2.5-flash';
-  const response=await fetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
+  const response=await providerFetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
    body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:request}]}],generationConfig:{temperature:0.35,maxOutputTokens:350}})
   });
@@ -127,12 +130,12 @@ async function verifyMarksSession(req,res){
  const token=authorization.startsWith('Bearer ')?authorization.slice(7):'';
  if(!token||token.length>5000)return null;
  try{
-  const verify=await fetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(process.env.FIREBASE_API_KEY||''),{
+  const verify=await providerFetch('https://identitytoolkit.googleapis.com/v1/accounts:lookup?key='+encodeURIComponent(process.env.FIREBASE_API_KEY||''),{
    method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({idToken:token})
   });
   if(!verify.ok)return null;
   const uid=(await verify.json()).users?.[0]?.localId;
-  return uid==='w4nbeq1UguRFrvdwVSFOkk46zXA2'?uid:null;
+  return uid===(process.env.MARKS_UID||'w4nbeq1UguRFrvdwVSFOkk46zXA2')?uid:null;
  }catch{return null}
 }
 app.post('/api/math/session',async(req,res)=>{
@@ -153,9 +156,11 @@ app.post('/api/math/grade',async(req,res)=>{
  catch(e){return res.status(400).json({error:e.message||'Neizdevās novērtēt.'})}
 });
 
-app.get('*', (req, res) => {
+app.get(['/', '/index.html'], (req, res) => {
   res.sendFile(path.join(__dirname, 'index.html'));
 });
+
+app.use((req,res)=>res.status(404).json({error:'Ceļš nav atrasts.'}));
 
 app.listen(port, '0.0.0.0', () => {
   console.log(`Server listening on http://0.0.0.0:${port}`);

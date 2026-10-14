@@ -1,0 +1,95 @@
+rules_version = '2';
+service cloud.firestore {
+ match /databases/{database}/documents {
+  // Integrate ONLY this match into the shared Datorika HUB rules.
+  match /homeSchool/data {
+   function signedIn(){return request.auth != null;}
+   function profile(){return get(/databases/$(database)/documents/homeSchool/data/users/$(request.auth.uid)).data;}
+   function family(){return signedIn() && exists(/databases/$(database)/documents/homeSchool/data/users/$(request.auth.uid)) && profile().approved == true;}
+   function parent(){return family() && profile().role == 'vecaks';}
+   function child(){return family() && profile().role in ['marks','samanta'];}
+   function assigned(task){return child() && task.assignedTo in [profile().role,'both'];}
+   allow get: if family();
+   match /users/{uid} {
+    allow get: if signedIn() && (request.auth.uid == uid || parent());
+    allow list: if parent();
+    // Accounts are provisioned by a parent/admin; no self-approval.
+    allow create,delete: if parent();
+    allow update: if parent() || (signedIn() && request.auth.uid == uid && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['displayName','updatedAt']));
+   }
+   match /settings/{id} {allow read: if family();allow write: if parent();}
+   match /tasks/{id} {
+    allow read: if parent() || assigned(resource.data);
+    allow create,delete: if parent();
+    function ownCompletion(){
+     let next=request.resource.data.completions;
+     let own=next[profile().role];
+     return next.diff(resource.data.get('completions',{})).affectedKeys().hasOnly([profile().role])
+       && own.keys().hasOnly(['status','attemptId','at'])
+       && own.status in ['pending','completed']
+       && (own.status == 'pending' || resource.data.get('moduleId',null) == null ||
+         (own.attemptId is string
+          && exists(/databases/$(database)/documents/homeSchool/data/progress/$(own.attemptId))
+          && get(/databases/$(database)/documents/homeSchool/data/progress/$(own.attemptId)).data.studentUid == request.auth.uid
+          && get(/databases/$(database)/documents/homeSchool/data/progress/$(own.attemptId)).data.taskId == id
+          && get(/databases/$(database)/documents/homeSchool/data/progress/$(own.attemptId)).data.taskQualified == true));
+    }
+    allow update: if parent() || (assigned(resource.data)
+     && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['completions','updatedAt'])
+     && ownCompletion());
+   }
+   match /progress/{id} {
+    allow read: if parent() || (child() && resource.data.studentUid == request.auth.uid);
+    function validAssignedTask(){
+     let data=request.resource.data;
+     let task=get(/databases/$(database)/documents/homeSchool/data/tasks/$(data.taskId)).data;
+     return assigned(task) && data.moduleId == task.moduleId
+       && (data.taskQualified == false && data.taskBonus == 0
+        || data.taskQualified == true && data.score >= task.get('targetScore',0)
+         && data.taskBonus == task.get('bonusBP',0));
+    }
+    function validTask(){
+     let data=request.resource.data;
+     return (data.taskId == null && data.taskBonus == 0 && data.taskQualified == false)
+       || (data.taskId is string
+         && exists(/databases/$(database)/documents/homeSchool/data/tasks/$(data.taskId))
+         && validAssignedTask());
+    }
+    allow create: if child()
+      && request.resource.data.studentUid == request.auth.uid
+      && request.resource.data.studentRole == profile().role
+      && request.resource.data.attemptId == id
+      && request.resource.data.score is number && request.resource.data.score >= 0 && request.resource.data.score <= 100
+      && request.resource.data.notes is string && request.resource.data.notes.size() <= 24000
+      && request.resource.data.activityType is string && request.resource.data.activityType.size() <= 180
+      && request.resource.data.subjectId in ['math','language','english',null]
+      && request.resource.data.recordedAt == request.time
+      && request.resource.data.keys().hasOnly(['studentUid','studentRole','activityType','subject','score','notes','attemptId','moduleId','taskId','subjectId','topicId','pointsVersion','taskQualified','taskBonus','completedAt','recordedAt'])
+      && validTask();
+    allow update: if false;
+    allow delete: if parent();
+   }
+   match /rewardRequests/{id} {
+    allow read: if parent() || (child() && resource.data.studentUid == request.auth.uid);
+    allow create: if child() && request.resource.data.studentUid == request.auth.uid
+      && request.resource.data.studentRole == profile().role
+      && request.resource.data.kind == 'points_request' && request.resource.data.status == 'pending'
+      && request.resource.data.rewardId in ['popcorn','cola','icecream','extra20','phone20','movie-pick','breakfast','board-game','games40','film']
+      && request.resource.data.cost == {'popcorn':40,'cola':40,'icecream':50,'extra20':70,'phone20':80,'movie-pick':90,'breakfast':110,'board-game':130,'games40':150,'film':200}[request.resource.data.rewardId]
+      && request.resource.data.keys().hasOnly(['studentUid','studentRole','rewardId','rewardTitle','cost','kind','status','createdAt','updatedAt']);
+    allow update: if parent() && resource.data.status == 'pending'
+      && request.resource.data.status in ['approved','rejected']
+      && request.resource.data.reviewedBy == request.auth.uid
+      && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status','chargedBP','reviewedBy','updatedAt']);
+    allow delete: if false;
+   }
+   match /activityPresence/{id} {
+    allow read: if parent() || (child() && resource.data.studentUid == request.auth.uid);
+    allow create,update: if child() && request.resource.data.studentUid == request.auth.uid
+      && request.resource.data.studentRole == profile().role
+      && request.resource.data.activeSeconds is int && request.resource.data.activeSeconds >= 0 && request.resource.data.activeSeconds <= 86400
+      && request.resource.data.updatedAt == request.time;
+   }
+  }
+ }
+}

@@ -1,0 +1,4 @@
+{
+ "firestore": {"rules": "firestore.home-school.rules"},
+ "emulators": {"firestore": {"port": 8088},"singleProjectMode": true,"ui": {"enabled": false}}
+}

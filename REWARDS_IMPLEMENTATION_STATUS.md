@@ -1,3 +1,5 @@
+> Vēsturisks dokuments. Aktuālais v3 apraksts: DEPLOYMENT_V3.md, POINTS_POLICY.md un firestore.home-school.rules.
+
 # BP maka ieviešanas statuss — 2026-10-09
 
 ## 1. Pabeigts un ieslēgts

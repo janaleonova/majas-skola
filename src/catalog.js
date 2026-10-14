@@ -1,0 +1,17 @@
+export const SUBJECTS=[{id:'language',name:'Latviešu valoda un literatūra',icon:'📕'},{id:'math',name:'Matemātika',icon:'🧮'},{id:'english',name:'Angļu valoda',icon:'🌎'}];
+export const CATALOG={marks:[
+ {id:'latviesu',subjectId:'language',name:'Vārdi, galotnes un saziņa',description:'4 tēmas · mācības, treniņš un pārbaude'},
+ {id:'teikumi',subjectId:'language',name:'Teikumu pūķa akadēmija',description:'Vārdšķiras un teikuma centrs',bonus:10,threshold:85,prefix:'Teikumu pūķa akadēmija'},
+ {id:'dzeja',subjectId:'language',name:'Dzejas superizaicinājums',description:'Rainis un Juris Kronbergs · lasi un pamato',bonus:20,threshold:85,prefix:'Dzejas superizaicinājums'},
+ {id:'matematika',subjectId:'math',name:'Skaitļu misijas',description:'Reizrēķins, dalīšana, darbību secība un stāsti'},
+ {id:'kristali',subjectId:'math',name:'Kristālu kalve',description:'Reizināšana, sadalot desmitos un vienos',bonus:10,threshold:85,prefix:'Kristālu kalve'},
+ {id:'anglu',subjectId:'english',name:'Angļu valodas piedzīvojums',description:'Dienas, mēneši, gadalaiki un vietniekvārdi'}
+],samanta:[
+ {id:'saskaitisana',subjectId:'math',name:'Saskaitīšanas pērles',description:'3 paņēmieni un summas līdz 100',bonus:15,threshold:80,prefix:'Saskaitīšanas pērles'},
+ {id:'matematika',subjectId:'math',name:'Skaitļu piedzīvojums',description:'Reizrēķins, dalīšana, attēli un stāsti'},
+ {id:'latviesu',subjectId:'language',name:'Valodas dārzs',description:'Lasīšana, vārdšķiras un trūkstošie burti'},
+ {id:'anglu',subjectId:'english',name:'Angļu valodas dārzs',description:'Krāsas, dzīvnieki, skaitļi un ikdiena'}
+]};
+export function taskStatus(task,role){return task.completions?.[role]?.status||(task.assignedTo==='both'?'pending':task.status)||'pending';}
+export function taskState(task,role,today){if(taskStatus(task,role)==='completed')return 'completed';if(task.startDate&&task.startDate>today)return 'scheduled';if(task.dueDate&&task.dueDate<today)return 'expired';return 'available';}
+export function qualifiesTask(task,row,mode,day){return task.moduleId===row.moduleId&&(!task.startDate||task.startDate<=day)&&(!task.dueDate||task.dueDate>=day)&&(!task.requiredMode||task.requiredMode==='any'||task.requiredMode===mode)&&row.score>=(task.targetScore||0);}

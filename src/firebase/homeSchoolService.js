@@ -26,6 +26,8 @@ import {
   onSnapshot, 
   serverTimestamp 
 } from 'firebase/firestore';
+import {qualifiesTask} from '../catalog.js';
+import {dayKey,describeActivity,POINTS_VERSION} from '../learning-policy.js';
 import { db, auth, handleFirestoreError, OperationType } from './init.js';
 
 export const ROLES = {
@@ -243,12 +245,19 @@ export async function getTasks(role) {
 /**
  * Pievieno jaunu uzdevumu (atļauts tikai vecākam)
  */
-export async function createTask({ title, subject, assignedTo, description, dueDate, createdByUid }) {
+export async function createTask({ title, subject, assignedTo, description, dueDate, startDate, moduleId, daily=false, bonusBP=0, targetScore=0, requiredMode='any', createdByUid }) {
   if (!db) return null;
   const path = 'homeSchool/data/tasks';
   try {
     const taskPayload = {
-      title,
+      title: String(title||'').trim().slice(0,120),
+      moduleId: moduleId || null,
+      daily: Boolean(daily),
+      bonusBP:Math.max(0,Math.min(30,Math.floor(Number(bonusBP)||0))),
+      targetScore:Math.max(0,Math.min(100,Math.floor(Number(targetScore)||0))),
+      requiredMode,
+      startDate: startDate || dayKey(new Date()),
+      completions: {},
       subject: subject || 'Vispārīgi',
       assignedTo: assignedTo || 'both',
       description: description || '',
@@ -269,53 +278,53 @@ export async function createTask({ title, subject, assignedTo, description, dueD
 /**
  * Atjaunina uzdevuma statusu
  */
-export async function updateTaskStatus(taskId, status) {
-  if (!db || !taskId) return false;
-  const path = `homeSchool/data/tasks/${taskId}`;
-  try {
-    await updateDoc(getTaskDocRef(taskId), {
-      status,
-      updatedAt: serverTimestamp()
-    });
-    return true;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.UPDATE, path);
-    return false;
-  }
+export async function updateTaskStatus(taskId,status,childRole=null,attemptId=null) {
+ if(!db||!auth.currentUser)throw Error('Nepieciešama pieteikšanās.');
+ if(!['completed','pending'].includes(status))throw Error('Nederīgs statuss.');
+ const profile=await getUserProfile(auth.currentUser.uid);
+ const role=profile?.role===ROLES.PARENT?childRole:profile?.role;
+ if(!['marks','samanta'].includes(role))throw Error('Izvēlies bērnu.');
+ const ref=getTaskDocRef(taskId),snap=await getDoc(ref);
+ if(!snap.exists())throw Error('Uzdevums nav atrasts.');
+ const task=snap.data();if(!['both',role].includes(task.assignedTo))throw Error('Uzdevums nav piešķirts šim bērnam.');
+ if(task.moduleId&&status==='completed'&&!attemptId)throw Error('Vispirms izpildi un saglabā mācību uzdevumu.');
+ await updateDoc(ref,{['completions.'+role]:{status,attemptId:attemptId||null,at:new Date().toISOString()},updatedAt:serverTimestamp()});
+ return true;
 }
+export async function editTask(taskId,data){
+ const profile=await getUserProfile(auth?.currentUser?.uid);if(profile?.role!==ROLES.PARENT)throw Error('Tikai vecāks var rediģēt uzdevumu.');
+ const payload={};for(const key of ['title','description','dueDate','startDate','moduleId','assignedTo','daily','bonusBP','targetScore','requiredMode'])if(key in data)payload[key]=data[key];
+ await updateDoc(getTaskDocRef(taskId),{...payload,updatedAt:serverTimestamp()});
+}
+export async function removeTask(taskId){const p=await getUserProfile(auth?.currentUser?.uid);if(p?.role!==ROLES.PARENT)throw Error('Tikai vecāks.');await deleteDoc(getTaskDocRef(taskId));}
 
 /**
  * Reģistrē progresu vai treniņa rezultātu.
  * DROŠĪBA: Obligāti piesaista autentificētā lietotāja UID (studentUid),
  * lai bērns nevarētu viltot cita bērna rezultātus.
  */
-export async function recordProgress({ studentRole, activityType, subject, score, notes, currentUid }) {
-  if (!db) return null;
-  const path = 'homeSchool/data/progress';
-  const effectiveUid = currentUid || auth?.currentUser?.uid || null;
-  // A parent inspecting a child screen must never create child progress.
-  // Check real authentication and profile rather than trusting a supplied role.
-  if(!effectiveUid || auth?.currentUser?.uid!==effectiveUid) return null;
-  if(studentRole!==ROLES.MARKS && studentRole!==ROLES.SAMANTA) return null;
-  const profile=await getUserProfile(effectiveUid);
-  if(profile?.role!==studentRole) return null;
-
-  try {
-    const progressPayload = {
-      studentUid: effectiveUid,
-      studentRole: studentRole, // 'marks' vai 'samanta'
-      activityType: activityType || 'trenins',
-      subject: subject || 'Mācības',
-      score: typeof score === 'number' ? score : 100,
-      notes: notes || '',
-      recordedAt: serverTimestamp()
-    };
-    const ref = await addDoc(getProgressColRef(), progressPayload);
-    return ref.id;
-  } catch (error) {
-    handleFirestoreError(error, OperationType.CREATE, path);
-    return null;
-  }
+export async function recordProgress(data) {
+ if(!db)throw Error('Nav savienojuma ar Firebase.');
+ const {studentRole,currentUid,activityType,subject,score,notes}=data;
+ const uid=auth?.currentUser?.uid;
+ if(!uid||currentUid&&currentUid!==uid||!['marks','samanta'].includes(studentRole))return null;
+ const profile=await getUserProfile(uid);if(profile?.role!==studentRole||profile.approved!==true)return null;
+ if(!Number.isFinite(score)||score<0||score>100)throw Error('Rezultātam jābūt no 0 līdz 100%.');
+ const attemptId=data.attemptId||crypto.randomUUID();
+ if(!/^[a-zA-Z0-9_-]{8,100}$/.test(attemptId))throw Error('Nederīgs mēģinājuma ID.');
+ const ref=getProgressDocRef(attemptId),existing=await getDoc(ref);
+ if(existing.exists()){if(existing.data().studentUid!==uid)throw Error('Mēģinājums pieder citam kontam.');return attemptId;}
+ const d=describeActivity(data);
+ let taskQualified=false,taskBonus=0;
+ if(data.taskId){const taskSnap=await getDoc(getTaskDocRef(data.taskId));if(!taskSnap.exists())throw Error('Uzdevums vairs nav pieejams.');const task=taskSnap.data();if(![studentRole,'both'].includes(task.assignedTo))throw Error('Uzdevums nav piešķirts šim bērnam.');taskQualified=qualifiesTask(task,data,d.mode,dayKey(data.completedAt||new Date()));taskBonus=taskQualified?task.bonusBP||0:0;}
+ await setDoc(ref,{
+  studentUid:uid,studentRole,activityType:String(activityType||'Treniņš').slice(0,180),subject:String(subject||'Mācības').slice(0,80),score,
+  notes:typeof notes==='string'?notes.slice(0,24000):'',attemptId,moduleId:data.moduleId||null,taskId:data.taskId||null,
+  subjectId:d.subjectId,topicId:d.topicId,pointsVersion:POINTS_VERSION,
+  taskQualified,taskBonus,
+  completedAt:data.completedAt||new Date().toISOString(),recordedAt:serverTimestamp()
+ });
+ return attemptId;
 }
 
 /**
@@ -372,7 +381,7 @@ export async function resetChildProgress(childRole,expectedCount){
  if(childRole!==ROLES.MARKS&&childRole!==ROLES.SAMANTA)throw new Error('Nepareiza bērna izvēle.');
  const profile=await getUserProfile(parent.uid);
  if(profile?.role!==ROLES.PARENT)throw new Error('Atiestatīšana pieejama tikai vecākam.');
- const childUid=childRole===ROLES.MARKS?'w4nbeq1UguRFrvdwVSFOkk46zXA2':'txTRitErw8c4NRK87v1JFrFkoPa2';
+ const identities=await getFamilyIdentities(),childUid=identities[childRole];if(!childUid)throw Error('Bērna konts nav konfigurēts.');
  const docs=await getDocs(query(getProgressColRef(),where('studentUid','==',childUid)));
  if(typeof expectedCount!=='number'||docs.size!==expectedCount)
   throw new Error('Ierakstu skaits ir mainījies. Atjauno lapu un apstiprini vēlreiz.');
@@ -382,4 +391,9 @@ export async function resetChildProgress(childRole,expectedCount){
  let deleted=0;
  for(const d of docs.docs){await deleteDoc(d.ref);deleted++;}
  return deleted;
+}
+
+export async function getFamilyIdentities(){
+ if(!db)return {};const profile=await getUserProfile(auth?.currentUser?.uid);if(profile?.role!==ROLES.PARENT)return {};
+ const snap=await getDocs(getUsersColRef()),ids={};for(const d of snap.docs){const p=d.data();if(p.approved&&['marks','samanta'].includes(p.role))ids[p.role]=d.id;}return ids;
 }

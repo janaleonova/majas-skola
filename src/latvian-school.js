@@ -42,7 +42,7 @@ const BANK={
   ['“Lācis meklē saldu med... koka dobumā.”',['-u (medu)','-us (medus)','-am (medum)','-ī (medī)'],0,'Meklē ko? Medu (galotne -u)!'],
   ['“Zēns ielika jauno grāmat... som...”', ['-u somā','-a somai','-ā somu','-i somas'],0,'Ielika ko? Grāmatu (kur?) somā!'],
   ['“Lapsu nobiedēja suns.” Kurš nobijās?',['Lapsa','Suns','Abi nobijās'],0,'Suns nobiedēja (viņš biedēja), tātad nobijās lapsa!'],
-  ['“Bērni uzmanīgi klausījās skolotāj... stāstījumā.”', ['-as (skolotājas)','-a (skolotāja)','-ai (skolotājai)','-u (skolotāju)'],0,'Klausījās kā stāstījumā? Skolotājas stāstījumā!'],
+  ['“Skolotāja Anna stāstīja. Bērni uzmanīgi klausījās skolotāj... stāstījumā.”', ['-as (skolotājas)','-a (skolotāja)','-ai (skolotājai)','-u (skolotāju)'],0,'Klausījās kā stāstījumā? Skolotājas stāstījumā!'],
   ['“Zivis peld vēsajā ezer...”', ['-ā (ezerā)','-s (ezers)','-am (ezeram)','-u (ezeru)'],0,'Peld kur? Ezerā! Lokālatīva galotne ir -ā.']
  ]
 };
@@ -73,13 +73,13 @@ const EXTENDED={
  ],
  galotnes:[
   {kind:'text',prompt:'Ieraksti pareizo galotni: "Suns grauž gardu kaul__ (ko?)"',answers:['u','-u'],explanation:'Grauž ko? Kaulu! Galotne ir -u.'},
-  {kind:'text',prompt:'Ieraksti pareizo darbības vārda galotni: "Mēs šodien daudz lasīj__"',answers:['ām','am','-ām'],explanation:'Mēs lasījām! Galotne -ām.'},
-  {kind:'text',prompt:'Ieraksti pareizo galotni: "Zēns uzkāpa augstā kaln__ (kur?)"',answers:['ā','a','-ā'],explanation:'Uzkāpa kur? Kalnā (galotne -ā).'}
+  {kind:'text',prompt:'Ieraksti pareizo darbības vārda galotni: "Mēs šodien daudz lasīj__"',answers:['ām','-ām'],explanation:'Mēs lasījām! Galotne -ām.'},
+  {kind:'text',prompt:'Ieraksti pareizo galotni: "Zēns uzkāpa augstā kaln__ (kur?)"',answers:['ā','-ā'],explanation:'Uzkāpa kur? Kalnā (galotne -ā).'}
  ]
 };
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
-export function renderLatvianSchool(container,{canSubmit=false,currentUid='',saveProgress=async()=>{},askAI=null}={}){
+export function renderLatvianSchool(container,{canSubmit=false,currentUid='',saveProgress=async()=>{},askAI=null,initialState=null,onCheckpoint=()=>{}}={}){
  const prefix=canSubmit&&currentUid?'majas-skola:'+currentUid+':marks-lv:':null;
  const host=document.createElement('section');host.className='module learning-hub latvian-hub';host.style.gridColumn='1/-1';
  host.innerHTML='<div class="learning-heading"><span class="eyebrow">✦ MARKA VALODAS LABORATORIJA</span><h2>📕 Vārdu piedzīvojums</h2><p>Atklāj vārdu noslēpumus, pārbaudi sevi un audzē prasmes! Izvēlies tēmu.</p></div>';
@@ -170,11 +170,12 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
   const wanted=mode==='errors'?Math.min(10,Math.max(4,previousMisses.length*2)):mode==='exam'?20:mode==='practice'?12:8;
   let items=source.slice(0,Math.min(wanted,source.length)).map(q=>({...q,options:shuffle(q.options||[])}));
   let index=0,correct=0,streak=0,maxStreak=0;
-  const results=[];
-  const missed=[];
-  const skillStats={};
+  let results=[];
+  let missed=[];
+  let skillStats={};
+  if(initialState?.topicId===topic.id){({items,index,correct,streak,maxStreak,results,missed,skillStats}=initialState);initialState=null;}
   render();
-  function render(){content.replaceChildren();
+  function render(){onCheckpoint({topicId:topic.id,mode,items,index,correct,streak,maxStreak,results,missed,skillStats});content.replaceChildren();
    if(index===items.length){void finish();return;}
    const progress=document.createElement('div');progress.className='progress-track';const fill=document.createElement('div');fill.className='progress-fill';fill.style.width=Math.round(index/items.length*100)+'%';progress.append(fill);content.append(progress);
    const streakTag=document.createElement('p');streakTag.className='streak-label';streakTag.textContent='🔥 '+streak+' pareizas pēc kārtas · Rekords: '+maxStreak;content.append(streakTag);
@@ -219,9 +220,9 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
    const bestKey=prefix+'best-'+topic.id;let bestBefore=0;if(prefix)try{bestBefore=Number(localStorage.getItem(bestKey))||0;}catch{}
    const award=previewImprovement(bestBefore,policy.potential);
    const points=document.createElement('div');points.className='soft-notice';
-   points.textContent=policy.eligible?'🏅 Punktu potenciāls '+policy.potential+'/20 · Uzlabojums +'+award.earned+' treniņa BP · Sērijas bonuss '+policy.streakBonus:'🌱 Mācību režīmā balvu punktus neiegūst.';
+   points.textContent=policy.eligible?'🏅 Meistarības potenciāls '+policy.potential+'/20 · Uzlabojums +'+award.earned+' treniņa BP · Sērijas bonuss '+policy.streakBonus:'🌱 Mācību režīmā saņem centības BP pēc saglabāšanas.';
    content.append(points);
-   const note=document.createElement('p');note.className='points-disclaimer';note.textContent='Treniņa BP pašlaik ir informatīvi un netiek pieskaitīti balvu makam, līdz ieviesta droša servera pārbaude.';content.append(note);
+   const note=document.createElement('p');note.className='points-disclaimer';note.textContent='Faktisko BP pieaugumu parādīs saglabāšanas apstiprinājums. Vienā tēmā ieskaita tikai meistarības uzlabojumu; centībai ir dienas limits.';content.append(note);
    const practiceRow={date:new Date().toISOString(),mode,percent:pct,correct,total:items.length,skills:breakdown,maxStreak,pointsPotential:policy.potential,pointsPreview:award.earned};
    if(breakdown.length)aiButton(content,'🤖 MI trenera ieteikums',{mode:'result',skill:breakdown[0].skill,percent:pct});
    if(mode!=='errors')remember(topic,missed);
@@ -243,4 +244,5 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
    const back=document.createElement('button');back.type='button';back.textContent='Atpakaļ uz režīmiem';back.style.margin='8px';back.onclick=()=>choose(topic);content.append(back);
   }
  }
+ if(initialState){const topic=TOPICS.find(t=>t.id===initialState.topicId);if(topic)start(topic,initialState.mode);}
 }
