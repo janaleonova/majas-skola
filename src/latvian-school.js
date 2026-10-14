@@ -79,7 +79,7 @@ const EXTENDED={
 };
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
-export function renderLatvianSchool(container,{canSubmit=false,currentUid='',saveProgress=async()=>{},askAI=null,initialState=null,onCheckpoint=()=>{}}={}){
+export function renderLatvianSchool(container,{canSubmit=false,currentUid='',saveProgress=async()=>{},askAI=null,initialState=null,onCheckpoint=()=>{},initialTopic=null}={}){
  const prefix=canSubmit&&currentUid?'majas-skola:'+currentUid+':marks-lv:':null;
  const host=document.createElement('section');host.className='module learning-hub latvian-hub';host.style.gridColumn='1/-1';
  host.innerHTML='<div class="learning-heading"><span class="eyebrow">✦ MARKA VALODAS LABORATORIJA</span><h2>📕 Vārdu piedzīvojums</h2><p>Atklāj vārdu noslēpumus, pārbaudi sevi un audzē prasmes! Izvēlies tēmu.</p></div>';
@@ -245,4 +245,5 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
   }
  }
  if(initialState){const topic=TOPICS.find(t=>t.id===initialState.topicId);if(topic)start(topic,initialState.mode);}
+ else if(initialTopic){const topic=TOPICS.find(t=>t.id===initialTopic);if(topic)choose(topic);}
 }
