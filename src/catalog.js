@@ -2,7 +2,7 @@ export const SUBJECTS=[{id:'language',name:'Latviešu valoda un literatūra',ico
 export const CATALOG={marks:[
  {id:'latviesu',subjectId:'language',name:'Vārdi, galotnes un saziņa',description:'4 tēmas · mācības, treniņš un pārbaude'},
  {id:'teikumi',subjectId:'language',name:'Teikumu pūķa akadēmija',description:'Vārdšķiras un teikuma centrs',bonus:10,threshold:85,prefix:'Teikumu pūķa akadēmija'},
- {id:'dzeja',subjectId:'language',name:'Dzejas superizaicinājums',description:'Rainis un Juris Kronbergs · lasi un pamato',bonus:20,threshold:85,prefix:'Dzejas superizaicinājums'},
+ {id:'dzeja',subjectId:'language',name:'Dzejas superizaicinājums',description:'Rainis un Juris Kronbergs · lasi un pamato',bonus:15,threshold:85,prefix:'Dzejas superizaicinājums'},
  {id:'matematika',subjectId:'math',name:'Skaitļu misijas',description:'Reizrēķins, dalīšana, darbību secība un stāsti'},
  {id:'kristali',subjectId:'math',name:'Kristālu kalve',description:'Reizināšana, sadalot desmitos un vienos',bonus:10,threshold:85,prefix:'Kristālu kalve'},
  {id:'anglu',subjectId:'english',name:'Angļu valodas piedzīvojums',description:'Dienas, mēneši, gadalaiki un vietniekvārdi'}
