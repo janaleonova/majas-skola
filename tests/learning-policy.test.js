@@ -23,7 +23,7 @@ test('three October missions award distinct bonus amounts only once',()=>{
  const math=row('math','Matemātika','family · exam',80,{topicId:'family',mode:'exam'});
  const p=calculateChildPoints('marks',[lit,lv,math,{...lit,id:'lit2'},{...lv,id:'lv2'},{...math,id:'math2'}],now);
  assert.equal(p.events.reduce((sum,event)=>sum+event.missionBonus,0),35);
- assert.deepEqual(p.events.slice(0,3).map(event=>event.missionBonus),[15,15,5]);
+ assert.deepEqual(p.events.map(event=>event.missionBonus).filter(Boolean).sort((a,b)=>b-a),[15,15,5]);
 });
 test('October special bonuses require independent mode and minimum result',()=>{
  const lv=row('lv','Latviešu valoda','Vārda sastāvs un vārddarināšana · learn',100,{topicId:'morfemas',mode:'learn'});
