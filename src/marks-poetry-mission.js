@@ -7,6 +7,23 @@ const texts=[
  {id:'rainis',author:'Rainis',title:'Saulītes uzdevums vasarā',source:'https://skolenam.lv/lv/darbi/literatura/latviesu-autoru-dzeja-un-dzejoli/15',lines:['Saulīte-māmiņa,','Vasara-meitiņa.'],theme:'Daba un vasara',mood:'Silta, gaiša',characters:'Saule un vasara'},
  {id:'kronbergs',author:'Juris Kronbergs',title:'Bez iemesla',source:'https://dgramata.lv/gramatas/dzeja/uz-balkona-bet-ja-visu-laiku/',lines:['bez iemesla','jauna zilbe','atrod papīru','pasaule pārtop'],theme:'Vārdi un radīšana',mood:'Pārdomu pilna',characters:'Personificēta zilbe'}
 ];
+
+const authorStories=[
+ {title:'Rainis — cilvēks, kurš ticēja izaugsmei',source:'https://enciklopedija.lv/skirklis/55869',paragraphs:[
+ 'Rainis ir rakstnieka vārds. Viņa īstais vārds bija Jānis Pliekšāns. Viņš dzimis 1865. gadā un miris 1929. gadā. Rainis bija dzejnieks, dramaturgs, tulkotājs un sabiedrisks darbinieks.',
+ 'Rainis bērnību pavadīja dažādās vietās Sēlijā un Latgalē. Viņš daudz mācījās, lasīja un vēlāk studēja tieslietas Pēterburgas Universitātē. Viņam bija svarīga ne tikai literatūra, bet arī cilvēku tiesības un Latvijas nākotne.',
+ 'Rainis dzīvoja laikā, kad Latvija vēl nebija neatkarīga valsts. Viņš piedzīvoja ieslodzījumu, izsūtījumu un trimdu. Viņa sieva bija rakstniece Aspazija. Abi bija nozīmīgas personības latviešu kultūrā.',
+ 'Rainis sarakstīja dzejoļu krājumus un lugas. Pazīstami darbi ir dzejoļu krājums “Tālas noskaņas zilā vakarā” un lugas “Uguns un nakts” un “Zelta zirgs”. Viņš rakstīja arī bērniem, piemēram, dzejoļu krājumu “Zelta sietiņš”.',
+ 'Raiņa darbos bieži sastopamas pārmaiņu, cerības, brīvības un garīgās izaugsmes tēmas. Dzejā dabas tēls ne vienmēr ir tikai dabas apraksts — tam var būt arī dziļāka, simboliska nozīme.'
+ ]},
+ {title:'Juris Kronbergs — latviešu dzejnieks Zviedrijā',source:'https://www.literatura.lv/personas/juris-kronbergs',paragraphs:[
+ 'Juris Kronbergs dzimis 1946. gadā Stokholmā, Zviedrijā, un miris 2020. gadā. Viņš bija latviešu dzejnieks un tulkotājs. Viņa ģimene bija saistīta ar latviešu trimdas vidi.',
+ 'Juris Kronbergs mācījās Stokholmas Universitātē. Viņš dzīvoja starp divām valodām un kultūrām — latviešu un zviedru. Viņš rakstīja dzeju un tulkoja literārus darbus starp abām valodām.',
+ 'Viņa dzejā sastopamas valodas, laika, identitātes un cilvēka izjūtu tēmas. Viņš izmantoja negaidītas vārdu kombinācijas, humoru, paradoksus un tēlainību. Tas nozīmē, ka dzejolis var pārsteigt un likt uz ierastu lietu paskatīties citādi.',
+ 'Jura Kronberga pazīstamo darbu vidū ir “Vilks Vienacis”, bērnu dzejas grāmatas “Mākoņu grāmata” un “Laika bikses”. Viņa dzeja nav tikai bērniem — viņš rakstīja arī pieaugušajiem.',
+ 'Abu autoru atšķirība nav vienkārši “veca un jauna dzeja”. Rainis bieži saistīts ar lieliem sabiedriskiem un filozofiskiem jautājumiem, savukārt Kronbergs spilgti rotaļājas ar valodu un neparastiem skatpunktiem. Taču abos gadījumos lasītājam jāskatās, ko konkrētais dzejolis patiesībā saka.'
+ ]}
+];
 const questions=[
  {kind:'choice',question:'Kas ir dzejoļa tēma?',options:['Par ko dzejolī stāstīts','Cik pantu ir dzejolī','Autora uzvārds'],correct:'Par ko dzejolī stāstīts',hint:'Tēma pasaka, par ko teksts vēsta.'},
  {kind:'choice',question:'Kas ir dzejoļa noskaņa?',options:['Sajūta, ko rada dzejolis','Dzejoļa garums','Tikai pēdējais vārds'],correct:'Sajūta, ko rada dzejolis',hint:'Noskaņa var būt priecīga, skumja, mierīga vai noslēpumaina.'},
@@ -44,6 +61,28 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   note.append(el('p','Atpazīsti dzejoļa tēmu, noskaņu, tēlus, atskaņas, salīdzini Raini un Juri Kronbergu un veido savas rindiņas. Autoru fragmenti ir īsi un pārbaudīti. Citi uzdevumi ir mūsu pašu sacerēti.'));
   note.append(el('p','🌱 20 mācību jautājumi ar palīdzību, pēc tam 🏆 30 pārbaudes jautājumi (26/30 = vismaz 85%). Vienreizējs +20 provizorisko BP superbonuss.'));
   host.append(note);
+
+  const stories=el('section','','sentence-tip');
+  stories.append(el('h3','📚 Iepazīsti abus autorus — lasi vai klausies'));
+  stories.append(el('p','Pārbaudīti biogrāfijas fakti. Šie ir mūsu veidoti izglītojoši stāsti, nevis autoru dzejoļu citāti. Pēc katra stāsta pārrunā galvenās atšķirības.'));
+  let currentSpeech=null;
+  const stopSpeech=()=>{if('speechSynthesis' in window){window.speechSynthesis.cancel();currentSpeech=null;}};
+  for(const story of authorStories){
+   const wrap=el('details','','poetry-author-story');
+   wrap.append(el('summary',story.title));
+   for(const paragraph of story.paragraphs)wrap.append(el('p',paragraph));
+   const link=el('a','🔎 Pārbaudītais avots');link.href=story.source;link.target='_blank';link.rel='noopener noreferrer';wrap.append(link);
+   btn(wrap,'🔊 Klausīties stāstu',()=>{
+    if(!('speechSynthesis' in window)){wrap.append(el('p','Šajā ierīcē balss atskaņošana nav pieejama.'));return;}
+    stopSpeech();
+    const utterance=new SpeechSynthesisUtterance(story.title+'. '+story.paragraphs.join(' '));
+    utterance.lang='lv-LV';utterance.rate=0.85;currentSpeech=utterance;
+    window.speechSynthesis.speak(utterance);
+   },'quiet-button');
+   btn(wrap,'⏹ Apturēt',stopSpeech,'quiet-button');
+   stories.append(wrap);
+  }
+  host.append(stories);
   btn(host,'💡 Ātrā atgādne',()=>{
    const hint=el('div','','sentence-tip');hint.append(el('strong','Atceries!'),el('p','Tēma = par ko dzejolis; noskaņa = kādas sajūtas; tēli = kas tajā darbojas; atskaņas = līdzīgi skanošas vārdu beigas.'));host.append(hint);
   },'quiet-button');
