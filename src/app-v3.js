@@ -145,6 +145,7 @@ function receipt(trainer,row){
  button(box,'Atgriezties pie dienas plāna →',()=>renderDashboard(row.studentRole));trainer.append(box);
 }
 function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=null){
+ if(resume&&!missionId)missionId=readDraft(uidFor(role),id)?.missionId||null;
  const module=CATALOG[role].find(x=>x.id===id)||{id,name:'Pirmā ekspedīcija'},key=role+':'+id;
  if(readDraft(uidFor(role),id)&&!resume){if(confirm('Šī tēma jau ir iesākta. Turpināt saglabāto darbu?'))resume=true;else{parked.delete(key);clearDraft(uidFor(role),id);}}
  const area=$('modules');area.replaceChildren();area.classList.add('learning-active');state.active={role,id,task};currentActivity=module.name;
@@ -153,7 +154,7 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
  state.dirty=false;const trainer=E('div','','subject-trainer');area.append(trainer);
  const draft={trainer,name:module.name,task,dirty:false};parked.set(key,draft);
  let checkpoint=savedDraft?.state||null;
- const persist=()=>{if(canSubmit(role)&&checkpoint)writeDraft(state.user.uid,id,{name:module.name,state:checkpoint,fields:captureFields(trainer),taskId:task?.id||null});};
+ const persist=()=>{if(canSubmit(role)&&checkpoint)writeDraft(state.user.uid,id,{name:module.name,state:checkpoint,fields:captureFields(trainer),taskId:task?.id||null,missionId});};
  trainer.addEventListener('input',()=>{draft.dirty=state.dirty=true;persist();});
  trainer.addEventListener('change',persist);
  trainer.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;if(!/^(←|⬅|Atpakaļ|Uz sākumu)/.test(b.textContent)&&!b.classList.contains('topic-tile'))draft.dirty=state.dirty=true;},true);
@@ -164,7 +165,7 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
   const notes=readNotes(data);
   const missionNotes=missionId?JSON.stringify({...notes,missionId}):data.notes;
   let row=queueResult(state.user.uid,{...data,notes:missionNotes,mode:describeActivity(data).mode,taskQualified:qualified,taskBonus:qualified?task.bonusBP||0:0,currentUid:state.user.uid,studentRole:role,moduleId:id,taskId:task?.id||null,attemptId:retryRow?.attemptId});retryRow=row;
-  if(checkpoint)writeDraft(ownerUid,id,{name:module.name,state:checkpoint,fields:captureFields(trainer),taskId:task?.id||null,pendingAttemptId:row.attemptId});
+  if(checkpoint)writeDraft(ownerUid,id,{name:module.name,state:checkpoint,fields:captureFields(trainer),taskId:task?.id||null,missionId,pendingAttemptId:row.attemptId});
   const send=async()=>{
    const savedId=await recordProgress(row);if(!savedId)throw Error('Saglabāšanu nevar apstiprināt.');const stored=await getProgressRecord(savedId);row={...row,...stored};qualified=row.taskQualified;
    acknowledgeResult(ownerUid,savedId);clearDraft(ownerUid,id);retryRow=null;
@@ -178,7 +179,7 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
    button(box,'Saglabāt vēlreiz',async()=>{try{await send();box.remove();}catch(err){notice(box,err.message);}});trainer.append(box);throw e;
   }
  };
- const options={initialState:savedDraft?.state||null,onCheckpoint:data=>{checkpoint=data;if(canSubmit(role))writeDraft(state.user.uid,id,{name:module.name,state:data,fields:[],taskId:task?.id||null});},canSubmit:canSubmit(role),currentUid:canSubmit(role)?state.user.uid:'',saveProgress,alreadyEarnedBonus:module.bonus?bonusEarned(role,module):false};
+ const options={initialState:savedDraft?.state||null,onCheckpoint:data=>{checkpoint=data;if(canSubmit(role))writeDraft(state.user.uid,id,{name:module.name,state:data,fields:[],taskId:task?.id||null,missionId});},canSubmit:canSubmit(role),currentUid:canSubmit(role)?state.user.uid:'',saveProgress,alreadyEarnedBonus:module.bonus?bonusEarned(role,module):false};
  const api=async(path,payload)=>{const token=await state.user.getIdToken();const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw Error(data.error||'Servera kļūda');return data;};
  try{
   if(id==='diagnostic')renderFirstDiagnostic(trainer,{...options,role,alreadyCompleted:state.progress.some(r=>r.studentUid===uidFor(role)&&r.activityType===DIAGNOSTIC_VERSION),onBack:()=>leave(()=>renderDashboard(role))});
