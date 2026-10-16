@@ -806,12 +806,13 @@ export function renderSamantaNature(container, options = {}) {
 
     examFinished = true;
     currentTab = 'diploma';
-    playSound('fanfare');
+    finalResult.saveStatus = canSubmit?'Saglabāju rezultātu…':'Priekšskatījums — rezultāts netiek saglabāts.';
+    render();
 
     // Saglabā progresu un piešķir BP
     if (canSubmit) {
       try {
-        await saveProgress({
+        const savedId = await saveProgress({
           activityType: 'Dabas teritorijas · 3. kl. NPD',
           subject: 'Dabaszinības',
           subjectId: 'nature',
@@ -825,11 +826,15 @@ export function renderSamantaNature(container, options = {}) {
             mission: 'Dabas teritorijas'
           }
         });
+        if(!savedId)throw Error('Saglabāšana nav apstiprināta');
+        finalResult.saveStatus='✅ Rezultāts saglabāts. Punktus skati BP kvītī.';
       } catch (err) {
+        finalResult.saveStatus='⚠️ Saglabāšana nav apstiprināta. Izmanto pogu “Saglabāt vēlreiz” vai pārbaudi savienojumu.';
         console.warn('Neizdevās saglabāt Dabaszinību NPD progresu:', err);
       }
     }
 
+    if(corePercent>=80)playSound('fanfare');
     render();
   }
 
@@ -844,6 +849,7 @@ export function renderSamantaNature(container, options = {}) {
     }
 
     const res = finalResult;
+    const saveMessage=document.createElement('p');saveMessage.setAttribute('role','status');saveMessage.textContent=res.saveStatus||'Saglabāšanas statuss nav zināms.';wrap.append(saveMessage);
 
     // Rīkjosla ar diplomu darbībām
     const actionsBar = document.createElement('div');
