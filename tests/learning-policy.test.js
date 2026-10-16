@@ -31,3 +31,18 @@ test('October special bonuses require independent mode and minimum result',()=>{
  const p=calculateChildPoints('marks',[lv,math],now);
  assert.equal(p.events.reduce((sum,event)=>sum+event.missionBonus,0),0);
 });
+
+test('persistent mission identifiers award 15, 15, 5 once even after the original deadlines',()=>{
+ const date=new Date('2026-10-16T10:00:00Z');
+ const make=(id,subject,activityType,topicId,missionId,score=90)=>({
+  ...row(id,subject,activityType,score,{topicId,mode:'exam',missionId}),
+  recordedAt:{seconds:date.getTime()/1000},completedAt:date.toISOString()
+ });
+ const p=calculateChildPoints('marks',[
+  make('a','Literatūra','Dzejas superizaicinājums · Rainis un Kronbergs','poetry','oct26-poetry'),
+  make('b','Latviešu valoda','Vārda sastāvs un vārddarināšana · exam','morfemas','oct26-morphology'),
+  make('c','Matemātika','family · exam','family','oct26-family'),
+  make('d','Matemātika','family · exam','family','oct26-family')
+ ],date);
+ assert.equal(p.events.reduce((sum,e)=>sum+e.missionBonus,0),35);
+});
