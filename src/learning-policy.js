@@ -47,6 +47,8 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   const attempt=row.attemptId||row.id;if(attempt&&attempts.has(attempt))continue;if(attempt)attempts.add(attempt);
   const topic=d.subjectId+'|'+d.topicId,percent=row.score,streak=Number(d.notes.maxStreak??d.notes.bestStreak??d.notes.streak)||0;
   const independent=['practice','exam','speed'].includes(d.mode);
+  const missionId=d.notes.missionId;
+  const newMission=role==='marks'&&['oct26-poetry','oct26-morphology','oct26-family'].includes(missionId);
   const potential=independent?Math.min(20,(percent<40?0:percent<60?4:percent<75?8:percent<90?12:18)+(percent>=40?Number(streak>=5)+Number(streak>=10):0)):0;
   const mastery=Math.max(0,potential-(best.get(topic)||0));best.set(topic,Math.max(best.get(topic)||0,potential));
   const effortKey=day+'|'+topic;let effort=0;
@@ -55,17 +57,31 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   const set=subjects.get(day),before=set.size;set.add(d.subjectId);const dailyBonus=before<3&&set.size===3?10:0;
   let missionBonus=0;
   for(const [key,label,threshold,bonus] of [['split','Kristālu kalve',85,10],['sentence','Teikumu pūķa akadēmija',85,10],['poetry','Dzejas superizaicinājums',85,day<'2026-10-14'?20:15],['addition','Saskaitīšanas pērles',80,15]])
-   if(String(row.activityType||'').startsWith(label)&&independent&&percent>=threshold&&!special.has(key)){special.add(key);missionBonus+=bonus;}
-  // Marka trīs mācību misiju papildu BP: tikai norādītajā dienā,
-  // tikai par patstāvīgu pārbaudi, vienu reizi katrā misijā.
-  if(role==='marks'&&independent&&day>='2026-10-14'&&day<='2026-10-15'&&d.mode==='exam'&&
-     d.topicId==='morfemas'&&d.subjectId==='language'&&percent>=85&&!special.has('npd-morfemas')){
-    special.add('npd-morfemas');missionBonus+=15;
-  }
-  if(role==='marks'&&day==='2026-10-14'&&independent&&d.mode==='exam'&&
-     (d.topicId==='family'||String(row.activityType||'').startsWith('family ·'))&&d.subjectId==='math'&&
-     percent>=80&&!special.has('daily-family')){
-    special.add('daily-family');missionBonus+=5;
+   if(!(newMission&&key==='poetry')&&String(row.activityType||'').startsWith(label)&&independent&&percent>=threshold&&!special.has(key)){special.add(key);missionBonus+=bonus;}
+  // Pastāvīgās 2026. gada oktobra misijas: unikālais ID ir ierakstīts rezultātā.
+  // Iepriekš saglabātos ierakstus bez missionId nepārrēķina pēc jaunajiem noteikumiem.
+  const missionRules={
+   'oct26-poetry':{subject:'language',topic:null,min:85,bonus:15},
+   'oct26-morphology':{subject:'language',topic:'morfemas',min:85,bonus:15},
+   'oct26-family':{subject:'math',topic:'family',min:80,bonus:5}
+  };
+  if(newMission){
+   const rule=missionRules[missionId];
+   if(day>='2026-10-14'&&d.mode==='exam'&&d.subjectId===rule.subject&&
+      (!rule.topic||d.topicId===rule.topic)&&percent>=rule.min&&!special.has(missionId)){
+    special.add(missionId);missionBonus+=rule.bonus;
+   }
+  }else{
+   // Vēsturiskās 14.–15. oktobra piemaksas paliek nemainīgas, lai nepazustu BP.
+   if(role==='marks'&&independent&&day>='2026-10-14'&&day<='2026-10-15'&&d.mode==='exam'&&
+      d.topicId==='morfemas'&&d.subjectId==='language'&&percent>=85&&!special.has('npd-morfemas')){
+     special.add('npd-morfemas');missionBonus+=15;
+   }
+   if(role==='marks'&&day==='2026-10-14'&&independent&&d.mode==='exam'&&
+      (d.topicId==='family'||String(row.activityType||'').startsWith('family ·'))&&
+      d.subjectId==='math'&&percent>=80&&!special.has('daily-family')){
+     special.add('daily-family');missionBonus+=5;
+   }
   }
   let assignedBonus=0;if(row.taskId&&row.taskQualified===true&&!taskBonuses.has(row.taskId)&&Number.isInteger(row.taskBonus)&&row.taskBonus>=0&&row.taskBonus<=30){assignedBonus=row.taskBonus;taskBonuses.add(row.taskId);}
   const earned=mastery+effort+dailyBonus+missionBonus+assignedBonus;totalEarned+=earned;if(day===today)todayEarned+=earned;activityCount++;
