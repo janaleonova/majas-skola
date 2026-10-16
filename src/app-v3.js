@@ -90,30 +90,29 @@ function renderDashboard(role){
  const assigned=tasks.find(t=>t.daily&&['available','completed'].includes(taskState(t,role,state.day))&&(!t.dueDate||t.dueDate>=state.day)&&(!t.startDate||t.startDate<=state.day))||activeTasks.find(t=>t.moduleId);
  const dailyModule=CATALOG[role][Math.floor(Date.parse(state.day+'T00:00:00Z')/86400000)%CATALOG[role].length];
  const daily=E('section','','module daily-task');daily.append(E('span','ŠODIENAS TĒMA','eyebrow'));
- if(role==='marks'&&['2026-10-14','2026-10-15'].includes(state.day)){
+ if(role==='marks'&&state.day>='2026-10-14'){
+  const specs=[
+   {id:'oct26-poetry',title:'📖 Literatūra — Rainis un Juris Kronbergs',module:'dzeja',topic:null,bonus:15,min:85,
+    details:'Lasi vai klausies autoru stāstus, izpildi mācību jautājumus un patstāvīgo pārbaudi. Rakstiskos pamatojumus pārskata vecāks.'},
+   {id:'oct26-morphology',title:'✍️ Latviešu valoda — vārda sastāvs un vārddarināšana',module:'latviesu',topic:'morfemas',bonus:15,min:85,
+    details:'Gatavojies NPD: sakne, priedēklis, piedēklis, galotne, izskaņa, radniecīgie vārdi un salikteņi.'},
+   {id:'oct26-family',title:'🧮 Matemātika — saistītais pieraksts',module:'matematika',topic:'family',bonus:5,min:80,
+    details:'Darbību secība, iekavas un saistītais pieraksts. Sāc ar mācīšanos, tad pārbaudi sevi.'}
+  ];
   const list=E('div','','today-missions');
-  const mission=(heading,detail,bonus,label,action)=>{
+  for(const spec of specs){
+   const completed=state.progress.some(r=>r.studentRole==='marks'&&r.studentUid===uidFor(role)&&
+    readNotes(r).missionId===spec.id&&describeActivity(r).mode==='exam'&&r.score>=spec.min);
    const card=E('article','','card task-card');
-   card.append(E('h3',heading),E('p',detail),E('p',bonus));
-   button(card,label,action);
+   card.append(E('h3',spec.title),E('p',spec.details),
+    E('p',completed?'✅ Izpildīts · īpašais +'+spec.bonus+' BP bonuss iegūts':
+      '🎁 +'+spec.bonus+' BP vienreiz, sasniedzot '+spec.min+'% patstāvīgajā pārbaudē.'));
+   button(card,completed?'Apskatīt vai atkārtot →':'Sākt bonusa misiju →',
+    ()=>openModule(role,spec.module,null,false,spec.topic,spec.id));
    list.append(card);
-  };
-  mission('📖 1. Literatūra — Rainis un Juris Kronbergs',
-    'Izlasi vai noklausies autoru dzīvesstāstus, analizē dzejas fragmentus, izpildi 20 mācību jautājumus un 30 patstāvīgos pārbaudes jautājumus. Rakstiskos pamatojumus pārskata vecāks.',
-    'Īpašais bonuss: +15 BP vienu reizi, sasniedzot vismaz 85% patstāvīgajā pārbaudē. Darbu drīkst pabeigt 15. oktobrī.',
-    'Atvērt literatūras superizaicinājumu →',()=>openModule(role,'dzeja'));
-  mission('✍️ 2. Latviešu valoda — vārda sastāvs un vārddarināšana',
-    'NPD sagatavošanās: sakne, priedēklis, piedēklis, galotne, izskaņa, pirmatnīgi un atvasināti vārdi, radniecīgu vārdu saimes, salikteņi, priedēkļu lietojums un vārdu darināšana ar izskaņām.',
-    'Papildu +15 BP vienu reizi pie vismaz 85% patstāvīgajā pārbaudē 14.–15. oktobrī.',
-    'Sākt latviešu valodas NPD treniņu →',()=>openModule(role,'latviesu',null,false,'morfemas'));
-  if(state.day==='2026-10-14'){
-   mission('🧮 3. Matemātika — saistītais pieraksts',
-    'Nostiprini saistīto pierakstu, darbību secību un iekavas. Vispirms mācies, tad trenējies un pārbaudi sevi.',
-    'Papildu +5 BP vienu reizi pie vismaz 80% patstāvīgajā pārbaudē 14. oktobrī.',
-    'Sākt saistīto pierakstu →',()=>openModule(role,'matematika',null,false,'family'));
   }
   daily.append(list);
-  if(assigned){const block=E('section','','daily-assigned');block.append(E('h3','Papildu vecāka piešķirtais uzdevums'));taskCard(block,assigned,role);daily.append(block);}
+  if(assigned){const extra=E('section','','daily-assigned');extra.append(E('h3','Cits vecāka piešķirts uzdevums'));taskCard(extra,assigned,role);daily.append(extra);}
  }
  else if(assigned)taskCard(daily,assigned,role);
  else {
@@ -145,7 +144,7 @@ function receipt(trainer,row){
  if(event)box.append(E('p','Meistarība +'+event.mastery+' · Centība +'+event.effort+' · Dienas bonuss +'+event.dailyBonus+' · Īpašais bonuss +'+event.missionBonus+' · Uzdevuma bonuss +'+event.assignedBonus),E('p','Kopā '+points.balance+' BP.'));
  button(box,'Atgriezties pie dienas plāna →',()=>renderDashboard(row.studentRole));trainer.append(box);
 }
-function openModule(role,id,task=null,resume=false,initialTopic=null){
+function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=null){
  const module=CATALOG[role].find(x=>x.id===id)||{id,name:'Pirmā ekspedīcija'},key=role+':'+id;
  if(readDraft(uidFor(role),id)&&!resume){if(confirm('Šī tēma jau ir iesākta. Turpināt saglabāto darbu?'))resume=true;else{parked.delete(key);clearDraft(uidFor(role),id);}}
  const area=$('modules');area.replaceChildren();area.classList.add('learning-active');state.active={role,id,task};currentActivity=module.name;
@@ -162,7 +161,9 @@ function openModule(role,id,task=null,resume=false,initialTopic=null){
  const saveProgress=async data=>{
   if(!canSubmit(role))return null;const ownerUid=state.user.uid;
   let qualified=task?qualifiesTask(task,{...data,moduleId:id},describeActivity(data).mode,dayKey(new Date())):false;
-  let row=queueResult(state.user.uid,{...data,mode:describeActivity(data).mode,taskQualified:qualified,taskBonus:qualified?task.bonusBP||0:0,currentUid:state.user.uid,studentRole:role,moduleId:id,taskId:task?.id||null,attemptId:retryRow?.attemptId});retryRow=row;
+  const notes=readNotes(data);
+  const missionNotes=missionId?JSON.stringify({...notes,missionId}):data.notes;
+  let row=queueResult(state.user.uid,{...data,notes:missionNotes,mode:describeActivity(data).mode,taskQualified:qualified,taskBonus:qualified?task.bonusBP||0:0,currentUid:state.user.uid,studentRole:role,moduleId:id,taskId:task?.id||null,attemptId:retryRow?.attemptId});retryRow=row;
   if(checkpoint)writeDraft(ownerUid,id,{name:module.name,state:checkpoint,fields:captureFields(trainer),taskId:task?.id||null,pendingAttemptId:row.attemptId});
   const send=async()=>{
    const savedId=await recordProgress(row);if(!savedId)throw Error('Saglabāšanu nevar apstiprināt.');const stored=await getProgressRecord(savedId);row={...row,...stored};qualified=row.taskQualified;
