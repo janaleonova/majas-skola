@@ -161,7 +161,7 @@ export function renderMarksPoetryMission(root,{canSubmit=false,alreadyEarnedBonu
   const save=btn(host,'✅ Esmu apmierināts — saglabāt',async()=>{
    if(saving||submitted)return;if(!canSubmit){status.textContent='Vecāka priekšskatījumā nesaglabā.';return;}
    saving=true;save.disabled=true;
-   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,writingAnswers,mode:'exam',childConfirmed:true,masteryBonusEligible:qualified,bonus:15,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+20 provizoriskie BP iegūti vienu reizi!':'');}
+   try{const id=await saveProgress({studentRole:'marks',subject:'Literatūra',activityType:TYPE,score:percent,notes:JSON.stringify({correct:points,total:items.length,writingAnswers,mode:'exam',childConfirmed:true,masteryBonusEligible:qualified,bonus:15,spendableBP:0})});if(!id)throw Error('Saglabāšana nav apstiprināta');submitted=true;status.textContent='✅ Saglabāts! '+(qualified&&!alreadyEarnedBonus?'+15 BP bonuss ir pieejams, ja šī misija ir izpildīta pirmoreiz.':'');}
    catch(e){status.textContent='⚠️ Neizdevās saglabāt: '+(e.message||'pārbaudi savienojumu');save.disabled=false;}finally{saving=false;}
   });
   btn(host,'🔁 Vēlreiz ar mainītu jautājumu secību',intro);
