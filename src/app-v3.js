@@ -8,6 +8,7 @@ import {renderSamantaLatvian} from './samanta-latvian.js';
 import {renderSamantaEnglish} from './samanta-english.js';
 import {renderSamantaMath} from './samanta-math.js';
 import {renderSamantaAdditionGame} from './samanta-sum-game.js';
+import {renderSamantaNature} from './samanta-nature.js';
 import {renderLatvianSchool} from './latvian-school.js';
 import {renderRewardShop,renderParentRewardManager} from './rewards-system.js';
 import {applyPersonalTheme,renderThemePicker} from './personal-theme.js';
@@ -33,7 +34,7 @@ const canSubmit=role=>state.role===role;
 const sendQueued=async row=>{const id=await recordProgress(row);const stored=id?await getProgressRecord(id):null;row={...row,...stored};if(id&&row.taskId&&row.taskQualified)await updateTaskStatus(row.taskId,'completed',row.studentRole,id);if(id&&state.user?.uid===row.currentUid&&!state.progress.some(r=>r.attemptId===id))state.progress.push({...row,studentUid:row.currentUid,recordedAt:{seconds:Date.parse(row.completedAt)/1000}});return id;};
 function stopAudio(){if('speechSynthesis' in window)speechSynthesis.cancel();}
 function leave(fn){if(state.dirty&&!confirm('Darbs vēl nav iesniegts. Iesākto posmu varēsi turpināt no dienas plāna. Vai atgriezties?'))return;stopAudio();state.dirty=false;fn();}
-function welcome(){version++;state.progress=[];state.tasks=[];familyIds={};spentByRole={};stopAudio();stopPresence?.();stopPresence=null;stopParent?.();stopParent=null;guide?.stop();guide=null;parked.clear();state.dirty=false;state.active=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=true;header();}
+function welcome(){version++;state.progress=[];state.tasks=[];familyIds={};spentByRole={};stopAudio();stopPresence?.();stopPresence=null;stopParent?.();stopParent=null;guide?.stop();guide=null;parked.clear();state.dirty=false;state.active=null;$('welcome').hidden=false;$('school').hidden=true;$('home').hidden=true;if($('login-password'))$('login-password').value='';if($('login-message'))$('login-message').textContent='';header();}
 function header(){let bar=$('header-auth-bar');if(!bar){bar=E('div');bar.id='header-auth-bar';document.querySelector('header').append(bar);}bar.replaceChildren();if(state.user)button(bar,'Iziet',()=>leave(async()=>{await signOut(auth);welcome();}),'quiet-button');}
 async function refresh(){
  const mine=version;state.loading=true;
@@ -114,6 +115,20 @@ function renderDashboard(role){
   daily.append(list);
   if(assigned){const extra=E('section','','daily-assigned');extra.append(E('h3','Cits vecāka piešķirts uzdevums'));taskCard(extra,assigned,role);daily.append(extra);}
  }
+ else if(role==='samanta'){
+  const list=E('div','','today-missions');
+  const card=E('article','','card task-card');
+  const npdEarned=bonusEarned(role,{id:'daba',bonus:20,threshold:80,prefix:'Dabas teritorijas'});
+  card.append(
+    E('h3','🌿 1. Dabaszinības — 3. klases NPD pārbaudes darbs'),
+    E('p','Temats: "Kas ir kopīgs un atšķirīgs dažādām dabas teritorijām?" (Mežs, pļava, purvs, ūdeņi, 5 meža stāvi, barības ķēdes un bionika).'),
+    E('p',npdEarned?'✅ Zelta bonuss jau saņemts (+20 BP)! Vari atkārtot vai pētīt Dabas laboratoriju.':'🌟 Zelta bonuss: +20 BP un Zelta Dabas Pētnieces Diploms pie vismaz 80% rezultāta!')
+  );
+  button(card,'Atvērt dabaszinību NPD un laboratoriju →',()=>openModule(role,'daba'));
+  list.append(card);
+  daily.append(list);
+  if(assigned){const block=E('section','','daily-assigned');block.append(E('h3','Papildu vecāka piešķirtais uzdevums'));taskCard(block,assigned,role);daily.append(block);}
+ }
  else if(assigned)taskCard(daily,assigned,role);
  else {
   const done=completedModule(role,dailyModule,state.day);daily.append(E('h2',(done?'✅ ':'')+dailyModule.name));
@@ -126,7 +141,7 @@ function renderDashboard(role){
  for(const [key,draft] of drafts){const card=E('section','','module');card.append(E('h3','Turpināt iesākto: '+draft.name),E('p','Iesāktais posms un ievadītās atbildes saglabāti šajā ierīcē.'));button(card,'Turpināt →',()=>openModule(role,key.split(':')[1],draft.task,true));area.append(card);}
  const more=activeTasks.filter(t=>t!==assigned);if(more.length){const section=E('section','','module');section.append(E('h2','Vēl piešķirtie uzdevumi'));more.forEach(t=>taskCard(section,t,role));area.append(section);}
  const subjects=E('section','','module');subjects.append(E('h2','Mācību priekšmeti'));const grid=E('div','','subject-grid');
- for(const subject of SUBJECTS){const card=E('article','','card');card.append(E('h3',subject.icon+' '+subject.name));for(const module of CATALOG[role].filter(x=>x.subjectId===subject.id)){button(card,module.name+' →',()=>openModule(role,module.id));if(module.bonus)card.append(E('small',bonusEarned(role,module)?'✅ Vienreizējais bonuss saņemts':module.description+' · +'+module.bonus+' BP pie '+module.threshold+'%'));}grid.append(card);}subjects.append(grid);area.append(subjects);
+ for(const subject of SUBJECTS.filter(s=>CATALOG[role].some(m=>m.subjectId===s.id))){const card=E('article','','card');card.append(E('h3',subject.icon+' '+subject.name));for(const module of CATALOG[role].filter(x=>x.subjectId===subject.id)){button(card,module.name+' →',()=>openModule(role,module.id));if(module.bonus)card.append(E('small',bonusEarned(role,module)?'✅ Vienreizējais bonuss saņemts':module.description+' · +'+module.bonus+' BP pie '+module.threshold+'%'));}grid.append(card);}subjects.append(grid);area.append(subjects);
  const extras=E('details','','module');extras.append(E('summary','Mana pasaule, sākuma ekspedīcija un balvas'));
  renderThemePicker(extras,role);const diagnosticDone=state.progress.some(r=>r.studentUid===uidFor(role)&&r.activityType===DIAGNOSTIC_VERSION);
  button(extras,diagnosticDone?'Atkārtot sākuma ekspedīciju bez BP':'Sākt pirmo ekspedīciju',()=>openModule(role,'diagnostic'));
@@ -193,6 +208,7 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
   else if(role==='samanta'&&id==='saskaitisana')renderSamantaAdditionGame(trainer,options);
   else if(role==='samanta'&&id==='latviesu')renderSamantaLatvian(trainer,options);
   else if(role==='samanta'&&id==='anglu')renderSamantaEnglish(trainer,options);
+  else if(role==='samanta'&&id==='daba')renderSamantaNature(trainer,options);
  }catch(e){notice(trainer,'Neizdevās atvērt tēmu: '+e.message);button(trainer,'Mēģināt vēlreiz',()=>openModule(role,id,task));}
  restoreFields(trainer,savedDraft?.fields);if(savedDraft)draft.dirty=state.dirty=true;
  back=()=>leave(()=>renderDashboard(role));trainer.querySelector('h2')?.setAttribute('tabindex','-1');trainer.querySelector('h2')?.focus({preventScroll:true});window.scrollTo?.(0,0);
@@ -241,8 +257,141 @@ async function start(){
  window.addEventListener('popstate',()=>{history.pushState({},'',location.href);back();});history.pushState({},'',location.href);
  window.addEventListener('online',async()=>{if(state.user&&state.role!=='vecaks')try{await flushResults(state.user.uid,sendQueued);if(!state.active)await showSchool(state.view);}catch{}});
  setInterval(async()=>{if(!state.user||state.active||state.loading)return;const day=dayKey(new Date());if(day!==state.day){void showSchool(state.view);return;}if(state.role==='vecaks')return;const before=JSON.stringify([state.progress,state.tasks,spentByRole]);if(await refresh()&&!state.active&&before!==JSON.stringify([state.progress,state.tasks,spentByRole]))renderDashboard(state.view);},30000);
- const fb=await initFirebase();if(!fb.isConfigured){$('login-message').textContent='Firebase nav konfigurēts. Pārbaudi servera iestatījumus.';return;}
- $('login-form').onsubmit=async e=>{e.preventDefault();const b=e.currentTarget.querySelector('[type=submit]');b.disabled=true;try{const response=await fetch('/api/password-login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:$('login-password').value}),signal:AbortSignal.timeout(20000)});const identified=await response.json();if(!response.ok)throw Error(identified.error);await setPersistence(auth,browserLocalPersistence);const result=await signInWithEmailAndPassword(auth,identified.email,$('login-password').value);const p=await getUserProfile(result.user.uid);if(!p?.approved||p.role!==identified.role){await signOut(auth);throw Error('Konts nav apstiprināts.');}$('login-password').value='';}catch(e){$('login-message').textContent=e.message||'Neizdevās pieslēgties.';}finally{b.disabled=false;}};
- onAuthStateChanged(auth,async user=>{stopPresence?.();stopPresence=null;guide?.stop();guide=null;state.user=user;state.role=null;if(!user){welcome();return;}try{const profile=await getUserProfile(user.uid);if(!profile?.approved||!['marks','samanta','vecaks'].includes(profile.role)){await signOut(auth);return;}state.role=profile.role;await showSchool(profile.role);if(profile.role!=='vecaks'){stopPresence=startChildPresence({role:profile.role,uid:user.uid,activity:()=>currentActivity});guide=installChildGuide({role:profile.role,getSubject:()=>currentActivity});}}catch(e){$('login-message').textContent='Neizdevās ielādēt kontu: '+e.message;welcome();}});
+ const fb=await initFirebase();
+ if(!fb.isConfigured){
+  $('login-message').textContent='Firebase nav konfigurēts. Pārbaudi servera iestatījumus.';
+  return;
+ }
+
+ let selectedLoginRole='marks';
+ const roleButtons=document.querySelectorAll('.role-select-btn');
+ const labelEl=$('login-password-label');
+ const pwdInput=$('login-password');
+ const msgEl=$('login-message');
+
+ function updateRoleSelection(role){
+  selectedLoginRole=role;
+  roleButtons.forEach(btn=>{
+   const active=btn.dataset.role===role;
+   btn.classList.toggle('active',active);
+   btn.style.borderColor=active?'#5d46d0':'#cbd5e1';
+   btn.style.background=active?'#f1ecff':'#fff';
+   btn.style.color=active?'#35208f':'#475569';
+  });
+  if(labelEl){
+   if(role==='marks')labelEl.textContent='Marka parole';
+   else if(role==='samanta')labelEl.textContent='Samantas parole';
+   else if(role==='vecaks')labelEl.textContent='Vecāka parole';
+   else labelEl.textContent='Parole';
+  }
+  if(msgEl)msgEl.textContent='';
+  pwdInput?.focus();
+ }
+
+ roleButtons.forEach(btn=>{
+  btn.onclick=()=>updateRoleSelection(btn.dataset.role);
+ });
+
+ if(pwdInput){
+  pwdInput.addEventListener('input',()=>{
+   if(msgEl&&msgEl.textContent)msgEl.textContent='';
+  });
+ }
+
+ let isLoggingIn=false;
+ $('login-form').onsubmit=async e=>{
+  e.preventDefault();
+  if(isLoggingIn)return;
+  isLoggingIn=true;
+
+  const submitBtn=e.currentTarget.querySelector('[type=submit]');
+  submitBtn.disabled=true;
+  if(pwdInput)pwdInput.disabled=true;
+  submitBtn.textContent='Pārbauda...';
+  if(msgEl)msgEl.textContent='';
+
+  const passwordVal=pwdInput?pwdInput.value:'';
+
+  try{
+   const payload={password:passwordVal};
+   if(selectedLoginRole&&['marks','samanta','vecaks'].includes(selectedLoginRole)){
+    payload.role=selectedLoginRole;
+   }
+
+   const response=await fetch('/api/password-login',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify(payload),
+    signal:AbortSignal.timeout(20000)
+   });
+
+   const identified=await response.json();
+   if(!response.ok){
+    const err=new Error(identified.error||'Neizdevās pieslēgties.');
+    err.code=identified.code||(response.status===429?'auth/too-many-requests':'auth/failed');
+    throw err;
+   }
+
+   await setPersistence(auth,browserLocalPersistence);
+   let result;
+   try{
+    result=await signInWithEmailAndPassword(auth,identified.email,passwordVal);
+   }catch(authErr){
+    console.error('[Firebase Auth Diagnostika]',{
+     code:authErr.code||'UNKNOWN',
+     time:new Date().toISOString()
+    });
+    if(authErr.code==='auth/too-many-requests'){
+     throw Object.assign(new Error('Pārāk daudz neveiksmīgu mēģinājumu. Drošības nolūkos Firebase uz laiku ir ierobežojis pieteikšanos šim kontam. Lūdzu, uzgaidi 10–15 minūtes.'),{code:authErr.code});
+    }
+    if(authErr.code==='auth/invalid-credential'||authErr.code==='auth/wrong-password'){
+     throw Object.assign(new Error('Nepareiza parole.'),{code:authErr.code});
+    }
+    throw authErr;
+   }
+
+   const p=await getUserProfile(result.user.uid);
+   if(!p?.approved||p.role!==identified.role){
+    await signOut(auth);
+    throw Object.assign(new Error('Konts nav apstiprināts vai neatbilst izvēlētajai lomai.'),{code:'auth/unapproved'});
+   }
+
+   if(pwdInput)pwdInput.value='';
+  }catch(err){
+   console.error('[Login Kļūda]',{
+    code:err.code||'UNKNOWN',
+    role:selectedLoginRole,
+    time:new Date().toISOString()
+   });
+   if(msgEl){
+    msgEl.textContent=err.message||'Neizdevās pieslēgties.';
+   }
+  }finally{
+   isLoggingIn=false;
+   submitBtn.disabled=false;
+   if(pwdInput)pwdInput.disabled=false;
+   submitBtn.textContent='Pieslēgties';
+  }
+ };
+
+ onAuthStateChanged(auth,async user=>{
+  stopPresence?.();stopPresence=null;guide?.stop();guide=null;state.user=user;state.role=null;
+  if(!user){welcome();return;}
+  try{
+   const profile=await getUserProfile(user.uid);
+   if(!profile?.approved||!['marks','samanta','vecaks'].includes(profile.role)){
+    await signOut(auth);return;
+   }
+   state.role=profile.role;
+   await showSchool(profile.role);
+   if(profile.role!=='vecaks'){
+    stopPresence=startChildPresence({role:profile.role,uid:user.uid,activity:()=>currentActivity});
+    guide=installChildGuide({role:profile.role,getSubject:()=>currentActivity});
+   }
+  }catch(e){
+   if($('login-message'))$('login-message').textContent='Neizdevās ielādēt kontu: '+e.message;
+   welcome();
+  }
+ });
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',()=>void start());else void start();

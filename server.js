@@ -8,7 +8,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const proxyHops=Number(process.env.TRUST_PROXY_HOPS||0);if(Number.isInteger(proxyHops)&&proxyHops>0)app.set('trust proxy',proxyHops);
+// Trust proxy for containerized environments (Cloud Run, reverse proxies)
+const proxyHops = Number(process.env.TRUST_PROXY_HOPS || 1);
+app.set('trust proxy', Number.isInteger(proxyHops) && proxyHops > 0 ? proxyHops : true);
 const port = process.env.PORT || 3000;
 
 // Serve public directory (compiled bundles, assets)
@@ -18,6 +20,15 @@ app.get('/manifest.json', (req, res) => res.sendFile(path.join(__dirname, 'publi
 app.disable('x-powered-by');
 app.use((req,res,next)=>{res.set('X-Content-Type-Options','nosniff');res.set('Referrer-Policy','same-origin');next();});
 const providerFetch=(url,options={})=>fetch(url,{...options,signal:AbortSignal.timeout(15000)});
+
+// Helper to determine client IP reliably behind reverse proxy
+function getClientIp(req) {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.length > 0) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip || req.socket?.remoteAddress || 'unknown';
+}
 
 // Secure endpoint exposing Firebase client configuration from environment variables
 // Does not expose secret server keys; only client-safe Web App config
@@ -32,50 +43,152 @@ app.get('/api/firebase-config', (req, res) => {
   });
 });
 
-// Verify one password against three Firebase Auth accounts, with throttling.
+// Verify password against Firebase Auth accounts with brute-force protection.
 // Deploy only behind HTTPS. Never log, store or return submitted passwords.
 app.use('/api/password-login', express.json({limit:'2kb'}));
-const attempts=new Map();
-app.post('/api/password-login',async(req,res)=>{
-  res.set('Cache-Control','no-store');
-  const ip=req.ip;
-  const now=Date.now();
-  const a=attempts.get(ip)||{count:0,until:now+15*60*1000};
-  if(now>a.until){a.count=0;a.until=now+15*60*1000}
-  if(a.count>=8)return res.status(429).json({error:'Pārāk daudz mēģinājumu. Mēģini vēlāk.'});
-  a.count++;attempts.set(ip,a);
-  if(attempts.size>5000){for(const [key,val] of attempts)if(now>val.until)attempts.delete(key)}
-  const password=req.body?.password;
-  const apiKey=process.env.FIREBASE_API_KEY;
-  const accounts={marks:process.env.MARKS_LOGIN_EMAIL,samanta:process.env.SAMANTA_LOGIN_EMAIL,vecaks:process.env.PARENT_LOGIN_EMAIL};
-  if(typeof password!=='string'||password.length<6||password.length>128)return res.status(400).json({error:'Nederīga parole.'});
-  if(!apiKey||Object.values(accounts).some(x=>!x))return res.status(503).json({error:'Pieteikšanās vēl nav konfigurēta.'});
-  try{
-    for(const [role,email] of Object.entries(accounts)){
-      const response=await providerFetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key='+encodeURIComponent(apiKey),{
-        method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,password,returnSecureToken:true})
+const loginAttempts = new Map();
+
+app.post('/api/password-login', async (req, res) => {
+  res.set('Cache-Control', 'no-store');
+  const ip = getClientIp(req);
+  const now = Date.now();
+  const attemptWindow = 15 * 60 * 1000; // 15 minutes window
+  const maxFailedAttempts = 10; // Max failed password attempts before lockout
+
+  const a = loginAttempts.get(ip) || { count: 0, until: now + attemptWindow };
+  if (now > a.until) {
+    a.count = 0;
+    a.until = now + attemptWindow;
+  }
+
+  // Check if client is locked out due to excessive failed attempts
+  if (a.count >= maxFailedAttempts) {
+    const minutesLeft = Math.max(1, Math.ceil((a.until - now) / 60000));
+    return res.status(429).json({
+      error: `Pārāk daudz neveiksmīgu mēģinājumu. Drošības nolūkos lūdzu uzgaidi ${minutesLeft} min.`,
+      code: 'auth/too-many-requests'
+    });
+  }
+
+  // Periodic pruning of expired entries
+  if (loginAttempts.size > 5000) {
+    for (const [key, val] of loginAttempts) {
+      if (now > val.until) loginAttempts.delete(key);
+    }
+  }
+
+  const password = req.body?.password;
+  const requestedRole = typeof req.body?.role === 'string' ? req.body.role.trim() : null;
+  const apiKey = process.env.FIREBASE_API_KEY;
+  const allAccounts = {
+    marks: process.env.MARKS_LOGIN_EMAIL,
+    samanta: process.env.SAMANTA_LOGIN_EMAIL,
+    vecaks: process.env.PARENT_LOGIN_EMAIL
+  };
+
+  if (typeof password !== 'string' || password.length < 6 || password.length > 128) {
+    return res.status(400).json({
+      error: 'Nederīga parole. Parolei jābūt vismaz 6 simbolu garai.',
+      code: 'auth/invalid-credential'
+    });
+  }
+
+  if (!apiKey || Object.values(allAccounts).some(x => !x)) {
+    return res.status(503).json({
+      error: 'Pieteikšanās vēl nav konfigurēta serverī.',
+      code: 'auth/configuration-error'
+    });
+  }
+
+  // If a specific valid role was requested, check ONLY that account to avoid collateral failed attempts
+  let targetAccounts = allAccounts;
+  if (requestedRole && ['marks', 'samanta', 'vecaks'].includes(requestedRole)) {
+    targetAccounts = { [requestedRole]: allAccounts[requestedRole] };
+  }
+
+  try {
+    let rateLimitedRole = null;
+    let disabledAccount = false;
+
+    for (const [role, email] of Object.entries(targetAccounts)) {
+      if (!email) continue;
+      const response = await providerFetch('https://identitytoolkit.googleapis.com/v1/accounts:signInWithPassword?key=' + encodeURIComponent(apiKey), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password, returnSecureToken: true })
       });
-      if(response.ok){return res.json({role,email})}
+
+      if (response.ok) {
+        // SUCCESS: Immediately clear any failed attempts for this client
+        loginAttempts.delete(ip);
+        return res.json({ role, email });
+      }
+
       let firebaseError;
-      try{firebaseError=(await response.json())?.error?.message}catch{}
-      // HTTP 400 does not always mean an incorrect password.
-      if(response.status===400 && ['INVALID_LOGIN_CREDENTIALS','INVALID_PASSWORD','EMAIL_NOT_FOUND','USER_DISABLED'].includes(firebaseError)){
+      try {
+        firebaseError = (await response.json())?.error?.message;
+      } catch {}
+
+      if (response.status === 400 && (firebaseError?.includes('API key not valid') || firebaseError === 'INVALID_API_KEY')) {
+        return res.status(503).json({
+          error: 'Firebase API atslēga nav derīga. Pārbaudi FIREBASE_API_KEY.',
+          code: 'auth/configuration-error'
+        });
+      }
+
+      if (firebaseError === 'API_KEY_SERVICE_BLOCKED' || firebaseError === 'API_KEY_HTTP_REFERRER_BLOCKED') {
+        return res.status(503).json({
+          error: 'Firebase API atslēgas ierobežojumi liedz autentifikāciju.',
+          code: 'auth/configuration-error'
+        });
+      }
+
+      if (response.status === 429 || firebaseError === 'TOO_MANY_ATTEMPTS_TRY_LATER') {
+        // Record that this specific account is rate-limited in Firebase, but DO NOT abort the loop
+        // if checking multiple accounts (so other accounts can still be verified).
+        rateLimitedRole = role;
         continue;
       }
-      if(response.status===400 && (firebaseError?.includes('API key not valid') || firebaseError==='INVALID_API_KEY')){
-        return res.status(503).json({error:'Firebase API atslēga nav derīga. Pārbaudi FIREBASE_API_KEY.'});
+
+      if (firebaseError === 'USER_DISABLED') {
+        disabledAccount = true;
+        continue;
       }
-      if(firebaseError==='API_KEY_SERVICE_BLOCKED'||firebaseError==='API_KEY_HTTP_REFERRER_BLOCKED'){
-        return res.status(503).json({error:'Firebase API atslēgas ierobežojumi liedz autentifikāciju.'});
+
+      if (response.status === 400 && ['INVALID_LOGIN_CREDENTIALS', 'INVALID_PASSWORD', 'EMAIL_NOT_FOUND'].includes(firebaseError)) {
+        continue;
       }
-      if(response.status===429 || firebaseError==='TOO_MANY_ATTEMPTS_TRY_LATER'){
-        return res.status(429).json({error:'Firebase īslaicīgi ierobežo pieteikšanos. Mēģini vēlāk.'});
-      }
-      // Do not expose provider error payloads, credentials, or API keys.
-      return res.status(503).json({error:'Firebase pieteikšanās konfigurācijas vai pakalpojuma kļūda.'});
     }
-    return res.status(401).json({error:'Nepareiza parole.'});
-  }catch(e){return res.status(503).json({error:'Savienojuma kļūda. Mēģini vēlāk.'})}
+
+    // If none matched, check if an account was rate-limited
+    if (rateLimitedRole) {
+      return res.status(429).json({
+        error: 'Pārāk daudz neveiksmīgu mēģinājumu šim kontam. Drošības nolūkos Firebase uz laiku ir apturējis pieteikšanos. Lūdzu, uzgaidi 10–15 minūtes.',
+        code: 'auth/too-many-requests'
+      });
+    }
+
+    if (disabledAccount && requestedRole) {
+      return res.status(403).json({
+        error: 'Šis konts ir atspējots Firebase Console.',
+        code: 'auth/user-disabled'
+      });
+    }
+
+    // Password was incorrect: Increment failed attempts counter only on failure!
+    a.count++;
+    loginAttempts.set(ip, a);
+
+    return res.status(401).json({
+      error: 'Nepareiza parole.',
+      code: 'auth/invalid-credential'
+    });
+  } catch (e) {
+    return res.status(503).json({
+      error: 'Savienojuma kļūda ar autentifikācijas pakalpojumu. Mēģini vēlāk.',
+      code: 'auth/service-unavailable'
+    });
+  }
 });
 // Marka latviešu valodas MI treneris. API key never enters the browser.
 const aiAttempts=new Map();

@@ -927,16 +927,27 @@ html[data-app-version="v3"] :is(textarea,button,summary):focus-visible{outline:3
 <p class="intro">Ievadi savu paroli — atvērsies Marka, Samantas vai vecāku vide.</p>
 <form id="login-form" class="card" style="max-width:450px;margin:28px auto">
 <h2 id="login-heading">Laipni lūgti!</h2>
-<label for="login-password">Parole</label>
+<p style="font-size:0.92rem;color:#5a6482;margin:2px 0 10px">Izvēlies savu profilu vai ievadi paroli:</p>
+<div id="login-role-selector" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:10px 0 16px">
+  <button type="button" class="role-select-btn active" data-role="marks" style="padding:10px 6px;border-radius:12px;border:2px solid #5d46d0;background:#f1ecff;color:#35208f;font-weight:800;font-size:0.88rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+    <span style="font-size:1.35rem">🐉</span><span>Marks</span>
+  </button>
+  <button type="button" class="role-select-btn" data-role="samanta" style="padding:10px 6px;border-radius:12px;border:2px solid #cbd5e1;background:#fff;color:#475569;font-weight:800;font-size:0.88rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+    <span style="font-size:1.35rem">🌸</span><span>Samanta</span>
+  </button>
+  <button type="button" class="role-select-btn" data-role="vecaks" style="padding:10px 6px;border-radius:12px;border:2px solid #cbd5e1;background:#fff;color:#475569;font-weight:800;font-size:0.88rem;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px">
+    <span style="font-size:1.35rem">📋</span><span>Vecāks</span>
+  </button>
+</div>
+<label for="login-password" id="login-password-label">Marka parole</label>
 <div class="password-field">
-<input id="login-password" name="password" type="password" minlength="6" required autocomplete="current-password" style="display:block;width:100%;padding:13px;border:1px solid #aebdd0;border-radius:10px;font:inherit;margin:10px 0">
+<input id="login-password" name="password" type="password" minlength="6" required autocomplete="current-password" placeholder="Ievadi paroli..." style="display:block;width:100%;padding:13px;border:1px solid #aebdd0;border-radius:10px;font:inherit;margin:10px 0">
 <button id="password-toggle" class="password-toggle" type="button" aria-label="Parādīt paroli" aria-pressed="false" title="Parādīt paroli">
 <svg aria-hidden="true" viewBox="0 0 24 24"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
 </button>
 </div>
 <p id="login-message" role="status" aria-live="polite"></p>
 <button type="submit">Pieslēgties</button>
-
 </form>
 </section>
 <section id="school" hidden aria-live="polite">

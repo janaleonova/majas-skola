@@ -5,6 +5,7 @@ import {renderSamantaLatvian,makeSamantaLatvianBank} from '../src/samanta-latvia
 import {renderSamantaEnglish} from '../src/samanta-english.js';
 import {renderMarksMath} from '../src/marks-math.js';
 import {renderSamantaAdditionGame,makeAdditionChallengeBank} from '../src/samanta-sum-game.js';
+import {renderSamantaNature,NATURE_QUESTIONS,NATURE_THEORY} from '../src/samanta-nature.js';
 import {queueResult,flushResults,pendingResults} from '../src/progress-outbox.js';
 function setup(){const {document,window}=parseHTML('<html><body><div id="root"></div></body></html>');globalThis.document=document;globalThis.window=window;globalThis.localStorage={data:new Map(),getItem(k){return this.data.get(k)||null},setItem(k,v){this.data.set(k,v)}};return document.querySelector('#root');}
 const click=(r,pattern)=>{const b=[...r.querySelectorAll('button')].find(x=>typeof pattern==='string'?x.textContent===pattern:pattern.test(x.textContent));assert.ok(b,'Missing button '+pattern);b.click();return b;};
@@ -23,3 +24,24 @@ test('leaving mini-game cancels old navigation timer',()=>{
  try{renderSamantaAdditionGame(r);click(r,/4. Mini-spēle/);const target=+r.querySelector('.math-expression').textContent.match(/\d+/)[0],buttons=[...r.querySelectorAll('.pearl-button')];let pair;for(let i=0;i<buttons.length;i++)for(let j=i+1;j<buttons.length;j++)if(+buttons[i].textContent + +buttons[j].textContent===target)pair=[buttons[i],buttons[j]];pair.forEach(b=>b.click());click(r,/Atpakaļ uz sākumu/);for(const fn of timers.values())fn();assert.equal(r.querySelector('h2').textContent,'Saskaitīšanas pērles 🌸');}finally{globalThis.setTimeout=native;globalThis.clearTimeout=nativeClear;}
 });
 test('outbox retains a failed result and retries the same ID exactly once',async()=>{setup();const row=queueResult('uid',{score:100});await assert.rejects(flushResults('uid',async()=>{throw Error('offline')}));assert.equal(pendingResults('uid')[0].attemptId,row.attemptId);await flushResults('uid',async d=>d.attemptId);assert.equal(pendingResults('uid').length,0);});
+test('Samanta 3rd grade nature NPD contains 10 core questions, 5 golden bonuses and mounts cleanly',()=>{
+ assert.equal(NATURE_QUESTIONS.length,15);
+ const core=NATURE_QUESTIONS.filter(q=>!q.isBonus);
+ const bonus=NATURE_QUESTIONS.filter(q=>q.isBonus);
+ assert.equal(core.length,10);
+ assert.equal(bonus.length,5);
+ for(const q of NATURE_QUESTIONS){
+  assert.ok(q.prompt&&q.prompt.length>10);
+  assert.equal(q.options.length,3);
+  assert.ok(q.options.includes(q.answer));
+  assert.ok(q.explanation&&q.explanation.length>10);
+ }
+ assert.equal(NATURE_THEORY.layers.length,5);
+ assert.equal(NATURE_THEORY.matrix.length,4);
+ assert.equal(NATURE_THEORY.foodChains.length,4);
+ const r=setup();
+ const mod=renderSamantaNature(r,{canSubmit:true});
+ assert.ok(r.querySelector('.samanta-nature-app'));
+ assert.ok(r.querySelector('.voice-reader-bar'));
+ mod.cleanup?.();
+});

@@ -1,4 +1,4 @@
-export const SUBJECTS=[{id:'language',name:'Latviešu valoda un literatūra',icon:'📕'},{id:'math',name:'Matemātika',icon:'🧮'},{id:'english',name:'Angļu valoda',icon:'🌎'}];
+export const SUBJECTS=[{id:'language',name:'Latviešu valoda un literatūra',icon:'📕'},{id:'math',name:'Matemātika',icon:'🧮'},{id:'english',name:'Angļu valoda',icon:'🌎'},{id:'nature',name:'Dabaszinības',icon:'🌿'}];
 export const CATALOG={marks:[
  {id:'latviesu',subjectId:'language',name:'Vārdi, galotnes un saziņa',description:'4 tēmas · mācības, treniņš un pārbaude'},
  {id:'teikumi',subjectId:'language',name:'Teikumu pūķa akadēmija',description:'Vārdšķiras un teikuma centrs',bonus:10,threshold:85,prefix:'Teikumu pūķa akadēmija'},
@@ -7,6 +7,7 @@ export const CATALOG={marks:[
  {id:'kristali',subjectId:'math',name:'Kristālu kalve',description:'Reizināšana, sadalot desmitos un vienos',bonus:10,threshold:85,prefix:'Kristālu kalve'},
  {id:'anglu',subjectId:'english',name:'Angļu valodas piedzīvojums',description:'Dienas, mēneši, gadalaiki un vietniekvārdi'}
 ],samanta:[
+ {id:'daba',subjectId:'nature',name:'Dabas teritorijas · 3. kl. NPD',description:'Kas kopīgs un atšķirīgs mežam, pļavai, purvam un ūdeņiem · +20 BP',bonus:20,threshold:80,prefix:'Dabas teritorijas'},
  {id:'saskaitisana',subjectId:'math',name:'Saskaitīšanas pērles',description:'3 paņēmieni un summas līdz 100',bonus:15,threshold:80,prefix:'Saskaitīšanas pērles'},
  {id:'matematika',subjectId:'math',name:'Skaitļu piedzīvojums',description:'Reizrēķins, dalīšana, attēli un stāsti'},
  {id:'latviesu',subjectId:'language',name:'Valodas dārzs',description:'Lasīšana, vārdšķiras un trūkstošie burti'},
