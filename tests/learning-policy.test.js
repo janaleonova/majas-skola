@@ -46,3 +46,16 @@ test('persistent mission identifiers award 15, 15, 5 once even after the origina
  ],date);
  assert.equal(p.events.reduce((sum,e)=>sum+e.missionBonus,0),35);
 });
+
+test('Samanta nature bonus once, threshold and mode enforced',()=>{
+ const now=new Date('2026-10-16T12:00:00Z');
+ const nature=(id,score,mode='exam')=>({
+  id,studentUid:CHILD_UIDS.samanta,studentRole:'samanta',
+  subject:'Dabaszinības',subjectId:'nature',topicId:'dabas_teritorijas_npd',
+  activityType:'Dabas teritorijas · 3. kl. NPD',mode,score,completedAt:now.toISOString()
+ });
+ const good=calculateChildPoints('samanta',[nature('a',80),nature('b',95)],now);
+ assert.equal(good.events.reduce((sum,e)=>sum+e.missionBonus,0),20);
+ const bad=calculateChildPoints('samanta',[nature('a',70),nature('b',100,'learn')],now);
+ assert.equal(bad.events.reduce((sum,e)=>sum+e.missionBonus,0),0);
+});
