@@ -58,6 +58,12 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   let missionBonus=0;
   for(const [key,label,threshold,bonus] of [['split','Kristālu kalve',85,10],['sentence','Teikumu pūķa akadēmija',85,10],['poetry','Dzejas superizaicinājums',85,day<'2026-10-14'?20:15],['addition','Saskaitīšanas pērles',80,15]])
    if(!(newMission&&key==='poetry')&&String(row.activityType||'').startsWith(label)&&independent&&percent>=threshold&&!special.has(key)){special.add(key);missionBonus+=bonus;}
+  // Samantas dabaszinību NPD: zelta bonuss +20 BP vienreiz pie >=80%.
+  // Saglabātās atbildes un piecas zelta zvaigznes netiek izmantotas papildpunktu fermošanai.
+  if(role==='samanta'&&d.subjectId==='nature'&&d.mode==='exam'&&
+     d.topicId==='dabas_teritorijas_npd'&&percent>=80&&!special.has('samanta-nature-npd')){
+   special.add('samanta-nature-npd');missionBonus+=20;
+  }
   // Pastāvīgās 2026. gada oktobra misijas: unikālais ID ir ierakstīts rezultātā.
   // Iepriekš saglabātos ierakstus bez missionId nepārrēķina pēc jaunajiem noteikumiem.
   const missionRules={
