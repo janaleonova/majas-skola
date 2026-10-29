@@ -59,3 +59,46 @@ test('Samanta nature bonus once, threshold and mode enforced',()=>{
  const bad=calculateChildPoints('samanta',[nature('a',70),nature('b',100,'learn')],now);
  assert.equal(bad.events.reduce((sum,e)=>sum+e.missionBonus,0),0);
 });
+
+test('Mark Latvian pronouns bonus mission awards 15 BP once at >=85% in exam mode',()=>{
+ const date=new Date('2026-10-28T10:00:00Z');
+ const make=(id,score,mode='exam',missionId='oct28-latvian-pronouns')=>({
+  ...row(id,'Latviešu valoda','Vietniekvārdu locīšana (7 locījumi) · '+mode,score,{topicId:'vietniekvardi',mode,missionId}),
+  recordedAt:{seconds:date.getTime()/1000},completedAt:date.toISOString()
+ });
+ const p=calculateChildPoints('marks',[
+  make('p1',85),
+  make('p2',100),
+  make('p3',60)
+ ],date);
+ assert.equal(p.events.reduce((sum,e)=>sum+e.missionBonus,0),15);
+
+ const nonQualifying=calculateChildPoints('marks',[
+  make('fail1',84,'exam'),
+  make('learn1',100,'learn'),
+  make('practice1',100,'practice')
+ ],date);
+ assert.equal(nonQualifying.events.reduce((sum,e)=>sum+e.missionBonus,0),0);
+});
+
+test('Mark 4th grade Nature NPD bonus mission awards 20 BP once at >=80% in exam mode',()=>{
+ const date=new Date('2026-10-29T10:00:00Z');
+ const make=(id,score,mode='exam',missionId='oct29-nature-organisms')=>({
+  ...row(id,'Dabaszinības','Dabaszinības 4. kl. · NPD · '+mode,score,{topicId:'organismi_npd',mode,missionId}),
+  recordedAt:{seconds:date.getTime()/1000},completedAt:date.toISOString()
+ });
+ const p=calculateChildPoints('marks',[
+  make('p1',80),
+  make('p2',100),
+  make('p3',60)
+ ],date);
+ assert.equal(p.events.reduce((sum,e)=>sum+e.missionBonus,0),20);
+
+ const nonQualifying=calculateChildPoints('marks',[
+  make('fail1',79,'exam'),
+  make('learn1',100,'learn'),
+  make('practice1',100,'practice')
+ ],date);
+ assert.equal(nonQualifying.events.reduce((sum,e)=>sum+e.missionBonus,0),0);
+});
+

@@ -24,7 +24,7 @@ test('dashboard → assigned lesson → grade → receipt → updated dashboard;
  const click=text=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(b,'Missing '+text);b.click();};
  try{
   new Function(compiled.outputFiles[0].text)();for(let i=0;i<10;i++)await tick();
-  assert.equal(document.querySelectorAll('.subject-grid>.card').length,3);assert.ok(document.querySelector('.daily-task').textContent.includes('Dienas matemātika'));
+  assert.equal(document.querySelectorAll('.subject-grid>.card').length,5);assert.ok(document.querySelector('.daily-task').textContent.includes('Dienas matemātika'));
   click('Sākt uzdevumu →');const tile=[...document.querySelectorAll('.topic-tile')].find(x=>x.textContent.includes('Reizrēķins'));tile.click();click('🌱 Mācos · 8');for(let i=0;i<10;i++)await tick();
   for(let i=0;i<8;i++){const expr=document.querySelector('.math-expression').textContent;const numbers=expr.match(/\d+/g).map(Number);document.querySelector('.big-number-input').value=String(numbers[0]*numbers[1]);document.querySelector('.math-answer-form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));click('Turpināt uzreiz →');}
   for(let i=0;i<15;i++)await tick();assert.ok(document.querySelector('.bp-receipt').textContent.includes('+7 BP'));assert.equal(window.rows.progress.length,1);assert.equal(window.rows.tasks[0].completions.marks.status,'completed');click('Atgriezties pie dienas plāna →');assert.ok(document.querySelector('.compact-progress').textContent.includes('Kopā 7 BP'));assert.ok(document.querySelector('.daily-task').textContent.includes('Izpildīts')||document.querySelector('.daily-task').textContent.includes('Šodienas'));

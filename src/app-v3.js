@@ -4,6 +4,8 @@ import {renderDragonSplitMath} from './dragon-split-math.js';
 import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
 import {renderMarksMath} from './marks-math.js';
 import {renderMarksEnglish} from './marks-english.js';
+import {renderMarksSocialStudies} from './marks-social-studies.js';
+import {renderMarksNatureNPD} from './marks-nature-npd.js';
 import {renderSamantaLatvian} from './samanta-latvian.js';
 import {renderSamantaEnglish} from './samanta-english.js';
 import {renderSamantaMath} from './samanta-math.js';
@@ -93,12 +95,10 @@ function renderDashboard(role){
  const daily=E('section','','module daily-task');daily.append(E('span','ŠODIENAS TĒMA','eyebrow'));
  if(role==='marks'&&state.day>='2026-10-14'){
   const specs=[
-   {id:'oct26-poetry',title:'📖 Literatūra — Rainis un Juris Kronbergs',module:'dzeja',topic:null,bonus:15,min:85,
-    details:'Lasi vai klausies autoru stāstus, izpildi mācību jautājumus un patstāvīgo pārbaudi. Rakstiskos pamatojumus pārskata vecāks.'},
-   {id:'oct26-morphology',title:'✍️ Latviešu valoda — vārda sastāvs un vārddarināšana',module:'latviesu',topic:'morfemas',bonus:15,min:85,
-    details:'Gatavojies NPD: sakne, priedēklis, piedēklis, galotne, izskaņa, radniecīgie vārdi un salikteņi.'},
-   {id:'oct26-family',title:'🧮 Matemātika — saistītais pieraksts',module:'matematika',topic:'family',bonus:5,min:80,
-    details:'Darbību secība, iekavas un saistītais pieraksts. Sāc ar mācīšanos, tad pārbaudi sevi.'}
+   {id:'oct29-nature-organisms',title:'🌱 Dabaszinības — Kā vairojas, aug un attīstās dzīvie organismi? (4. kl. NPD)',module:'daba',topic:'organismi_npd',bonus:20,min:80,
+    details:'Oficiālā sagatavošanās 4. klases nobeiguma pārbaudes darbam (Lielvārds 2025, 25 punkti, 14 uzdevumi): augu un dzīvnieku vairošanās, zieda daļas, sēklu dīgšanas 3 apstākļi, veģetatīvā pavairošana, riests, tauriņa cikls, pubertāte, iedzimtība un 4 stādu eksperimenta datu analīze.'},
+   {id:'oct26-english-questions',title:'🇬🇧 Angļu valoda — SR: Jautājumi ar am / is / are & Jaunie vārdi',module:'anglu',topic:'worksheet',bonus:15,min:85,
+    details:'Interaktīvā darba lapa: 15 jaunie vārdi (bag, guitar, phone, trainers, headphones...), jautājumu veidošana ar am/is/are un īsās atbildes.'}
   ];
   const list=E('div','','today-missions');
   for(const spec of specs){
@@ -203,7 +203,9 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
   else if(role==='marks'&&id==='teikumi')renderMarksSentenceMission(trainer,options);
   else if(role==='marks'&&id==='dzeja')renderMarksPoetryMission(trainer,options);
   else if(role==='marks'&&id==='kristali')renderDragonSplitMath(trainer,options);
-  else if(role==='marks'&&id==='anglu')renderMarksEnglish(trainer,options);
+  else if(role==='marks'&&id==='anglu')renderMarksEnglish(trainer,{...options,initialTopic});
+  else if(role==='marks'&&(id==='social'||id==='socialie'))renderMarksSocialStudies(trainer,options);
+  else if(role==='marks'&&id==='daba')renderMarksNatureNPD(trainer,{...options,initialTopic});
   else if(role==='samanta'&&id==='matematika')renderSamantaMath(trainer,options);
   else if(role==='samanta'&&id==='saskaitisana')renderSamantaAdditionGame(trainer,options);
   else if(role==='samanta'&&id==='latviesu')renderSamantaLatvian(trainer,options);

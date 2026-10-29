@@ -1,12 +1,15 @@
 import {calculatePracticePoints,previewImprovement} from './points-policy.js';
+import {renderPronounLab,PRONOUN_BANK_QUESTIONS,PRONOUN_EXTENDED_QUESTIONS} from './latvian-pronouns.js';
 // Marka skola: latviešu valodas trenažieri. Sākotnējā integrācijas versija.
 const TOPICS=[
+  {id:'vietniekvardi',name:'Vietniekvārdu locīšana (7 locījumi)',icon:'🎭'},
   {id:'morfemas',name:'Vārda sastāvs un vārddarināšana',icon:'🔎'},
   {id:'galotnes',name:'🎯 Galotņu detektīvs & Lamatas',icon:'🕵️'},
   {id:'sazina',name:'Saziņa un saziņas veidi',icon:'💬'},
   {id:'vardskiras',name:'Vārdšķiras un vārda pamatforma',icon:'📚'}
 ];
 const BANK={
+ vietniekvardi:[...PRONOUN_BANK_QUESTIONS],
  morfemas:[
   ['Kas ir vārda sakne?',['Vārda daļa, kas kopīga radniecīgiem vārdiem','Vienmēr vārda pēdējais burts','Vārda sākumā esošs priedēklis'],0,'Sakne izsaka radniecīgo vārdu kopīgo nozīmi.'],
   ['Kurš ir saliktenis?',['saules stars','saulespuķe','skaista puķe'],1,'Saliktenis veidots no divām vai vairākām saknēm.'],
@@ -75,7 +78,8 @@ const EXTENDED={
   {kind:'text',prompt:'Ieraksti pareizo galotni: "Suns grauž gardu kaul__ (ko?)"',answers:['u','-u'],explanation:'Grauž ko? Kaulu! Galotne ir -u.'},
   {kind:'text',prompt:'Ieraksti pareizo darbības vārda galotni: "Mēs šodien daudz lasīj__"',answers:['ām','-ām'],explanation:'Mēs lasījām! Galotne -ām.'},
   {kind:'text',prompt:'Ieraksti pareizo galotni: "Zēns uzkāpa augstā kaln__ (kur?)"',answers:['ā','-ā'],explanation:'Uzkāpa kur? Kalnā (galotne -ā).'}
- ]
+ ],
+ vietniekvardi:[...PRONOUN_EXTENDED_QUESTIONS]
 };
 const normalize=s=>String(s).trim().toLocaleLowerCase('lv-LV').replace(/\s+/g,' ');
 const shuffle=a=>{let b=[...a];for(let i=b.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;};
@@ -91,6 +95,13 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
  function saveHistory(topic,row){if(!prefix)return;try{localStorage.setItem(historyKey(topic),JSON.stringify([...readHistory(topic),row].slice(-30)));}catch{}}
  function skillOf(topic,q){
   const p=q.prompt.toLocaleLowerCase('lv-LV');
+  if(topic.id==='vietniekvardi'){
+    if(/jautājum|kas\?|kā\?|kam\?|ko\?|ar ko\?|kur\?|uzruna/i.test(p))return 'Locījumu jautājumi';
+    if(/sevis|sev|sevi|sevī/.test(p))return 'Atgriezeniskais vietniekvārds sevis';
+    if(/daudzskait|mēs|mūs|jūs|viņi|viņas/.test(p))return 'Daudzskaitļa vietniekvārdi';
+    if(/teikum|ieliec|pareizo/.test(p))return 'Vietniekvārds teikumā';
+    return 'Personu vietniekvārdu locīšana';
+  }
   if(topic.id==='galotnes'){
     if(/kurš kuru|kas kuru|apsteidza|nobiedēja/.test(p))return 'Darītājs un teikuma jēga';
     if(/kura galotne|ieraksti pareizo galotni|rād|mēs/.test(p))return 'Pareizās galotnes izvēle';
@@ -155,6 +166,9 @@ export function renderLatvianSchool(container,{canSubmit=false,currentUid='',sav
   const missed=loadPending(topic);if(missed.length){const note=document.createElement('p');note.textContent='🐉 Vēl vari nostiprināt '+missed.length+' jautājumus, kuros kļūdījies.';content.append(note);addButton(content,'🎯 Trenēt manas kļūdas',()=>start(topic,'errors',missed));}
   for(const [key,label] of [['learn','📖 Mācos'],['practice','🎯 Trenējos'],['exam','📝 Pārbaudu sevi']]){
    const b=document.createElement('button');b.type='button';b.textContent=label;b.className='action-button';b.style.margin='5px';b.onclick=()=>start(topic,key);content.append(b);}
+  if(topic.id==='vietniekvardi'){
+   renderPronounLab(content,{onStartPractice:()=>start(topic,'practice')});
+  }
  }
  function start(topic,mode,previousMisses=[]){const base=BANK[topic.id].map(q=>({kind:'single',prompt:q[0],options:q[1].map((label,i)=>({label,correct:i===q[2]})),explanation:q[3]}));
   const extras=EXTENDED[topic.id]||[];

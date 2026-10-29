@@ -14,16 +14,16 @@ export function rigaDayStart(day){
 }
 export function rigaDayEnd(day){const next=new Date(Date.parse(day+'T00:00:00Z')+86400000).toISOString().slice(0,10);return new Date(rigaDayStart(next).getTime()-1);}
 export function readNotes(row){try{const n=typeof row.notes==='string'?JSON.parse(row.notes):row.notes;return n&&typeof n==='object'?n:{};}catch{return {};}}
-export function describeActivity(row){
- const notes=readNotes(row),parts=String(row.activityType||'').split(' · ').map(x=>x.trim());
- const knownModes=['learn','practice','exam','speed','review','errors','mistakes'];
- const mode=knownModes.includes(row.mode)?row.mode:knownModes.includes(notes.mode)?notes.mode:[...parts].reverse().find(x=>knownModes.includes(x))||'practice';
- const text=String(row.subject||'')+' '+parts[0];
- const subjectId=row.subjectId||(/matemāt|reizrēķ|reizin|dalīš|saskait|kristālu|multiply|divide|family|story/i.test(text)?'math':/angļu|english/i.test(text)?'english':/latvie|literat|dzeja|dzejas|teikumu/i.test(text)?'language':null);
- const base=parts.filter(x=>!knownModes.includes(x)).join(' · ');
- const topicId=row.topicId||notes.topicId||base||'unknown';
- return {mode,subjectId,topicId,diagnostic:parts[0]==='starta-misija-v1'||notes.kind==='baseline',quick:parts[0]==='Reizrēķins'&&parts.length===1&&!notes.total,notes};
-}
+ export function describeActivity(row){
+  const notes=readNotes(row),parts=String(row.activityType||'').split(' · ').map(x=>x.trim());
+  const knownModes=['learn','practice','exam','speed','review','errors','mistakes'];
+  const mode=knownModes.includes(row.mode)?row.mode:knownModes.includes(notes.mode)?notes.mode:[...parts].reverse().find(x=>knownModes.includes(x))||'practice';
+  const text=String(row.subject||row.activityType||'');
+  const subjectId=row.subjectId||(/matemāt|reizrēķ|reizin|dalīš|saskait|kristālu|multiply|divide|family|story/i.test(text)?'math':/angļu|english/i.test(text)?'english':/latvie|literat|dzeja|dzejas|teikumu|vietniek/i.test(text)?'language':/sociāl|resurs|nauda|budžet|patērē/i.test(text)?'social':/daba|dabas|zinīb|biotop|teritorij/i.test(text)?'nature':null);
+  const base=parts.filter(x=>!knownModes.includes(x)).join(' · ');
+  const topicId=row.topicId||notes.topicId||base||'unknown';
+  return {mode,subjectId,topicId,diagnostic:parts[0]==='starta-misija-v1'||notes.kind==='baseline',quick:parts[0]==='Reizrēķins'&&parts.length===1&&!notes.total,notes};
+ }
 export function calculatePracticePoints({correct,total,maxStreak=0,mode='practice'}={}){
  if(!Number.isInteger(total)||total<1||!Number.isInteger(correct)||correct<0||correct>total)throw Error('Nederīgs rezultāts');
  const percent=Math.round(correct*100/total),eligible=['practice','exam','speed'].includes(mode);
@@ -48,7 +48,7 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   const topic=d.subjectId+'|'+d.topicId,percent=row.score,streak=Number(d.notes.maxStreak??d.notes.bestStreak??d.notes.streak)||0;
   const independent=['practice','exam','speed'].includes(d.mode);
   const missionId=d.notes.missionId;
-  const newMission=role==='marks'&&['oct26-poetry','oct26-morphology','oct26-family'].includes(missionId);
+  const newMission=role==='marks'&&['oct26-poetry','oct26-morphology','oct26-family','oct26-english-questions','oct28-social-resources','nov26-social-resources','oct28-latvian-pronouns','oct29-nature-organisms'].includes(missionId);
   const potential=independent?Math.min(20,(percent<40?0:percent<60?4:percent<75?8:percent<90?12:18)+(percent>=40?Number(streak>=5)+Number(streak>=10):0)):0;
   const mastery=Math.max(0,potential-(best.get(topic)||0));best.set(topic,Math.max(best.get(topic)||0,potential));
   const effortKey=day+'|'+topic;let effort=0;
@@ -69,7 +69,12 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   const missionRules={
    'oct26-poetry':{subject:'language',topic:null,min:85,bonus:15},
    'oct26-morphology':{subject:'language',topic:'morfemas',min:85,bonus:15},
-   'oct26-family':{subject:'math',topic:'family',min:80,bonus:5}
+   'oct26-family':{subject:'math',topic:'family',min:80,bonus:5},
+   'oct26-english-questions':{subject:'english',topic:null,min:85,bonus:15},
+   'oct28-social-resources':{subject:'social',topic:null,min:80,bonus:20},
+   'nov26-social-resources':{subject:'social',topic:null,min:80,bonus:20},
+   'oct28-latvian-pronouns':{subject:'language',topic:'vietniekvardi',min:85,bonus:15},
+   'oct29-nature-organisms':{subject:'nature',topic:null,min:80,bonus:20}
   };
   if(newMission){
    const rule=missionRules[missionId];

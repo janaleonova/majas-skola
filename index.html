@@ -917,6 +917,53 @@ html[data-app-version="v3"] .bp-receipt h3{color:#123d30!important}
 html[data-app-version="v3"] .task-card{padding:16px;margin:10px 0;color:#203252;background:#fff;border:1px solid #b6c3db}
 html[data-app-version="v3"] :is(textarea,button,summary):focus-visible{outline:3px solid #7054c8;outline-offset:3px}
 @media(max-width:700px){html[data-app-version="v3"] .subject-grid{grid-template-columns:1fr}html[data-app-version="v3"] #modules>.module{padding:17px!important}html[data-app-version="v3"] .levelup-guide-launcher{min-height:44px;max-width:105px;font-size:14px}}
+
+/* Mark's English Worksheet, Vocabulary Cards & Audio styles */
+.marks-english .english-sr-banner{background:linear-gradient(135deg,#1e3a8a,#2563eb);color:#fff;padding:22px 26px;border-radius:20px;box-shadow:0 12px 30px rgba(30,58,138,0.22);margin-bottom:18px}
+.marks-english .english-sr-badge{display:inline-block;background:rgba(255,255,255,0.2);color:#fff;padding:5px 12px;border-radius:999px;font-size:0.82rem;font-weight:900;letter-spacing:0.04em;margin-bottom:8px}
+.marks-english .english-sr-title{font-size:clamp(1.4rem,3.2vw,2.1rem);font-weight:900;margin:4px 0 8px;color:#fff!important;text-shadow:0 2px 10px rgba(0,0,0,0.2)}
+.marks-english .english-sr-desc{font-size:1.02rem;line-height:1.55;color:#e0f2fe!important;margin:0}
+.marks-english .english-nav-tabs{display:flex;flex-wrap:wrap;gap:9px;margin:10px 0 16px}
+.marks-english .english-nav-tab{background:#f1f5f9;color:#334155;border:2px solid #cbd5e1;padding:10px 16px;border-radius:14px;font-size:0.92rem;font-weight:800;cursor:pointer;transition:all 0.15s ease}
+.marks-english .english-nav-tab:hover{background:#e2e8f0;border-color:#94a3b8}
+.marks-english .english-nav-tab.active{background:#2563eb;color:#fff;border-color:#1d4ed8;box-shadow:0 4px 14px rgba(37,99,235,0.3)}
+.marks-english .english-worksheet{display:flex;flex-direction:column;gap:18px}
+.marks-english .vocab-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:14px;margin:14px 0}
+.marks-english .vocab-card{background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:8px;box-shadow:0 4px 14px rgba(0,0,0,0.04);transition:transform .15s ease,border-color .15s ease}
+.marks-english .vocab-card:hover{transform:translateY(-2px);border-color:#3b82f6}
+.marks-english .vocab-card-header{display:flex;align-items:center;justify-content:space-between}
+.marks-english .vocab-card-icon{font-size:2.2rem;line-height:1}
+.marks-english .vocab-card-word{font-size:1.32rem;font-weight:900;color:#0f172a;margin:0}
+.marks-english .vocab-card-meaning{font-size:1rem;font-weight:700;color:#475569;margin:0}
+.marks-english .vocab-card-tag{display:inline-block;font-size:0.75rem;font-weight:800;padding:3px 8px;border-radius:6px;background:#fef3c7;color:#92400e;align-self:flex-start}
+.marks-english .vocab-card-example{font-size:0.86rem;font-style:italic;color:#475569;background:#f8fafc;padding:8px 10px;border-radius:8px;border-left:3px solid #3b82f6;margin:4px 0 0}
+.marks-english .audio-btn{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:10px;padding:6px 12px;font-size:0.86rem;font-weight:800;display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.marks-english .audio-btn:hover{background:#dbeafe}
+.marks-english .audio-btn.audio-playing{background:#3b82f6;color:#fff}
+.marks-english .grammar-guide-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin:14px 0}
+.marks-english .grammar-card{background:#fff;border:2px solid #e2e8f0;border-radius:16px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,0.03)}
+.marks-english .grammar-card h3{color:#1e3a8a!important;margin:0 0 10px;font-size:1.15rem}
+.marks-english .grammar-rule-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #f1f5f9}
+.marks-english .grammar-badge{font-weight:900;padding:4px 10px;border-radius:8px;font-size:0.88rem;min-width:48px;text-align:center}
+.marks-english .grammar-badge-am{background:#dbeafe;color:#1e40af}
+.marks-english .grammar-badge-is{background:#dcfce7;color:#166534}
+.marks-english .grammar-badge-are{background:#fef3c7;color:#92400e}
+.marks-english .worksheet-task-box{background:#fff;border:2px solid #e2e8f0;border-radius:18px;padding:22px;margin-bottom:16px;box-shadow:0 4px 16px rgba(0,0,0,0.03)}
+.marks-english .worksheet-task-title{font-size:1.2rem;font-weight:900;color:#1e293b!important;margin:0 0 8px;display:flex;align-items:center;justify-content:space-between}
+.marks-english .worksheet-question-row{padding:14px;border:1px solid #e2e8f0;border-radius:12px;margin:10px 0;background:#f8fafc}
+.marks-english .word-scramble-area{display:flex;flex-wrap:wrap;gap:8px;padding:12px;min-height:52px;border:2px dashed #94a3b8;border-radius:12px;background:#fff;margin:10px 0;align-items:center}
+.marks-english .word-chip{background:#3b82f6;color:#fff;padding:7px 14px;border-radius:10px;font-size:1rem;font-weight:800;cursor:pointer;transition:transform 0.1s ease,background 0.1s ease;user-select:none;display:inline-flex;align-items:center}
+.marks-english .word-chip:hover{background:#2563eb;transform:translateY(-1px)}
+.marks-english .word-chip-source{background:#e2e8f0;color:#1e293b;border:1px solid #cbd5e1}
+.marks-english .word-chip-source:hover{background:#cbd5e1}
+.marks-english .word-chip-source.used{opacity:0.35;pointer-events:none}
+.marks-english .print-worksheet-sheet{background:#fff;color:#0f172a;border:2px solid #334155;border-radius:12px;padding:32px 36px;font-family:'Nunito',system-ui,sans-serif;max-width:820px;margin:10px auto}
+@media print{
+  body *{visibility:hidden!important}
+  .print-worksheet-sheet,.print-worksheet-sheet *{visibility:visible!important}
+  .print-worksheet-sheet{position:absolute!important;left:0!important;top:0!important;width:100%!important;margin:0!important;padding:20px!important;border:none!important;box-shadow:none!important}
+  .no-print{display:none!important}
+}
 </style>
 </head>
 <body>
