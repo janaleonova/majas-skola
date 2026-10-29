@@ -45,10 +45,24 @@ try{
       buttons:[...document.querySelectorAll('.subject-trainer button')].slice(0,10).map(b=>b.textContent?.trim()),
       width:document.documentElement.scrollWidth,viewport:innerWidth
      })).catch(()=>({error:'Could not read DOM'}));
+     fs.mkdirSync(repo+'test-artifacts',{recursive:true});
+     await page.screenshot({path:repo+'test-artifacts/browser-failure-'+role+'-'+viewport.width+'.png',fullPage:true}).catch(()=>{});
      throw new Error('Browser module failed ['+role+' '+viewport.width+' '+name+']: '+error.message+' | '+JSON.stringify(diagnostic));
     }
    }
    if(role==='marks'){
+    // End-to-end check: CSS must survive moving between exam questions.
+    await page.getByRole('button',{name:'Dabaszinības · 4. kl. NPD →',exact:true}).click();
+    await page.locator('#exam-q-1').waitFor();
+    let background=await page.locator('#exam-q-1').evaluate(el=>getComputedStyle(el).backgroundColor);
+    assert.equal(background,'rgb(255, 255, 255)','Nature question card should have white background');
+    await page.locator('#exam-q-1 .exam-choice-btn').first().click();
+    await page.getByRole('button',{name:'Nākamais →',exact:true}).click();
+    await page.locator('#exam-q-2').waitFor();
+    background=await page.locator('#exam-q-2').evaluate(el=>getComputedStyle(el).backgroundColor);
+    assert.equal(background,'rgb(255, 255, 255)','Nature CSS must persist on the second question');
+    assert.equal(await page.locator('.exam-q-card').count(),1);
+    await page.getByRole('button',{name:'← Dienas plāns',exact:true}).click();
     await page.getByRole('button',{name:'Skaitļu misijas →',exact:true}).click();await page.getByRole('button',{name:/Saistītais pieraksts/}).click();await page.getByRole('button',{name:'🌱 Mācos · 8',exact:true}).click();await page.locator('.order-choice-btn').first().waitFor();
     const labels=await page.locator('.order-choice-btn').allTextContents();assert.ok(labels.every(t=>t!=='order-choice-btn'));await page.locator('.order-choice-btn').first().click();if(!await page.locator('.order-step-form').count())await page.locator('.order-choice-btn').nth(1).click();await page.locator('.order-step-form').waitFor();
    }
