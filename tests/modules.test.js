@@ -192,8 +192,17 @@ test('Mark 4th grade Nature NPD module covers all 14 criteria, 25 points, and mo
  click(r,/Pārbaudes darbs/);
  assert.ok(r.querySelector('.exam-questions-list'));
  assert.ok(r.querySelector('#exam-q-1'));
- assert.ok(r.querySelector('#exam-q-14'));
-
+ assert.equal(r.querySelector('#exam-q-14'),null);
+ assert.ok(r.textContent.includes('Uzdevums 1 no 14'));
+ for(let i=1;i<14;i++){
+  click(r,/Nākamais →/);
+  assert.ok(r.querySelector('#exam-q-'+(i+1)));
+  assert.equal(r.querySelectorAll('.exam-q-card').length,1);
+ }
+ assert.ok(r.textContent.includes('Uzdevums 14 no 14'));
+ click(r,/Iepriekšējais/);
+ assert.ok(r.querySelector('#exam-q-13'));
+ click(r,/Nākamais →/);
  click(r,/Pabeigt un iesniegt pārbaudes darbu/);
  await Promise.resolve();
  assert.ok(savedData);
