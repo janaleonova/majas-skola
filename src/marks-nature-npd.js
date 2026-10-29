@@ -589,10 +589,12 @@ export function renderMarksNatureNPD(container, options = {}) {
 
   function render() {
     root.replaceChildren();
+    root.style.cssText='max-width:940px;width:100%;box-sizing:border-box;margin:0 auto;padding:16px;background:#f5f8fc;color:#172b43;border-radius:20px;color-scheme:light;';
 
     // Galvene
     const header = document.createElement('header');
     header.className = 'npd-header';
+    header.style.cssText='display:block;width:100%;box-sizing:border-box;background:#fff;border:1px solid #cbd5e1;border-radius:18px;padding:22px;margin:0 0 20px;color:#172b43;';
     header.innerHTML = `
       <div class="npd-badge-row">
         <span class="npd-badge-pill">🌱 Dabaszinības · 4. klase</span>
@@ -639,12 +641,14 @@ export function renderMarksNatureNPD(container, options = {}) {
       };
       nav.append(btn);
     });
+    nav.style.cssText='display:flex;flex-wrap:wrap;gap:9px;align-items:center;justify-content:flex-start;width:100%;margin-top:16px;';
     header.append(nav);
     root.append(header);
 
     // Saturs atkarībā no izvēlētās cilnes
     const contentBox = document.createElement('div');
     contentBox.className = 'npd-content-box';
+    contentBox.style.cssText='display:block;width:100%;max-width:100%;box-sizing:border-box;background:#f5f8fc;color:#172b43;';
 
     if (currentTab === 'theory') {
       renderTheoryView(contentBox);
@@ -907,6 +911,7 @@ export function renderMarksNatureNPD(container, options = {}) {
   function renderExamView(parent) {
     const wrap = document.createElement('div');
     wrap.className = 'exam-container';
+    wrap.style.cssText='display:block;width:100%;max-width:820px;box-sizing:border-box;margin:0 auto;background:#f5f8fc;color:#172b43;padding:12px;';
 
     if (examSubmitted) {
       renderExamResults(wrap);
@@ -938,6 +943,7 @@ export function renderMarksNatureNPD(container, options = {}) {
     if(q){
       const qCard = document.createElement('article');
       qCard.className = 'exam-q-card';
+      qCard.style.cssText='display:block!important;width:100%;box-sizing:border-box;background:#ffffff!important;color:#172b43!important;border:2px solid #cbd5e1;border-radius:18px;padding:24px;margin:0 0 18px;';
       qCard.id = `exam-q-${q.id}`;
 
       const qHead = document.createElement('div');
@@ -957,6 +963,7 @@ export function renderMarksNatureNPD(container, options = {}) {
 
       const promptEl = document.createElement('p');
       promptEl.className = 'exam-q-prompt';
+      promptEl.style.cssText='display:block;color:#172b43!important;font-size:1.17rem;font-weight:700;line-height:1.6;margin:16px 0;';
       promptEl.textContent = q.prompt;
       qCard.append(promptEl);
 
@@ -1055,10 +1062,12 @@ export function renderMarksNatureNPD(container, options = {}) {
           subBox.innerHTML = `<div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:1.03rem;">${sq.label}</div>`;
           const opts = document.createElement('div');
           opts.className = 'exam-options-stack';
+          opts.style.cssText='display:flex!important;flex-direction:column!important;align-items:stretch!important;gap:12px;width:100%;';
           sq.options.forEach((optText, oIdx) => {
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.className = `exam-choice-btn ${examSubAnswers[sq.qId] === oIdx ? 'selected' : ''}`;
+            btn.style.cssText='display:block!important;width:100%!important;box-sizing:border-box;white-space:normal;text-align:left;background:#fff;color:#172b43;font-size:1.05rem;line-height:1.5;min-height:54px;padding:14px;border:2px solid #94a3b8;border-radius:12px;';
             btn.textContent = optText;
             btn.setAttribute('aria-pressed',String(examSubAnswers[sq.qId] === oIdx));
             btn.onclick = () => {
@@ -1078,6 +1087,7 @@ export function renderMarksNatureNPD(container, options = {}) {
           const btn = document.createElement('button');
           btn.type = 'button';
           btn.className = `exam-choice-btn ${examAnswers[q.id] === oIdx ? 'selected' : ''}`;
+          btn.style.cssText='display:block!important;width:100%!important;box-sizing:border-box;white-space:normal;text-align:left;background:#fff;color:#172b43;font-size:1.05rem;line-height:1.5;min-height:54px;padding:14px;border:2px solid #94a3b8;border-radius:12px;';
           btn.textContent = opt.text;
           btn.setAttribute('aria-pressed',String(examAnswers[q.id] === oIdx));
           btn.onclick = () => {
@@ -2259,7 +2269,11 @@ export function renderMarksNatureNPD(container, options = {}) {
       }
     }
   `;
-  root.append(style);
+  // CSS persists across render() calls: root.replaceChildren() removes child styles.
+  const previousStyle=document.getElementById('marks-nature-npd-styles');
+  previousStyle?.remove();
+  style.id='marks-nature-npd-styles';
+  document.head.append(style);
 
   render();
   return {
