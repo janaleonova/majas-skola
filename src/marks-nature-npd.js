@@ -622,16 +622,18 @@ export function renderMarksNatureNPD(container, options = {}) {
     root.style.cssText='max-width:940px;width:100%;box-sizing:border-box;margin:0 auto;padding:16px;background:#f5f8fc;color:#172b43;border-radius:20px;color-scheme:light;';
 
     // Galvene
-    const header = document.createElement('header');
+    // The site-wide `header` selector is sticky; module headings must stay in normal flow.
+    const header = document.createElement('section');
+    header.setAttribute('aria-labelledby','marks-nature-npd-title');
     header.className = 'npd-header';
-    header.style.cssText='display:block;width:100%;box-sizing:border-box;background:#fff;border:1px solid #cbd5e1;border-radius:18px;padding:22px;margin:0 0 20px;color:#172b43;';
+    header.style.cssText='display:block;position:static;top:auto;z-index:auto;width:100%;box-sizing:border-box;background:#fff;border:1px solid #cbd5e1;border-radius:18px;padding:18px 22px;margin:0 0 20px;color:#172b43;';
     header.innerHTML = `
       <div class="npd-badge-row">
         <span class="npd-badge-pill">🌱 Dabaszinības · 4. klase</span>
         <span class="npd-badge-pill gold">🏆 Lielvārds 2025 · 25 punkti</span>
         <span class="npd-badge-pill">SOLO I–IV līmeņi</span>
       </div>
-      <h2>Kā vairojas, aug un attīstās dzīvie organismi?</h2>
+      <h2 id="marks-nature-npd-title">Kā vairojas, aug un attīstās dzīvie organismi?</h2>
       <p class="npd-sub">Oficiālais 4. klases nobeiguma pārbaudes darba trenažieris un laboratorija Markam.</p>
     `;
 
@@ -1514,11 +1516,16 @@ export function renderMarksNatureNPD(container, options = {}) {
 
     /* Galvene */
     .nature-npd-app .npd-header {
+      position: static !important;
+      top: auto !important;
+      bottom: auto !important;
+      z-index: auto !important;
+      transform: none !important;
       background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 55%, #e6f7ef 100%) !important;
       border: 1.5px solid #a7f3d0 !important;
       border-radius: 22px !important;
-      padding: 26px 30px !important;
-      margin-bottom: 24px !important;
+      padding: 18px 22px !important;
+      margin-bottom: 18px !important;
       box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.09) !important;
     }
     .nature-npd-app .npd-badge-row {
@@ -1566,12 +1573,14 @@ export function renderMarksNatureNPD(container, options = {}) {
       background: #ffffffcc !important;
       backdrop-filter: blur(8px) !important;
       border: 1px solid #a7f3d0 !important;
-      padding: 10px 18px !important;
-      border-radius: 14px !important;
-      margin-bottom: 18px !important;
+      padding: 9px 14px !important;
+      border-radius: 12px !important;
+      margin-bottom: 12px !important;
       gap: 12px !important;
       flex-wrap: wrap !important;
     }
+    .nature-npd-app .nature-voice-status:empty { display: none !important; }
+    .nature-npd-app .nature-voice-status:not(:empty) { flex-basis: 100%; margin: 0 !important; line-height: 1.45 !important; }
     .nature-npd-app .audio-btn {
       padding: 8px 16px !important;
       border-radius: 10px !important;
@@ -2267,7 +2276,7 @@ export function renderMarksNatureNPD(container, options = {}) {
     }
 
     @media print {
-      .no-print, header, .npd-audio-bar, .npd-tabs, .subject-backbar {
+      .no-print, header, .nature-npd-app .npd-header, .npd-audio-bar, .npd-tabs, .subject-backbar {
         display: none !important;
       }
       .nature-npd-app {
