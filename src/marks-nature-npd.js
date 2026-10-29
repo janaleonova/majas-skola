@@ -549,6 +549,7 @@ export function renderMarksNatureNPD(container, options = {}) {
   let examScore = 0;
   let examPointsEarned = 0;
   let examFeedback = null;
+  let examQuestionIndex = 0;
   let examSaveStatus = '';
   let examSaving = false;
 
@@ -925,11 +926,16 @@ export function renderMarksNatureNPD(container, options = {}) {
       </div>
     `;
     wrap.append(banner);
+    const progress=document.createElement('div');progress.className='exam-step-progress';
+    progress.setAttribute('role','progressbar');progress.setAttribute('aria-valuemin','1');progress.setAttribute('aria-valuemax',String(NPD_QUESTIONS.length));
+    progress.setAttribute('aria-valuenow',String(examQuestionIndex+1));
+    const progressFill=document.createElement('span');progressFill.style.width=((examQuestionIndex+1)/NPD_QUESTIONS.length*100)+'%';progress.append(progressFill);wrap.append(progress);
 
     const questionsList = document.createElement('div');
     questionsList.className = 'exam-questions-list';
 
-    NPD_QUESTIONS.forEach((q) => {
+    const q = NPD_QUESTIONS[examQuestionIndex];
+    if(q){
       const qCard = document.createElement('article');
       qCard.className = 'exam-q-card';
       qCard.id = `exam-q-${q.id}`;
@@ -1084,9 +1090,23 @@ export function renderMarksNatureNPD(container, options = {}) {
       }
 
       questionsList.append(qCard);
-    });
+    }
 
-    wrap.append(questionsList);
+    const navBar=document.createElement('div');
+    navBar.className='exam-step-navigation';
+    const indicator=document.createElement('div');indicator.className='exam-step-counter';
+    indicator.textContent='Uzdevums '+(examQuestionIndex+1)+' no '+NPD_QUESTIONS.length;
+    navBar.append(indicator);
+    const previous=document.createElement('button');previous.type='button';previous.className='exam-step-button secondary';
+    previous.textContent='← Iepriekšējais';previous.disabled=examQuestionIndex===0;
+    previous.onclick=()=>{examQuestionIndex--;render();};
+    navBar.append(previous);
+    const next=document.createElement('button');next.type='button';next.className='exam-step-button primary';
+    next.textContent=examQuestionIndex===NPD_QUESTIONS.length-1?'Pēdējais uzdevums ✓':'Nākamais →';
+    next.disabled=examQuestionIndex===NPD_QUESTIONS.length-1;
+    next.onclick=()=>{examQuestionIndex++;render();};
+    navBar.append(next);
+    wrap.append(questionsList,navBar);
 
     // Iesniegšanas poga
     const submitBar = document.createElement('div');
@@ -1099,7 +1119,7 @@ export function renderMarksNatureNPD(container, options = {}) {
       calculateAndSubmitExam();
     };
     submitBar.append(submitBtn);
-    wrap.append(submitBar);
+    if(examQuestionIndex===NPD_QUESTIONS.length-1)wrap.append(submitBar);
 
     parent.append(wrap);
   }
@@ -1420,6 +1440,23 @@ export function renderMarksNatureNPD(container, options = {}) {
   const style = document.createElement('style');
   style.textContent = `
     /* Dabaszinību NPD trenažieris un laboratorija — augsta kontrasta, mierīgs ziemeļniecisks dizains */
+    .nature-npd-app .exam-container {max-width:820px !important;margin:0 auto !important;background:#f4f7fc !important;padding:16px !important;border-radius:18px;}
+    .nature-npd-app .exam-q-card {display:block !important;background:#fff !important;color:#15263d !important;border:2px solid #cbd5e1 !important;padding:26px !important;margin:14px 0 !important;border-radius:20px !important;}
+    .nature-npd-app .exam-q-card .exam-q-prompt,.nature-npd-app .exam-q-card h4 {color:#15263d !important;font-size:1.17rem !important;line-height:1.55 !important;}
+    .nature-npd-app .exam-options-stack {display:flex !important;flex-direction:column !important;gap:12px !important;}
+    .nature-npd-app .exam-options-stack > .exam-choice-btn {display:block !important;width:100% !important;white-space:normal !important;min-height:54px !important;background:#fff !important;color:#14283e !important;text-align:left !important;border:2px solid #94a3b8 !important;border-radius:12px !important;padding:14px 18px !important;font-size:1.07rem !important;line-height:1.5 !important;}
+    .nature-npd-app .exam-options-stack > .exam-choice-btn.selected {background:#dcfce7 !important;color:#14532d !important;border-color:#15803d !important;box-shadow:inset 5px 0 #15803d !important;}
+    .nature-npd-app .experiment-description,.nature-npd-app .experiment-description * {color:#172b43 !important;opacity:1 !important;}
+    .nature-npd-app .experiment-description {background:#eff6ff !important;border:2px solid #93c5fd !important;padding:18px !important;border-radius:14px !important;}
+    .nature-npd-app .exam-step-progress {height:12px;background:#dce4ee;border-radius:99px;overflow:hidden;margin:18px 0 24px;}
+    .nature-npd-app .exam-step-progress span {height:100%;display:block;background:#15803d;border-radius:99px;}
+    .nature-npd-app .exam-step-navigation {display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between;margin:20px 0;}
+    .nature-npd-app .exam-step-counter {font-size:1rem;font-weight:800;color:#172b43 !important;flex-basis:100%;}
+    .nature-npd-app .exam-step-button {font-size:1rem;font-weight:700;border:2px solid #2563eb;border-radius:12px;padding:13px 20px;cursor:pointer;min-height:48px;}
+    .nature-npd-app .exam-step-button.secondary {background:#fff;color:#1d4ed8;}
+    .nature-npd-app .exam-step-button.primary {background:#1d4ed8;color:white;}
+    .nature-npd-app .exam-step-button:disabled {opacity:.45;cursor:not-allowed;}
+    @media(max-width:680px){.nature-npd-app .exam-container{padding:8px !important;}.nature-npd-app .exam-q-card{padding:16px !important;}}
     .nature-npd-app {
       font-family: 'DM Sans', system-ui, -apple-system, sans-serif !important;
       background: #f8fafc !important;
