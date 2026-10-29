@@ -54,11 +54,14 @@ try{
     // End-to-end check: CSS must survive moving between exam questions.
     await page.getByRole('button',{name:'Dabaszinības · 4. kl. NPD →',exact:true}).click();
     await page.locator('#exam-q-1').waitFor();
+    assert.equal(await page.locator('.npd-header').evaluate(el=>el.tagName),'SECTION');
+    assert.equal(await page.locator('.npd-header').evaluate(el=>getComputedStyle(el).position),'static','Nature heading must scroll away instead of covering questions');
     let background=await page.locator('#exam-q-1').evaluate(el=>getComputedStyle(el).backgroundColor);
     assert.equal(background,'rgb(255, 255, 255)','Nature question card should have white background');
     await page.locator('#exam-q-1 .exam-choice-btn').first().click();
     await page.getByRole('button',{name:'Nākamais →',exact:true}).click();
     await page.locator('#exam-q-2').waitFor();
+    assert.equal(await page.locator('.npd-header').evaluate(el=>getComputedStyle(el).position),'static');
     background=await page.locator('#exam-q-2').evaluate(el=>getComputedStyle(el).backgroundColor);
     assert.equal(background,'rgb(255, 255, 255)','Nature CSS must persist on the second question');
     assert.equal(await page.locator('.exam-q-card').count(),1);
