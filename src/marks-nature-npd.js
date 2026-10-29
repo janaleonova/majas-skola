@@ -251,21 +251,19 @@ export function stopSpeaking() {
 }
 
 export function speakText(text) {
-  if (!('speechSynthesis' in window)) return;
-  window.speechSynthesis.cancel();
-  if (!text) return;
-  const clean = String(text)
-    .replace(/[🌿🌸🌱🐣🐾💧🌺🐝🥚🐛🦋🧑🧬🔬⭐🏆✅❌⚠️1️⃣2️⃣3️⃣4️⃣5️⃣6️⃣]/g, '')
-    .replace(/➔|→/g, ' seko ')
-    .replace(/\s+/g, ' ')
-    .trim();
-  const utterance = new SpeechSynthesisUtterance(clean);
-  utterance.lang = 'lv-LV';
-  utterance.rate = 0.88;
-  const voices = window.speechSynthesis.getVoices();
-  const lvVoice = voices.find(v => v.lang.startsWith('lv') || v.lang.includes('Latvian'));
-  if (lvVoice) utterance.voice = lvVoice;
-  window.speechSynthesis.speak(utterance);
+ if(typeof window==='undefined'||!('speechSynthesis' in window)||typeof SpeechSynthesisUtterance==='undefined')return false;
+ const voices=window.speechSynthesis.getVoices?.()||[];
+ // lv-LV alone does not force pronunciation: never silently use an English/Russian default voice.
+ const lvVoice=voices.find(v=>/^lv(?:-|_|$)/i.test(v.lang||''));
+ if(!lvVoice)return false;
+ window.speechSynthesis.cancel();
+ const clean=String(text||'').replace(/[🌿🌸🌱🐣🐾💧🌺🐝🥚🐛🦋🧑🧬🔬⭐🏆✅❌⚠️]/g,' ')
+   .replace(/[➔→]/g,' pēc tam ').replace(/\s+/g,' ').trim();
+ if(!clean)return false;
+ const utterance=new SpeechSynthesisUtterance(clean);
+ utterance.voice=lvVoice;utterance.lang='lv-LV';utterance.rate=0.92;
+ window.speechSynthesis.speak(utterance);
+ return true;
 }
 
 // 14 NPD uzdevumu jautājumu banka pārbaudes darbam un treniņam
@@ -530,7 +528,7 @@ export const NPD_QUESTIONS = [
 
 // Galvenais komponentes renderētājs
 export function renderMarksNatureNPD(container, options = {}) {
-  const { canSubmit = true, saveProgress = null, initialTopic = null } = options;
+  const { canSubmit = true, saveProgress = null, initialTopic = null, requestLatvianAudio = null } = options;
 
   let currentTab = initialTopic === 'theory' ? 'theory' : initialTopic === 'practice' ? 'practice' : 'exam';
   let activeTheoryId = 't1';
@@ -550,6 +548,38 @@ export function renderMarksNatureNPD(container, options = {}) {
   let examPointsEarned = 0;
   let examFeedback = null;
   let examQuestionIndex = 0;
+  let activeSpeechAudio=null;
+  let currentSpeechRequest=0;
+  function stopNatureVoice(){
+    currentSpeechRequest++;
+    if(activeSpeechAudio){activeSpeechAudio.pause();activeSpeechAudio=null;}
+    stopSpeaking();
+    const status=root.querySelector('.nature-voice-status');
+    if(status)status.textContent='';
+  }
+  async function speakNatureText(text){
+    stopNatureVoice();
+    const requestId=currentSpeechRequest;
+    const status=root.querySelector('.nature-voice-status');
+    if(status)status.textContent='Ielādēju latviešu balsi…';
+    if(typeof requestLatvianAudio==='function'){
+      try{
+        const audioResult=await requestLatvianAudio(text);
+        if(requestId!==currentSpeechRequest)return;
+        if(typeof audioResult?.audioContent==='string'&&audioResult.audioContent){
+          const audio=new Audio('data:audio/mpeg;base64,'+audioResult.audioContent);
+          activeSpeechAudio=audio;
+          audio.onended=()=>{if(status)status.textContent='';activeSpeechAudio=null;};
+          await audio.play();
+          if(status)status.textContent='🎧 Skan latviešu balss';
+          return;
+        }
+      }catch{}
+    }
+    if(requestId!==currentSpeechRequest)return;
+    if(speakText(text)){if(status)status.textContent='🔊 Latviešu balss (ierīces lasītājs)';}
+    else if(status)status.textContent='Šajā ierīcē nav latviešu balss. Kvalitatīvai izrunai nepieciešams konfigurēt mākoņa lasītāju.';
+  }
   let examSaveStatus = '';
   let examSaving = false;
 
@@ -617,7 +647,8 @@ export function renderMarksNatureNPD(container, options = {}) {
         <button type="button" class="audio-btn stop" id="btn-stop-audio">⏹️ Apturēt balsi</button>
       </div>
     `;
-    audioBar.querySelector('#btn-stop-audio').onclick = () => stopSpeaking();
+    audioBar.querySelector('#btn-stop-audio').onclick = () => stopNatureVoice();
+    const voiceStatus=document.createElement('p');voiceStatus.className='nature-voice-status';voiceStatus.setAttribute('role','status');voiceStatus.style.cssText='font-size:0.9rem;color:#1e293b;margin:8px 0 0;';audioBar.append(voiceStatus);
     header.append(audioBar);
 
     // Navigācijas cilnes
@@ -635,7 +666,7 @@ export function renderMarksNatureNPD(container, options = {}) {
       btn.className = `npd-tab-btn ${currentTab === t.id ? 'active' : ''}`;
       btn.textContent = t.label;
       btn.onclick = () => {
-        stopSpeaking();
+        stopNatureVoice();
         currentTab = t.id;
         render();
       };
@@ -703,7 +734,7 @@ export function renderMarksNatureNPD(container, options = {}) {
     speakBtn.onclick = () => {
       const plain = activeItem.title + '. ' + activeItem.summary + '. ' +
         activeItem.content.replace(/<[^>]+>/g, ' ');
-      speakText(plain);
+      speakNatureText(plain);
     };
     tHeader.append(speakBtn);
     main.append(tHeader);
@@ -751,7 +782,7 @@ export function renderMarksNatureNPD(container, options = {}) {
     speakQBtn.type = 'button';
     speakQBtn.className = 'audio-btn speak';
     speakQBtn.textContent = '🔊 Nolasīt';
-    speakQBtn.onclick = () => speakText(q.prompt);
+    speakQBtn.onclick = () => speakNatureText(q.prompt);
     qTitle.append(speakQBtn);
     card.append(qTitle);
 
@@ -958,7 +989,7 @@ export function renderMarksNatureNPD(container, options = {}) {
           <button type="button" class="audio-btn speak q-speak-btn" title="Noklausīties jautājumu balsī">🔊 Nolasīt</button>
         </div>
       `;
-      qHead.querySelector('.q-speak-btn').onclick = () => speakText(q.prompt);
+      qHead.querySelector('.q-speak-btn').onclick = () => speakNatureText(q.prompt);
       qCard.append(qHead);
 
       const promptEl = document.createElement('p');
@@ -2278,7 +2309,7 @@ export function renderMarksNatureNPD(container, options = {}) {
   render();
   return {
     cleanup: () => {
-      stopSpeaking();
+      stopNatureVoice();
     }
   };
 }
