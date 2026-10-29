@@ -1393,6 +1393,50 @@ export function renderMarksNatureNPD(container, options = {}) {
     .nature-npd-app .exam-q-card, .nature-npd-app .practice-card,
     .nature-npd-app .theory-card { background:#fff !important; color:#172b42 !important; }
     .nature-npd-app .npd-save-status { background:#ecfdf5; color:#064e3b !important; border:2px solid #047857; border-radius:12px; padding:14px; font-weight:700; font-size:1rem; }
+    /* Pārbaudes darba lasāmības izolācija no globālajiem fantasy/tumšās tēmas stiliem. */
+    .nature-npd-app .exam-container,
+    .nature-npd-app .exam-questions-list { background:#f5f8fc !important; color:#14243b !important; }
+    .nature-npd-app .exam-q-card {
+      display:block !important; background:#fff !important; color:#14243b !important;
+      border:2px solid #cbd5e1 !important; border-radius:16px !important;
+      padding:22px !important; margin:0 0 18px !important;
+      box-shadow:0 3px 10px rgba(15,23,42,.07) !important;
+    }
+    .nature-npd-app .exam-q-head {display:flex !important; gap:12px !important; flex-wrap:wrap !important;}
+    .nature-npd-app .exam-q-head h4,
+    .nature-npd-app .exam-q-prompt {color:#12243b !important; opacity:1 !important; font-size:1.15rem !important; line-height:1.55 !important;}
+    .nature-npd-app .exam-options-stack {display:grid !important; grid-template-columns:1fr !important; gap:12px !important; width:100% !important;}
+    .nature-npd-app .exam-choice-btn {
+      display:block !important; width:100% !important; max-width:100% !important;
+      box-sizing:border-box !important; white-space:normal !important; height:auto !important;
+      padding:14px 16px !important; text-align:left !important; line-height:1.5 !important;
+      background:#f8fafc !important; color:#152b43 !important;
+      border:2px solid #94a3b8 !important; border-radius:12px !important;
+      font-size:1.05rem !important; font-weight:600 !important;
+      opacity:1 !important; cursor:pointer;
+    }
+    .nature-npd-app .exam-choice-btn:hover,
+    .nature-npd-app .exam-choice-btn:focus-visible {
+      background:#e0f2fe !important; border-color:#0369a1 !important; outline:2px solid #0369a1 !important; outline-offset:2px;
+    }
+    .nature-npd-app .exam-choice-btn.selected {
+      background:#dcfce7 !important; color:#14532d !important;
+      border-color:#15803d !important; box-shadow:inset 4px 0 0 #15803d !important;
+    }
+    .nature-npd-app .exam-match-group, .nature-npd-app .match-row,
+    .nature-npd-app .stmt-card-row, .nature-npd-app .exam-experiment-card {
+      background:#fff !important; color:#14243b !important;
+    }
+    .nature-npd-app .match-select, .nature-npd-app select,
+    .nature-npd-app textarea, .nature-npd-app input {
+      background:#fff !important; color:#14243b !important; border:2px solid #94a3b8 !important;
+      border-radius:10px; max-width:100%; box-sizing:border-box;
+    }
+    @media (max-width:640px) {
+      .nature-npd-app .exam-q-card {padding:16px !important;}
+      .nature-npd-app .exam-q-prompt {font-size:1.08rem !important;}
+      .nature-npd-app .match-row {flex-direction:column !important; align-items:stretch !important;}
+    }
     .nature-npd-app {
       font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
       color: #1e293b;
