@@ -251,6 +251,31 @@ async function verifyMarksSession(req,res){
   return uid===(process.env.MARKS_UID||'w4nbeq1UguRFrvdwVSFOkk46zXA2')?uid:null;
  }catch{return null}
 }
+// Optional high-quality Latvian speech synthesis. Requires a server-only Cloud TTS API key.
+// Never send the key to the browser. Limit payload and requests; verify Marks's Firebase ID token.
+const latvianSpeechAttempts=new Map();
+app.post('/api/latvian-tts',express.json({limit:'4kb'}),async(req,res)=>{
+ res.set('Cache-Control','no-store');
+ const key=process.env.GOOGLE_TTS_API_KEY;
+ if(!key)return res.status(503).json({error:'Kvalitatīva latviešu balss vēl nav konfigurēta.'});
+ const uid=await verifyMarksSession(req,res);
+ if(!uid)return res.status(403).json({error:'Pieejams tikai Marka kontam.'});
+ const content=req.body?.text;
+ if(typeof content!=='string'||!content.trim()||content.length>1200)return res.status(400).json({error:'Nederīgs lasāmais teksts.'});
+ const now=Date.now(),entries=(latvianSpeechAttempts.get(uid)||[]).filter(t=>now-t<60*60*1000);
+ if(entries.length>=80)return res.status(429).json({error:'Balss lasīšanas limits sasniegts.'});
+ entries.push(now);latvianSpeechAttempts.set(uid,entries);
+ try{
+  const result=await providerFetch('https://texttospeech.googleapis.com/v1/text:synthesize?key='+encodeURIComponent(key),{
+   method:'POST',headers:{'Content-Type':'application/json'},
+   body:JSON.stringify({input:{text:content.trim()},voice:{languageCode:'lv-LV',name:'lv-LV-Chirp3-HD-Kore'},audioConfig:{audioEncoding:'MP3'}})
+  });
+  if(!result.ok)return res.status(502).json({error:'Latviešu mākoņa balss pašlaik nav pieejama.'});
+  const data=await result.json();
+  if(typeof data.audioContent!=='string'||!data.audioContent)return res.status(502).json({error:'Balss pakalpojums neatgrieza audio.'});
+  return res.json({audioContent:data.audioContent,mimeType:'audio/mpeg'});
+ }catch{return res.status(503).json({error:'Neizdevās pieslēgties balss pakalpojumam.'});}
+});
 app.post('/api/math/session',async(req,res)=>{
  res.set('Cache-Control','no-store');
  const uid=await verifyMarksSession(req,res);
