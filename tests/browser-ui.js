@@ -30,7 +30,24 @@ try{
   if(role!=='vecaks'){
    assert.equal(await page.locator('.subject-grid>.card').count(),new Set(CATALOG[role].map(m=>m.subjectId)).size);
    const labels=await page.locator('.subject-grid button').allTextContents();
-   for(const name of labels){await page.getByRole('button',{name,exact:true}).click();await page.locator('.subject-trainer h2').first().waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Module overflow '+name);await page.getByRole('button',{name:'← Dienas plāns',exact:true}).click();}
+   for(const name of labels){
+    console.log('Checking browser module:',role,viewport.width+'x'+viewport.height,name);
+    try{
+     await page.getByRole('button',{name,exact:true}).click();
+     await page.locator('.subject-trainer').waitFor({state:'visible'});
+     assert.ok((await page.locator('.subject-trainer').innerText()).trim().length>30,'Empty module '+name);
+     const width=await page.evaluate(()=>({scroll:document.documentElement.scrollWidth,viewport:innerWidth}));
+     assert.ok(width.scroll<=width.viewport,'Module overflow '+name+': '+JSON.stringify(width));
+     await page.getByRole('button',{name:'← Dienas plāns',exact:true}).click();
+    }catch(error){
+     const diagnostic=await page.evaluate(()=>({
+      path:location.pathname,heading:document.querySelector('.subject-trainer h2')?.textContent,
+      buttons:[...document.querySelectorAll('.subject-trainer button')].slice(0,10).map(b=>b.textContent?.trim()),
+      width:document.documentElement.scrollWidth,viewport:innerWidth
+     })).catch(()=>({error:'Could not read DOM'}));
+     throw new Error('Browser module failed ['+role+' '+viewport.width+' '+name+']: '+error.message+' | '+JSON.stringify(diagnostic));
+    }
+   }
    if(role==='marks'){
     await page.getByRole('button',{name:'Skaitļu misijas →',exact:true}).click();await page.getByRole('button',{name:/Saistītais pieraksts/}).click();await page.getByRole('button',{name:'🌱 Mācos · 8',exact:true}).click();await page.locator('.order-choice-btn').first().waitFor();
     const labels=await page.locator('.order-choice-btn').allTextContents();assert.ok(labels.every(t=>t!=='order-choice-btn'));await page.locator('.order-choice-btn').first().click();if(!await page.locator('.order-step-form').count())await page.locator('.order-choice-btn').nth(1).click();await page.locator('.order-step-form').waitFor();
