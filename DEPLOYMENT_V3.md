@@ -44,3 +44,10 @@ Ielogoties katrā no trim kontiem. Izpildīt vienu uzdevumu, salīdzināt kvīti
 ## Zināmās robežas
 
 Melnraksti un nosūtīšanas rinda ir konkrētajā ierīcē; ierīces atmiņas dzēšana tos noņem. Neizdzēst lokālos datus, ja tajos ir nenosūtīts rezultāts. Melnraksts glabā pēdējo jautājuma/stadijas kontrolpunktu un teksta laukus; vēl neapstiprināta klikšķu izvēle vai pasvītrojums var būt jāatzīmē atkārtoti. Pārtraukts ātruma mēģinājums atsākas bez ātruma sacensības; ilgāk par 2 stundām aizkavētu servera matemātikas sesiju jāsāk no jauna. PWA bezsaistē var izmantot agrāk saņemtu publisko Firebase konfigurāciju, bet servera matemātika un MI joprojām prasa savienojumu.
+
+
+## Marka dabaszinību balss (lv-LV)
+
+Lai bērns dzirdētu dabisku latviešu izrunu, konfigurēt servera vides mainīgo `GOOGLE_TTS_API_KEY` kā slepenu vērtību. Atslēgai jābūt atļaujai izmantot ieslēgtu Google Cloud Text-to-Speech API (ar atbilstošu norēķinu kontu); tā nekad nav jāieliek frontend vai GitHub. Serveris izmanto `lv-LV-Chirp3-HD-Kore` un pārbauda Marka Firebase ID tokenu, ierobežo teksta garumu un izsaukumu skaitu. Bezmaksas pieejamību negarantē.
+
+Ja nav konfigurēta mākoņa balss, sistēma izmanto pārlūkā instalētu *tieši latviešu* balss dzinēju, ja tāds ir; tā **neizmanto** angļu vai krievu noklusējuma balsi. Ja neviena no iespējām nav pieejama, bērns saņem skaidru paziņojumu, nevis nepareizu izrunu. Mākoņa balss jātestē reālajā izvietojumā ar Marka kontu.
