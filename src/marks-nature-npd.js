@@ -937,12 +937,16 @@ export function renderMarksNatureNPD(container, options = {}) {
       const qHead = document.createElement('div');
       qHead.className = 'exam-q-head';
       qHead.innerHTML = `
-        <div style="display:flex; align-items:center; gap:8px;">
+        <div style="display:flex; align-items:center; gap:10px;">
           <span class="q-num-badge">${q.id}</span>
-          <h4 style="margin:0; font-size:1.05rem;">${q.title}</h4>
+          <h4 style="margin:0; font-size:1.1rem; color:#0f172a;">${q.title}</h4>
         </div>
-        <div class="q-pts-pill">${q.pts} ${q.pts === 1 ? 'punkts' : 'punkti'} (SOLO ${q.solo})</div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <div class="q-pts-pill">${q.pts} ${q.pts === 1 ? 'punkts' : 'punkti'} · SOLO ${q.solo}</div>
+          <button type="button" class="audio-btn speak q-speak-btn" title="Noklausīties jautājumu balsī">🔊 Nolasīt</button>
+        </div>
       `;
+      qHead.querySelector('.q-speak-btn').onclick = () => speakText(q.prompt);
       qCard.append(qHead);
 
       const promptEl = document.createElement('p');
@@ -957,7 +961,7 @@ export function renderMarksNatureNPD(container, options = {}) {
         q.items.forEach(it => {
           const row = document.createElement('div');
           row.className = 'match-row';
-          row.innerHTML = `<span style="min-width:140px; font-weight:700;">${it.label}:</span>`;
+          row.innerHTML = `<span style="min-width:140px; font-weight:700; color:#0f172a;">${it.label}</span><span style="color:#059669; font-weight:800;">➔</span>`;
           const sel = document.createElement('select');
           sel.className = 'match-select';
           sel.innerHTML = `<option value="">-- Izvēlies pavairošanas veidu --</option>` +
@@ -975,7 +979,7 @@ export function renderMarksNatureNPD(container, options = {}) {
         q.statements.forEach((st, sIdx) => {
           const row = document.createElement('div');
           row.className = 'stmt-card-row';
-          row.innerHTML = `<div style="font-weight:600; margin-bottom:6px;">${sIdx + 1}) ${st.text}</div>`;
+          row.innerHTML = `<div style="font-weight:600; margin-bottom:8px; color:#0f172a; line-height:1.5;">${sIdx + 1}) ${st.text}</div>`;
           const cluster = document.createElement('div');
           cluster.className = 'button-cluster';
           ['Patiess', 'Aplams'].forEach(val => {
@@ -998,19 +1002,51 @@ export function renderMarksNatureNPD(container, options = {}) {
         expDiv.className = 'exam-exp-group';
         expDiv.innerHTML = `
           <div class="experiment-description">
-            <strong>Eksperimenta apraksts:</strong> Četri vienādi pupu stādi 14 dienas auga dažādos apstākļos:
-            <ul style="margin:6px 0 0; padding-left:20px;">
-              <li><strong>Stāds A (Kontrolgrupa):</strong> Saule + laistīts + istabā (+20°C) ➔ 18 cm, stiprs zaļš stumbrs, 6 veselīgas lapas.</li>
-              <li><strong>Stāds B (Tumsa):</strong> Skapis + laistīts + istabā (+20°C) ➔ 22 cm, bāli dzeltens, izstīdzējis un vārgs.</li>
-              <li><strong>Stāds C (Bez ūdens):</strong> Saule + bez laistīšanas + istabā ➔ 4 cm, nokaltis un sakrunkojies.</li>
-              <li><strong>Stāds D (Aukstums):</strong> Saule + laistīts + ledusskapī (+4°C) ➔ 5 cm, augšana apstājusies.</li>
+            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+              <span style="font-size:1.3rem;">🔬</span>
+              <strong style="font-size:1.08rem; color:#064e3b;">Laboratorijas pētījums: 4 pupu stādi 14 dienu eksperimentā</strong>
+            </div>
+            <p style="margin:0 0 12px; font-size:0.95rem; color:#166534;">Četri vienādi pupu stādi vienādā augsnē tika audzēti dažādos apstākļos:</p>
+            <ul style="margin:0; padding:0; list-style:none; display:grid; grid-template-columns:repeat(auto-fit, minmax(210px, 1fr)); gap:12px;">
+              <li style="background:#ffffff; border:1.5px solid #bbf7d0; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="color:#065f46;">🌱 Stāds A</strong>
+                  <span style="background:#dcfce7; color:#166534; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:99px;">Kontrolgrupa</span>
+                </div>
+                <div style="font-size:0.88rem; color:#475569; margin-bottom:6px;">☀️ Saule · 💧 Laistīts · 🌡️ +20°C</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#059669;">➔ 18 cm, stiprs zaļš stumbrs, 6 veselīgas lapas.</div>
+              </li>
+              <li style="background:#ffffff; border:1.5px solid #fed7aa; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="color:#9a3412;">🚪 Stāds B</strong>
+                  <span style="background:#ffedd5; color:#9a3412; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:99px;">Tumsa</span>
+                </div>
+                <div style="font-size:0.88rem; color:#475569; margin-bottom:6px;">🌑 Tumšs skapis · 💧 Laistīts · 🌡️ +20°C</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#c2410c;">➔ 22 cm, bāli dzeltens, izstīdzējis un vārgs.</div>
+              </li>
+              <li style="background:#ffffff; border:1.5px solid #fecaca; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="color:#991b1b;">🏜️ Stāds C</strong>
+                  <span style="background:#fee2e2; color:#991b1b; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:99px;">Bez ūdens</span>
+                </div>
+                <div style="font-size:0.88rem; color:#475569; margin-bottom:6px;">☀️ Saule · 🚫 Bez laistīšanas · 🌡️ +20°C</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#dc2626;">➔ 4 cm, nokaltis un sakrunkojies.</div>
+              </li>
+              <li style="background:#ffffff; border:1.5px solid #bfdbfe; border-radius:14px; padding:14px; box-shadow:0 1px 4px rgba(0,0,0,0.03);">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                  <strong style="color:#1e40af;">❄️ Stāds D</strong>
+                  <span style="background:#dbeafe; color:#1e40af; font-size:0.75rem; font-weight:800; padding:2px 8px; border-radius:99px;">Aukstums</span>
+                </div>
+                <div style="font-size:0.88rem; color:#475569; margin-bottom:6px;">☀️ Saule · 💧 Laistīts · 🧊 Ledusskapī (+4°C)</div>
+                <div style="font-size:0.88rem; font-weight:700; color:#2563eb;">➔ 5 cm, augšana apstājusies.</div>
+              </li>
             </ul>
           </div>
         `;
         q.subQuestions.forEach(sq => {
           const subBox = document.createElement('div');
-          subBox.style.marginBottom = '16px';
-          subBox.innerHTML = `<div style="font-weight:700; color:#1e293b; margin-bottom:8px;">${sq.label}</div>`;
+          subBox.style.marginBottom = '18px';
+          subBox.innerHTML = `<div style="font-weight:700; color:#0f172a; margin-bottom:10px; font-size:1.03rem;">${sq.label}</div>`;
           const opts = document.createElement('div');
           opts.className = 'exam-options-stack';
           sq.options.forEach((optText, oIdx) => {
@@ -1380,572 +1416,809 @@ export function renderMarksNatureNPD(container, options = {}) {
     parent.append(wrap);
   }
 
-  // CSS stili
+  // CSS stili — tīrs, mierīgs un augstas salasāmības dabaszinību mācību dizains
   const style = document.createElement('style');
   style.textContent = `
-    /* Neatkarīgs, augsta kontrasta bērna mācību ekrāns — arī pie tumšas lietotnes tēmas. */
-    .nature-npd-app, .nature-npd-app * { opacity: 1; }
-    .nature-npd-app { background:#ffffff !important; color:#172b42 !important; color-scheme:light; }
-    .nature-npd-app p, .nature-npd-app li, .nature-npd-app label,
-    .nature-npd-app small, .nature-npd-app .npd-sub,
-    .nature-npd-app .exam-q-prompt { color:#24364a !important; line-height:1.6; }
-    .nature-npd-app small { font-size:0.9rem !important; }
-    .nature-npd-app button, .nature-npd-app select, .nature-npd-app input,
-    .nature-npd-app textarea { font-size:1rem !important; min-height:44px; }
-    .nature-npd-app .exam-q-card, .nature-npd-app .practice-card,
-    .nature-npd-app .theory-card { background:#fff !important; color:#172b42 !important; }
-    .nature-npd-app .npd-save-status { background:#ecfdf5; color:#064e3b !important; border:2px solid #047857; border-radius:12px; padding:14px; font-weight:700; font-size:1rem; }
-    /* Pārbaudes darba lasāmības izolācija no globālajiem fantasy/tumšās tēmas stiliem. */
-    .nature-npd-app .exam-container,
-    .nature-npd-app .exam-questions-list { background:#f5f8fc !important; color:#14243b !important; }
+    /* Dabaszinību NPD trenažieris un laboratorija — augsta kontrasta, mierīgs ziemeļniecisks dizains */
+    .nature-npd-app {
+      font-family: 'DM Sans', system-ui, -apple-system, sans-serif !important;
+      background: #f8fafc !important;
+      color: #0f172a !important;
+      color-scheme: light !important;
+      max-width: 1060px !important;
+      margin: 0 auto !important;
+      padding: 16px 20px 48px !important;
+      border-radius: 24px !important;
+    }
+    .nature-npd-app * {
+      box-sizing: border-box !important;
+    }
+
+    /* Galvene */
+    .nature-npd-app .npd-header {
+      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 55%, #e6f7ef 100%) !important;
+      border: 1.5px solid #a7f3d0 !important;
+      border-radius: 22px !important;
+      padding: 26px 30px !important;
+      margin-bottom: 24px !important;
+      box-shadow: 0 8px 24px -4px rgba(16, 185, 129, 0.09) !important;
+    }
+    .nature-npd-app .npd-badge-row {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 8px !important;
+      margin-bottom: 12px !important;
+    }
+    .nature-npd-app .npd-badge-pill {
+      background: #ffffff !important;
+      color: #065f46 !important;
+      border: 1px solid #6ee7b7 !important;
+      padding: 5px 14px !important;
+      border-radius: 99px !important;
+      font-size: 0.82rem !important;
+      font-weight: 700 !important;
+      letter-spacing: 0.02em !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+    }
+    .nature-npd-app .npd-badge-pill.gold {
+      background: #fef3c7 !important;
+      color: #92400e !important;
+      border-color: #fcd34d !important;
+    }
+    .nature-npd-app .npd-header h2 {
+      margin: 0 0 8px !important;
+      color: #064e3b !important;
+      font-size: clamp(1.4rem, 2.8vw, 1.85rem) !important;
+      font-weight: 800 !important;
+      line-height: 1.3 !important;
+    }
+    .nature-npd-app .npd-sub {
+      margin: 0 0 16px !important;
+      color: #047857 !important;
+      font-size: 1.02rem !important;
+      font-weight: 500 !important;
+      line-height: 1.5 !important;
+    }
+
+    /* Balss lasītāja josla */
+    .nature-npd-app .npd-audio-bar {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      background: #ffffffcc !important;
+      backdrop-filter: blur(8px) !important;
+      border: 1px solid #a7f3d0 !important;
+      padding: 10px 18px !important;
+      border-radius: 14px !important;
+      margin-bottom: 18px !important;
+      gap: 12px !important;
+      flex-wrap: wrap !important;
+    }
+    .nature-npd-app .audio-btn {
+      padding: 8px 16px !important;
+      border-radius: 10px !important;
+      font-weight: 700 !important;
+      font-size: 0.88rem !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+      border: 1px solid transparent !important;
+    }
+    .nature-npd-app .audio-btn.speak {
+      background: #059669 !important;
+      color: #ffffff !important;
+      box-shadow: 0 2px 6px rgba(5, 150, 105, 0.22) !important;
+    }
+    .nature-npd-app .audio-btn.speak:hover {
+      background: #047857 !important;
+      transform: translateY(-1px) !important;
+    }
+    .nature-npd-app .audio-btn.stop {
+      background: #fef2f2 !important;
+      color: #b91c1c !important;
+      border-color: #fecaca !important;
+    }
+    .nature-npd-app .audio-btn.stop:hover {
+      background: #fee2e2 !important;
+    }
+
+    /* Navigācijas cilnes */
+    .nature-npd-app .npd-tabs {
+      display: flex !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+    }
+    .nature-npd-app .npd-tab-btn {
+      padding: 11px 20px !important;
+      border-radius: 12px !important;
+      font-weight: 700 !important;
+      font-size: 0.94rem !important;
+      border: 1.5px solid #a7f3d0 !important;
+      background: #ffffff !important;
+      color: #065f46 !important;
+      cursor: pointer !important;
+      transition: all 0.16s ease !important;
+    }
+    .nature-npd-app .npd-tab-btn:hover {
+      background: #f0fdf4 !important;
+      border-color: #059669 !important;
+      color: #047857 !important;
+    }
+    .nature-npd-app .npd-tab-btn.active {
+      background: #059669 !important;
+      color: #ffffff !important;
+      border-color: #059669 !important;
+      box-shadow: 0 4px 14px rgba(5, 150, 105, 0.28) !important;
+    }
+
+    /* Pārbaudes darba ekrāns */
+    .nature-npd-app .exam-container {
+      background: transparent !important;
+    }
+    .nature-npd-app .exam-intro-banner {
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-left: 5px solid #059669 !important;
+      border-radius: 16px !important;
+      padding: 18px 22px !important;
+      margin-bottom: 24px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.03) !important;
+    }
+    .nature-npd-app .exam-status-badge {
+      background: #059669 !important;
+      color: #ffffff !important;
+      font-weight: 700 !important;
+      padding: 7px 16px !important;
+      border-radius: 99px !important;
+      font-size: 0.88rem !important;
+    }
+    .nature-npd-app .exam-questions-list {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 22px !important;
+    }
+
+    /* Jautājumu kartīte */
     .nature-npd-app .exam-q-card {
-      display:block !important; background:#fff !important; color:#14243b !important;
-      border:2px solid #cbd5e1 !important; border-radius:16px !important;
-      padding:22px !important; margin:0 0 18px !important;
-      box-shadow:0 3px 10px rgba(15,23,42,.07) !important;
+      display: block !important;
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 20px !important;
+      padding: 24px 28px !important;
+      box-shadow: 0 3px 12px -2px rgba(15, 23, 42, 0.04) !important;
+      transition: border-color 0.2s ease !important;
     }
-    .nature-npd-app .exam-q-head {display:flex !important; gap:12px !important; flex-wrap:wrap !important;}
-    .nature-npd-app .exam-q-head h4,
-    .nature-npd-app .exam-q-prompt {color:#12243b !important; opacity:1 !important; font-size:1.15rem !important; line-height:1.55 !important;}
-    .nature-npd-app .exam-options-stack {display:grid !important; grid-template-columns:1fr !important; gap:12px !important; width:100% !important;}
+    .nature-npd-app .exam-q-card:hover {
+      border-color: #cbd5e1 !important;
+    }
+    .nature-npd-app .exam-q-head {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: center !important;
+      margin-bottom: 14px !important;
+      flex-wrap: wrap !important;
+      gap: 10px !important;
+    }
+    .nature-npd-app .q-num-badge {
+      background: #059669 !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      width: 32px !important;
+      height: 32px !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      border-radius: 10px !important;
+      font-size: 0.95rem !important;
+    }
+    .nature-npd-app .exam-q-head h4 {
+      margin: 0 !important;
+      font-size: 1.12rem !important;
+      font-weight: 700 !important;
+      color: #0f172a !important;
+    }
+    .nature-npd-app .q-pts-pill {
+      background: #f1f5f9 !important;
+      color: #334155 !important;
+      border: 1px solid #e2e8f0 !important;
+      font-size: 0.82rem !important;
+      font-weight: 700 !important;
+      padding: 5px 12px !important;
+      border-radius: 99px !important;
+    }
+    .nature-npd-app .q-speak-btn {
+      padding: 5px 12px !important;
+      font-size: 0.82rem !important;
+      font-weight: 700 !important;
+      border-radius: 8px !important;
+    }
+    .nature-npd-app .exam-q-prompt {
+      font-size: 1.14rem !important;
+      font-weight: 700 !important;
+      color: #0f291e !important;
+      line-height: 1.6 !important;
+      margin: 0 0 18px !important;
+    }
+
+    /* Atbilžu izvēles pogas */
+    .nature-npd-app .exam-options-stack {
+      display: flex !important;
+      flex-direction: column !important;
+      align-items: stretch !important;
+      gap: 10px !important;
+      width: 100% !important;
+    }
     .nature-npd-app .exam-choice-btn {
-      display:block !important; width:100% !important; max-width:100% !important;
-      box-sizing:border-box !important; white-space:normal !important; height:auto !important;
-      padding:14px 16px !important; text-align:left !important; line-height:1.5 !important;
-      background:#f8fafc !important; color:#152b43 !important;
-      border:2px solid #94a3b8 !important; border-radius:12px !important;
-      font-size:1.05rem !important; font-weight:600 !important;
-      opacity:1 !important; cursor:pointer;
+      display: flex !important;
+      align-items: center !important;
+      gap: 14px !important;
+      width: 100% !important;
+      max-width: 100% !important;
+      box-sizing: border-box !important;
+      white-space: normal !important;
+      min-height: 54px !important;
+      padding: 14px 18px !important;
+      text-align: left !important;
+      line-height: 1.5 !important;
+      background: #ffffff !important;
+      color: #1e293b !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 14px !important;
+      font-size: 1.02rem !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      transition: all 0.16s ease !important;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
     }
-    .nature-npd-app .exam-choice-btn:hover,
-    .nature-npd-app .exam-choice-btn:focus-visible {
-      background:#e0f2fe !important; border-color:#0369a1 !important; outline:2px solid #0369a1 !important; outline-offset:2px;
+    .nature-npd-app .exam-choice-btn::before {
+      content: '' !important;
+      display: inline-block !important;
+      flex-shrink: 0 !important;
+      width: 20px !important;
+      height: 20px !important;
+      border-radius: 50% !important;
+      border: 2px solid #cbd5e1 !important;
+      background: #ffffff !important;
+      transition: all 0.15s ease !important;
+    }
+    .nature-npd-app .exam-choice-btn:hover {
+      background: #f8fafc !important;
+      border-color: #10b981 !important;
+      color: #0f172a !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(16, 185, 129, 0.08) !important;
+    }
+    .nature-npd-app .exam-choice-btn:hover::before {
+      border-color: #10b981 !important;
     }
     .nature-npd-app .exam-choice-btn.selected {
-      background:#dcfce7 !important; color:#14532d !important;
-      border-color:#15803d !important; box-shadow:inset 4px 0 0 #15803d !important;
+      background: #ecfdf5 !important;
+      color: #064e3b !important;
+      border: 2px solid #059669 !important;
+      font-weight: 700 !important;
+      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.15) !important;
     }
-    .nature-npd-app .exam-match-group, .nature-npd-app .match-row,
-    .nature-npd-app .stmt-card-row, .nature-npd-app .exam-experiment-card {
-      background:#fff !important; color:#14243b !important;
+    .nature-npd-app .exam-choice-btn.selected::before {
+      border-color: #059669 !important;
+      background: radial-gradient(circle at center, #059669 45%, #ffffff 50%) !important;
+      box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.2) !important;
     }
-    .nature-npd-app .match-select, .nature-npd-app select,
-    .nature-npd-app textarea, .nature-npd-app input {
-      background:#fff !important; color:#14243b !important; border:2px solid #94a3b8 !important;
-      border-radius:10px; max-width:100%; box-sizing:border-box;
+    .nature-npd-app .exam-choice-btn:focus-visible {
+      outline: 2px solid #059669 !important;
+      outline-offset: 2px !important;
     }
-    @media (max-width:640px) {
-      .nature-npd-app .exam-q-card {padding:16px !important;}
-      .nature-npd-app .exam-q-prompt {font-size:1.08rem !important;}
-      .nature-npd-app .match-row {flex-direction:column !important; align-items:stretch !important;}
+
+    /* Savienošanas uzdevums (match_trio - 9. uzd.) */
+    .nature-npd-app .exam-match-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 16px !important;
+      padding: 16px !important;
     }
-    /* Skaidrs bērna eksāmena izkārtojums neatkarīgi no globālās tēmas */
-    .nature-npd-app .npd-content-box, .nature-npd-app .exam-container, .nature-npd-app .exam-questions-list {background:#f3f6fb !important;color:#14263d !important;}
-    .nature-npd-app .exam-q-card {display:block !important;background:#fff !important;color:#14263d !important;border:2px solid #cbd5e1 !important;padding:22px !important;margin-bottom:20px !important;border-radius:18px !important;}
-    .nature-npd-app .exam-q-card h4,.nature-npd-app .exam-q-card p,.nature-npd-app .exam-q-card strong,.nature-npd-app .exam-q-card li,.nature-npd-app .exam-q-card .exam-q-prompt {color:#172b43 !important;opacity:1 !important;}
-    .nature-npd-app .exam-q-card .exam-q-prompt {font-size:1.15rem !important;line-height:1.55 !important;margin:14px 0 18px !important;}
-    .nature-npd-app .exam-options-stack {display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:10px !important;width:100% !important;}
-    .nature-npd-app .exam-options-stack > .exam-choice-btn {display:block !important;width:100% !important;height:auto !important;min-height:52px !important;box-sizing:border-box !important;white-space:normal !important;text-align:left !important;line-height:1.5 !important;padding:13px 16px !important;color:#172b43 !important;background:#fff !important;border:2px solid #94a3b8 !important;border-radius:12px !important;font-size:1.04rem !important;font-weight:600 !important;}
-    .nature-npd-app .exam-options-stack > .exam-choice-btn.selected {background:#dcfce7 !important;border-color:#15803d !important;color:#14532d !important;box-shadow:inset 5px 0 0 #15803d !important;}
-    .nature-npd-app .exam-options-stack > .exam-choice-btn:focus-visible {outline:3px solid #2563eb !important;outline-offset:2px !important;}
-    .nature-npd-app .experiment-description {background:#eff6ff !important;color:#172b43 !important;border:2px solid #93c5fd !important;border-left:6px solid #2563eb !important;padding:18px 20px !important;margin-bottom:20px !important;border-radius:14px !important;font-size:1.04rem !important;line-height:1.7 !important;}
-    .nature-npd-app .experiment-description * {color:#172b43 !important;opacity:1 !important;}
-    .nature-npd-app .experiment-description li {margin-bottom:9px !important;}
-    .nature-npd-app .exam-exp-group > div:not(.experiment-description) {background:#fff !important;color:#172b43 !important;padding:12px 0 !important;border-bottom:1px solid #cbd5e1;}
-    @media(max-width:680px){.nature-npd-app .exam-q-card {padding:16px !important;}.nature-npd-app .experiment-description {padding:14px !important;}}
-    .nature-npd-app {
-      font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
-      color: #1e293b;
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 10px;
+    .nature-npd-app .match-row {
+      display: flex !important;
+      align-items: center !important;
+      justify-content: space-between !important;
+      gap: 12px !important;
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      padding: 12px 18px !important;
+      flex-wrap: wrap !important;
     }
-    .npd-header {
-      background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 50%, #d1fae5 100%);
-      border: 1px solid #a7f3d0;
-      border-radius: 20px;
-      padding: 24px;
-      margin-bottom: 22px;
-      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.08);
+    .nature-npd-app .match-select {
+      padding: 10px 16px !important;
+      border-radius: 10px !important;
+      border: 1.5px solid #cbd5e1 !important;
+      background: #ffffff !important;
+      color: #0f172a !important;
+      font-weight: 600 !important;
+      font-size: 0.98rem !important;
+      min-height: 44px !important;
+      cursor: pointer !important;
+      flex: 1 !important;
+      max-width: 320px !important;
+      transition: border-color 0.15s ease !important;
     }
-    .npd-badge-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
+    .nature-npd-app .match-select:focus {
+      border-color: #059669 !important;
+      outline: 2px solid #059669 !important;
+      outline-offset: 2px !important;
     }
-    .npd-badge-pill {
-      background: #ffffff;
-      color: #065f46;
-      border: 1px solid #6ee7b7;
-      padding: 4px 12px;
-      border-radius: 99px;
-      font-size: 0.78rem;
-      font-weight: 800;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
+
+    /* Apgalvojumu izvērtēšana (multi_statements - 10. uzd.) */
+    .nature-npd-app .exam-multi-group {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 12px !important;
     }
-    .npd-badge-pill.gold {
-      background: #fef3c7;
-      color: #92400e;
-      border-color: #fcd34d;
+    .nature-npd-app .stmt-card-row {
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 14px !important;
+      padding: 16px 18px !important;
     }
-    .npd-header h2 {
-      margin: 0 0 6px;
-      color: #064e3b;
-      font-size: 1.6rem;
-      font-weight: 900;
+    .nature-npd-app .stmt-card-row .button-cluster {
+      display: flex !important;
+      gap: 10px !important;
+      margin-top: 10px !important;
     }
-    .npd-sub {
-      margin: 0 0 14px;
-      color: #047857;
-      font-size: 0.96rem;
+    .nature-npd-app .stmt-card-row .button-cluster button {
+      flex: 1 !important;
+      min-height: 44px !important;
+      border-radius: 10px !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      box-shadow: none !important;
     }
-    .npd-audio-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #ffffffaa;
-      border: 1px solid #a7f3d0;
-      padding: 8px 14px;
-      border-radius: 12px;
-      margin-bottom: 16px;
+    .nature-npd-app .stmt-card-row .quiet-button {
+      background: #ffffff !important;
+      border: 1.5px solid #cbd5e1 !important;
+      color: #475569 !important;
     }
-    .audio-btn {
-      padding: 6px 14px;
-      border-radius: 8px;
-      font-weight: 700;
-      font-size: 0.85rem;
-      border: 1px solid transparent;
-      cursor: pointer;
-      transition: all 0.15s ease;
+    .nature-npd-app .stmt-card-row .quiet-button:hover {
+      background: #f1f5f9 !important;
+      border-color: #94a3b8 !important;
+      color: #1e293b !important;
     }
-    .audio-btn.speak {
-      background: #10b981;
-      color: white;
+    .nature-npd-app .stmt-card-row .action-button.active {
+      background: #059669 !important;
+      color: #ffffff !important;
+      border: 2px solid #059669 !important;
+      box-shadow: 0 3px 10px rgba(5, 150, 105, 0.25) !important;
     }
-    .audio-btn.speak:hover {
-      background: #059669;
+
+    /* Eksperimenta analīze (14. uzd.) */
+    .nature-npd-app .experiment-description {
+      background: #f0fdf4 !important;
+      border: 1.5px solid #86efac !important;
+      border-radius: 16px !important;
+      padding: 20px 22px !important;
+      margin-bottom: 24px !important;
+      box-shadow: 0 2px 10px rgba(16, 185, 129, 0.05) !important;
+      line-height: 1.6 !important;
     }
-    .audio-btn.stop {
-      background: #fee2e2;
-      color: #b91c1c;
-      border-color: #fca5a5;
+    .nature-npd-app .exam-exp-group > div:not(.experiment-description) {
+      background: #ffffff !important;
+      border: 1px solid #e2e8f0 !important;
+      border-radius: 16px !important;
+      padding: 18px 20px !important;
+      margin-bottom: 18px !important;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.02) !important;
     }
-    .npd-tabs {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
+
+    /* Iesniegšanas poga */
+    .nature-npd-app .exam-submit-bar {
+      margin-top: 30px !important;
+      padding-top: 24px !important;
+      border-top: 2px dashed #cbd5e1 !important;
+      display: flex !important;
+      justify-content: center !important;
     }
-    .npd-tab-btn {
-      padding: 10px 18px;
-      border-radius: 12px;
-      font-weight: 800;
-      font-size: 0.92rem;
-      border: 1px solid #6ee7b7;
-      background: #ffffff;
-      color: #065f46;
-      cursor: pointer;
-      transition: all 0.15s ease;
+    .nature-npd-app .submit-exam-btn {
+      background: linear-gradient(135deg, #059669, #10b981) !important;
+      color: #ffffff !important;
+      font-size: 1.1rem !important;
+      font-weight: 800 !important;
+      padding: 16px 36px !important;
+      border-radius: 16px !important;
+      border: none !important;
+      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.28) !important;
+      cursor: pointer !important;
+      transition: all 0.16s ease !important;
     }
-    .npd-tab-btn:hover {
-      background: #a7f3d0;
+    .nature-npd-app .submit-exam-btn:hover {
+      transform: translateY(-2px) !important;
+      box-shadow: 0 14px 30px rgba(16, 185, 129, 0.38) !important;
     }
-    .npd-tab-btn.active {
-      background: #059669;
-      color: #ffffff;
-      border-color: #059669;
-      box-shadow: 0 4px 12px rgba(5, 150, 105, 0.25);
+
+    /* Saglabāšanas statuss */
+    .nature-npd-app .npd-save-status {
+      background: #ecfdf5 !important;
+      color: #064e3b !important;
+      border: 1.5px solid #059669 !important;
+      border-radius: 14px !important;
+      padding: 16px 20px !important;
+      font-weight: 700 !important;
+      font-size: 1.02rem !important;
+      margin-bottom: 22px !important;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.08) !important;
     }
-    .theory-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 20px;
+
+    /* Rezultātu ekrāns & Diploms */
+    .nature-npd-app .exam-results-card {
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 24px !important;
+      padding: 32px !important;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.04) !important;
     }
-    @media (max-width: 768px) {
-      .theory-layout {
-        grid-template-columns: 1fr;
+    .nature-npd-app .results-header-box {
+      text-align: center !important;
+      background: #f0fdf4 !important;
+      border: 2px solid #86efac !important;
+      border-radius: 20px !important;
+      padding: 28px !important;
+      margin-bottom: 24px !important;
+    }
+    .nature-npd-app .results-header-box.gold {
+      background: linear-gradient(135deg, #fef3c7 0%, #fffbeb 100%) !important;
+      border-color: #fcd34d !important;
+    }
+    .nature-npd-app .gold-trophy-icon {
+      font-size: 3.6rem !important;
+      display: block !important;
+      margin-bottom: 10px !important;
+    }
+    .nature-npd-app .score-display {
+      margin: 14px 0 !important;
+      font-size: 1.35rem !important;
+      color: #064e3b !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      flex-wrap: wrap !important;
+      gap: 12px !important;
+    }
+    .nature-npd-app .grade-pill {
+      background: #059669 !important;
+      color: #ffffff !important;
+      font-weight: 800 !important;
+      padding: 6px 18px !important;
+      border-radius: 99px !important;
+      font-size: 0.98rem !important;
+    }
+    .nature-npd-app .bonus-congrats {
+      font-weight: 700 !important;
+      color: #92400e !important;
+      font-size: 1.05rem !important;
+      margin: 10px 0 0 !important;
+    }
+    .nature-npd-app .solo-levels-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)) !important;
+      gap: 14px !important;
+      margin-bottom: 26px !important;
+    }
+    .nature-npd-app .solo-card {
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 14px !important;
+      padding: 16px !important;
+      text-align: center !important;
+      transition: transform 0.15s ease !important;
+    }
+    .nature-npd-app .solo-card h4 {
+      margin: 0 0 6px !important;
+      font-size: 0.95rem !important;
+      font-weight: 700 !important;
+      color: #475569 !important;
+    }
+    .nature-npd-app .solo-val {
+      font-size: 1.5rem !important;
+      font-weight: 900 !important;
+      color: #059669 !important;
+      margin-bottom: 4px !important;
+    }
+    .nature-npd-app .solo-card small {
+      color: #64748b !important;
+      font-size: 0.84rem !important;
+    }
+    .nature-npd-app .results-actions-bar {
+      display: flex !important;
+      justify-content: center !important;
+      gap: 14px !important;
+      margin: 24px 0 !important;
+      flex-wrap: wrap !important;
+    }
+    .nature-npd-app .results-actions-bar button {
+      padding: 13px 24px !important;
+      border-radius: 12px !important;
+      font-weight: 700 !important;
+      font-size: 0.98rem !important;
+      cursor: pointer !important;
+    }
+    .nature-npd-app .breakdown-table-wrap {
+      overflow-x: auto !important;
+      border-radius: 14px !important;
+      border: 1.5px solid #e2e8f0 !important;
+    }
+    .nature-npd-app .npd-table {
+      width: 100% !important;
+      border-collapse: collapse !important;
+      font-size: 0.94rem !important;
+    }
+    .nature-npd-app .npd-table th, .nature-npd-app .npd-table td {
+      padding: 12px 16px !important;
+      border: 1px solid #e2e8f0 !important;
+      text-align: left !important;
+    }
+    .nature-npd-app .npd-table th {
+      background: #f8fafc !important;
+      font-weight: 800 !important;
+      color: #334155 !important;
+    }
+    .nature-npd-app .solo-tag {
+      background: #f1f5f9 !important;
+      color: #475569 !important;
+      border: 1px solid #cbd5e1 !important;
+      padding: 3px 10px !important;
+      border-radius: 99px !important;
+      font-weight: 700 !important;
+      font-size: 0.8rem !important;
+    }
+
+    /* Mācību ceļvedis & Špikeris */
+    .nature-npd-app .theory-layout {
+      display: grid !important;
+      grid-template-columns: 290px 1fr !important;
+      gap: 24px !important;
+    }
+    @media (max-width: 820px) {
+      .nature-npd-app .theory-layout {
+        grid-template-columns: 1fr !important;
       }
     }
-    .theory-sidebar {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
+    .nature-npd-app .theory-sidebar {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
     }
-    .theory-nav-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 12px;
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      color: #1e293b;
-      font-weight: 700;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s ease;
+    .nature-npd-app .theory-nav-item {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      padding: 14px 16px !important;
+      border-radius: 14px !important;
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      color: #1e293b !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      text-align: left !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
     }
-    .theory-nav-item:hover {
-      border-color: #10b981;
-      background: #f0fdf4;
+    .nature-npd-app .theory-nav-item:hover {
+      border-color: #10b981 !important;
+      background: #f0fdf4 !important;
+      transform: translateX(2px) !important;
     }
-    .theory-nav-item.active {
-      background: #ecfdf5;
-      border-color: #10b981;
-      color: #065f46;
-      font-weight: 800;
+    .nature-npd-app .theory-nav-item.active {
+      background: #ecfdf5 !important;
+      border-color: #059669 !important;
+      color: #064e3b !important;
+      box-shadow: 0 2px 8px rgba(5, 150, 105, 0.15) !important;
     }
-    .theory-main-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    .nature-npd-app .theory-main-card {
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 20px !important;
+      padding: 28px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03) !important;
     }
-    .theory-header-bar {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      border-bottom: 1px solid #f1f5f9;
-      padding-bottom: 14px;
-      margin-bottom: 18px;
-      gap: 12px;
+    .nature-npd-app .theory-header-bar {
+      display: flex !important;
+      justify-content: space-between !important;
+      align-items: flex-start !important;
+      border-bottom: 1.5px solid #f1f5f9 !important;
+      padding-bottom: 16px !important;
+      margin-bottom: 20px !important;
+      gap: 14px !important;
+      flex-wrap: wrap !important;
     }
-    .theory-summary {
-      color: #64748b;
-      margin: 4px 0 0;
-      font-size: 0.95rem;
+    .nature-npd-app .theory-summary {
+      color: #64748b !important;
+      margin: 6px 0 0 !important;
+      font-size: 0.98rem !important;
     }
-    .theory-card h4 {
-      color: #065f46;
-      margin: 16px 0 8px;
-      font-size: 1.1rem;
+    .nature-npd-app .theory-card h4 {
+      color: #065f46 !important;
+      margin: 18px 0 10px !important;
+      font-size: 1.15rem !important;
+      font-weight: 800 !important;
     }
-    .cycle-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 10px;
-      margin: 12px 0;
+    .nature-npd-app .theory-card p, .nature-npd-app .theory-card li {
+      font-size: 1.02rem !important;
+      line-height: 1.65 !important;
+      color: #334155 !important;
     }
-    .cycle-step {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 10px;
-      padding: 10px 12px;
-      font-size: 0.88rem;
+    .nature-npd-app .cycle-grid {
+      display: grid !important;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)) !important;
+      gap: 12px !important;
+      margin: 14px 0 !important;
     }
-    .practice-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 18px;
-      padding: 24px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.03);
+    .nature-npd-app .cycle-step {
+      background: #f8fafc !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 12px !important;
+      padding: 12px 14px !important;
+      font-size: 0.92rem !important;
+      line-height: 1.5 !important;
     }
-    .practice-progress-bar {
-      margin-bottom: 16px;
+
+    /* Treniņa laboratorija */
+    .nature-npd-app .practice-card {
+      background: #ffffff !important;
+      border: 1.5px solid #e2e8f0 !important;
+      border-radius: 20px !important;
+      padding: 26px !important;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.03) !important;
     }
-    .practice-step-info {
-      display: flex;
-      justify-content: space-between;
-      margin-bottom: 6px;
-      font-size: 0.9rem;
-      color: #475569;
+    .nature-npd-app .practice-progress-bar {
+      margin-bottom: 18px !important;
     }
-    .progress-track {
-      background: #e2e8f0;
-      border-radius: 99px;
-      height: 8px;
-      overflow: hidden;
+    .nature-npd-app .practice-step-info {
+      display: flex !important;
+      justify-content: space-between !important;
+      margin-bottom: 8px !important;
+      font-size: 0.92rem !important;
+      color: #475569 !important;
     }
-    .progress-fill {
-      background: #10b981;
-      height: 100%;
-      transition: width 0.3s ease;
+    .nature-npd-app .progress-track {
+      background: #e2e8f0 !important;
+      border-radius: 99px !important;
+      height: 8px !important;
+      overflow: hidden !important;
     }
-    .practice-prompt {
-      font-size: 1.12rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 18px;
+    .nature-npd-app .progress-fill {
+      background: #059669 !important;
+      height: 100% !important;
+      transition: width 0.3s ease !important;
     }
-    .practice-options {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      margin-bottom: 20px;
+    .nature-npd-app .practice-prompt {
+      font-size: 1.15rem !important;
+      font-weight: 700 !important;
+      color: #0f291e !important;
+      margin-bottom: 18px !important;
+      line-height: 1.6 !important;
     }
-    .practice-opt-btn {
-      padding: 14px 18px;
-      border-radius: 12px;
-      border: 2px solid #e2e8f0;
-      background: #ffffff;
-      color: #1e293b;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      font-size: 0.98rem;
+    .nature-npd-app .practice-options {
+      display: flex !important;
+      flex-direction: column !important;
+      gap: 10px !important;
+      margin-bottom: 20px !important;
     }
-    .practice-opt-btn:hover {
-      border-color: #10b981;
-      background: #f0fdf4;
+    .nature-npd-app .practice-opt-btn {
+      display: flex !important;
+      align-items: center !important;
+      gap: 12px !important;
+      width: 100% !important;
+      min-height: 52px !important;
+      padding: 14px 18px !important;
+      border-radius: 12px !important;
+      border: 1.5px solid #e2e8f0 !important;
+      background: #ffffff !important;
+      color: #1e293b !important;
+      font-weight: 600 !important;
+      text-align: left !important;
+      cursor: pointer !important;
+      transition: all 0.15s ease !important;
+      font-size: 1.02rem !important;
+      line-height: 1.5 !important;
     }
-    .practice-opt-btn.selected {
-      border-color: #059669;
-      background: #ecfdf5;
-      color: #064e3b;
-      font-weight: 700;
+    .nature-npd-app .practice-opt-btn::before {
+      content: '' !important;
+      display: inline-block !important;
+      flex-shrink: 0 !important;
+      width: 18px !important;
+      height: 18px !important;
+      border-radius: 50% !important;
+      border: 2px solid #cbd5e1 !important;
+      background: #ffffff !important;
+      transition: all 0.15s ease !important;
     }
-    .practice-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 14px;
+    .nature-npd-app .practice-opt-btn:hover {
+      border-color: #10b981 !important;
+      background: #f0fdf4 !important;
     }
-    .practice-feedback-box {
-      margin-top: 20px;
-      background: #f0fdf4;
-      border: 1px solid #bbf7d0;
-      border-radius: 12px;
-      padding: 16px;
-      line-height: 1.6;
+    .nature-npd-app .practice-opt-btn:hover::before {
+      border-color: #10b981 !important;
     }
-    .exam-intro-banner {
-      background: #f8fafc;
-      border: 1px solid #cbd5e1;
-      border-radius: 14px;
-      padding: 16px 20px;
-      margin-bottom: 20px;
+    .nature-npd-app .practice-opt-btn.selected {
+      border-color: #059669 !important;
+      background: #ecfdf5 !important;
+      color: #064e3b !important;
+      font-weight: 700 !important;
     }
-    .exam-status-badge {
-      background: #059669;
-      color: white;
-      font-weight: 800;
-      padding: 6px 14px;
-      border-radius: 99px;
-      font-size: 0.85rem;
+    .nature-npd-app .practice-opt-btn.selected::before {
+      border-color: #059669 !important;
+      background: radial-gradient(circle at center, #059669 45%, #ffffff 50%) !important;
     }
-    .exam-questions-list {
-      display: flex;
-      flex-direction: column;
-      gap: 20px;
+    .nature-npd-app .practice-actions {
+      display: flex !important;
+      gap: 10px !important;
+      margin-top: 16px !important;
+      flex-wrap: wrap !important;
     }
-    .exam-q-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 16px;
-      padding: 20px;
-      box-shadow: 0 3px 12px rgba(0,0,0,0.02);
+    .nature-npd-app .practice-actions button {
+      padding: 12px 20px !important;
+      border-radius: 12px !important;
+      font-weight: 700 !important;
     }
-    .exam-q-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-      flex-wrap: wrap;
-      gap: 8px;
+    .nature-npd-app .practice-feedback-box {
+      margin-top: 22px !important;
+      background: #f0fdf4 !important;
+      border: 1.5px solid #86efac !important;
+      border-radius: 14px !important;
+      padding: 18px 20px !important;
+      line-height: 1.65 !important;
     }
-    .q-num-badge {
-      background: #10b981;
-      color: white;
-      font-weight: 900;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border-radius: 50%;
-      font-size: 0.88rem;
+
+    /* Izdrukājamā darba lapa */
+    .nature-npd-app .print-worksheet-sheet {
+      background: #ffffff !important;
+      border: 1.5px solid #cbd5e1 !important;
+      border-radius: 12px !important;
+      padding: 36px 40px !important;
+      margin-top: 16px !important;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04) !important;
     }
-    .q-pts-pill {
-      background: #f1f5f9;
-      color: #475569;
-      font-size: 0.82rem;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 99px;
+    .nature-npd-app .print-actions {
+      display: flex !important;
+      justify-content: flex-end !important;
+      margin-bottom: 12px !important;
     }
-    .exam-q-prompt {
-      font-size: 1.05rem;
-      font-weight: 700;
-      color: #0f172a;
-      margin-bottom: 14px;
-    }
-    .exam-options-stack {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .exam-choice-btn {
-      padding: 12px 16px;
-      border-radius: 10px;
-      border: 1.5px solid #e2e8f0;
-      background: #ffffff;
-      text-align: left;
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 0.94rem;
-      transition: all 0.12s ease;
-    }
-    .exam-choice-btn:hover {
-      border-color: #10b981;
-      background: #f0fdf4;
-    }
-    .exam-choice-btn.selected {
-      border-color: #059669;
-      background: #ecfdf5;
-      color: #064e3b;
-      font-weight: 700;
-    }
-    .match-row {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 10px;
-      font-size: 0.95rem;
-    }
-    .match-select {
-      padding: 8px 12px;
-      border-radius: 8px;
-      border: 1.5px solid #cbd5e1;
-      background: #ffffff;
-      font-weight: 600;
-    }
-    .stmt-card-row {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 10px;
-      padding: 12px;
-      margin-bottom: 10px;
-    }
-    .exam-submit-bar {
-      margin-top: 24px;
-      padding-top: 20px;
-      border-top: 2px dashed #cbd5e1;
-      display: flex;
-      justify-content: center;
-    }
-    .submit-exam-btn {
-      background: linear-gradient(135deg, #059669, #10b981) !important;
-      font-size: 1.08rem !important;
-      padding: 16px 32px !important;
-      box-shadow: 0 10px 25px rgba(16, 185, 129, 0.3) !important;
-    }
-    .exam-results-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      border-radius: 20px;
-      padding: 28px;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.04);
-    }
-    .results-header-box {
-      text-align: center;
-      background: #f0fdf4;
-      border: 2px solid #86efac;
-      border-radius: 16px;
-      padding: 24px;
-      margin-bottom: 24px;
-    }
-    .results-header-box.gold {
-      background: linear-gradient(135deg, #fef3c7, #fef9c3);
-      border-color: #fcd34d;
-    }
-    .gold-trophy-icon {
-      font-size: 3.5rem;
-      display: block;
-      margin-bottom: 8px;
-    }
-    .score-display {
-      margin: 12px 0;
-      font-size: 1.25rem;
-      color: #064e3b;
-    }
-    .grade-pill {
-      display: inline-block;
-      margin-left: 10px;
-      background: #059669;
-      color: white;
-      font-weight: 800;
-      padding: 4px 14px;
-      border-radius: 99px;
-      font-size: 0.95rem;
-    }
-    .bonus-congrats {
-      font-weight: 700;
-      color: #92400e;
-      font-size: 1.05rem;
-      margin: 8px 0 0;
-    }
-    .solo-levels-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-      gap: 12px;
-      margin-bottom: 24px;
-    }
-    .solo-card {
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 14px;
-      text-align: center;
-    }
-    .solo-card h4 {
-      margin: 0 0 6px;
-      font-size: 0.92rem;
-      color: #475569;
-    }
-    .solo-val {
-      font-size: 1.4rem;
-      font-weight: 900;
-      color: #0f172a;
-    }
-    .results-actions-bar {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      margin: 20px 0;
-    }
-    .breakdown-table-wrap {
-      overflow-x: auto;
-    }
-    .npd-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 0.92rem;
-    }
-    .npd-table th, .npd-table td {
-      padding: 10px 12px;
-      border: 1px solid #e2e8f0;
-      text-align: left;
-    }
-    .npd-table th {
-      background: #f8fafc;
-      font-weight: 800;
-      color: #334155;
-    }
-    .solo-tag {
-      background: #e2e8f0;
-      padding: 2px 8px;
-      border-radius: 99px;
-      font-weight: 700;
-      font-size: 0.78rem;
-    }
-    .print-worksheet-sheet {
-      background: #ffffff;
-      border: 1px solid #cbd5e1;
-      border-radius: 8px;
-      padding: 30px;
-      margin-top: 14px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-    }
+
     @media print {
       .no-print, header, .npd-audio-bar, .npd-tabs, .subject-backbar {
         display: none !important;
+      }
+      .nature-npd-app {
+        padding: 0 !important;
+        background: #ffffff !important;
       }
       .print-worksheet-sheet {
         border: none !important;
         box-shadow: none !important;
         padding: 0 !important;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .nature-npd-app {
+        padding: 10px 12px 32px !important;
+      }
+      .nature-npd-app .npd-header {
+        padding: 18px !important;
+      }
+      .nature-npd-app .exam-q-card {
+        padding: 18px !important;
+      }
+      .nature-npd-app .match-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+      }
+      .nature-npd-app .match-select {
+        max-width: 100% !important;
       }
     }
   `;
