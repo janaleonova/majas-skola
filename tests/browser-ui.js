@@ -5,6 +5,7 @@ import {build} from 'esbuild';
 import {chromium} from '@playwright/test';
 import {createMathSession,gradeMathSession} from '../server/math-review.js';
 import {CHILD_UIDS} from '../src/learning-policy.js';
+import {CATALOG} from '../src/catalog.js';
 const repo=new URL('../',import.meta.url).pathname;
 const compiled=await build({entryPoints:[repo+'src/main.js'],bundle:true,write:false,plugins:[{name:'browser-fixtures',setup(b){
  b.onLoad({filter:/firebase\/init\.js$/},()=>({loader:'js',contents:`export const auth={currentUser:{uid:window.testRole==='marks'?'${CHILD_UIDS.marks}':window.testRole==='samanta'?'${CHILD_UIDS.samanta}':'parent',getIdToken:async()=> 'test'}};export const db=null;export const initFirebase=async()=>({isConfigured:true});export const onAuthStateChanged=(a,cb)=>cb(a.currentUser);export const signOut=async()=>{};export const signInWithEmailAndPassword=async()=>({user:auth.currentUser});export const setPersistence=async()=>{};export const browserLocalPersistence='local';`}));
@@ -27,7 +28,7 @@ try{
   await page.locator(role==='vecaks'?'#modules form':'.daily-task').waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Dashboard overflow '+role+' '+viewport.width);
   if(role!=='vecaks'){
-   assert.equal(await page.locator('.subject-grid>.card').count(),3);
+   assert.equal(await page.locator('.subject-grid>.card').count(),new Set(CATALOG[role].map(m=>m.subjectId)).size);
    const labels=await page.locator('.subject-grid button').allTextContents();
    for(const name of labels){await page.getByRole('button',{name,exact:true}).click();await page.locator('.subject-trainer h2').first().waitFor();assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Module overflow '+name);await page.getByRole('button',{name:'← Dienas plāns',exact:true}).click();}
    if(role==='marks'){
