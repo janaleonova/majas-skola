@@ -205,7 +205,14 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
   else if(role==='marks'&&id==='kristali')renderDragonSplitMath(trainer,options);
   else if(role==='marks'&&id==='anglu')renderMarksEnglish(trainer,{...options,initialTopic});
   else if(role==='marks'&&(id==='social'||id==='socialie'))renderMarksSocialStudies(trainer,options);
-  else if(role==='marks'&&id==='daba')renderMarksNatureNPD(trainer,{...options,initialTopic});
+  else if(role==='marks'&&id==='daba')renderMarksNatureNPD(trainer,{...options,initialTopic,
+    requestLatvianAudio:async text=>{
+      const token=await state.user.getIdToken();
+      const result=await fetch('/api/latvian-tts',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify({text}),signal:AbortSignal.timeout(16000)});
+      if(!result.ok)throw Error('Kvalitatīvā balss nav pieejama');
+      return result.json();
+    }
+  });
   else if(role==='samanta'&&id==='matematika')renderSamantaMath(trainer,options);
   else if(role==='samanta'&&id==='saskaitisana')renderSamantaAdditionGame(trainer,options);
   else if(role==='samanta'&&id==='latviesu')renderSamantaLatvian(trainer,options);
