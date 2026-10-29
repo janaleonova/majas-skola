@@ -18,3 +18,10 @@ jobs:
    - run: npm run test:rules
    - run: npx playwright install --with-deps chromium
    - run: npm run test:browser
+   - name: Upload browser failure screenshots
+     if: failure()
+     uses: actions/upload-artifact@v4
+     with:
+      name: browser-ui-debug
+      path: test-artifacts/
+      if-no-files-found: ignore
