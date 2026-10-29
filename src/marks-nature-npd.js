@@ -549,6 +549,8 @@ export function renderMarksNatureNPD(container, options = {}) {
   let examScore = 0;
   let examPointsEarned = 0;
   let examFeedback = null;
+  let examSaveStatus = '';
+  let examSaving = false;
 
   const root = document.createElement('div');
   root.className = 'nature-npd-app marks-theme';
@@ -1107,6 +1109,9 @@ export function renderMarksNatureNPD(container, options = {}) {
     examScore = Math.round((totalEarned / 25) * 100);
     examSubmitted = true;
     examFeedback = breakdown;
+    examSaveStatus = '⏳ Saglabāju rezultātu…';
+    examSaving = true;
+    render();
 
     if (examScore >= 80) {
       playFanfare();
@@ -1116,7 +1121,7 @@ export function renderMarksNatureNPD(container, options = {}) {
 
     if (canSubmit && typeof saveProgress === 'function') {
       try {
-        await saveProgress({
+        const savedId = await saveProgress({
           studentRole: 'marks',
           subject: 'Dabaszinības',
           subjectId: 'nature',
@@ -1132,11 +1137,16 @@ export function renderMarksNatureNPD(container, options = {}) {
             breakdown
           })
         });
+        if(!savedId)throw Error('Saglabāšana netika apstiprināta');
+        examSaveStatus = '✅ Rezultāts apstiprināti saglabāts. Faktiski ieskaitītos BP skati kvītī.';
       } catch (err) {
+        examSaveStatus = '⚠️ Saglabāšana nav apstiprināta. Rezultāts ir saglabāts ierīces rezerves rindā — izmanto atkārtotas nosūtīšanas pogu dienas plānā.';
         console.warn('Neizdevās saglabāt Dabaszinību NPD:', err);
       }
+    }else{
+      examSaveStatus = 'Priekšskatījuma režīms — punkti netiek saglabāti.';
     }
-
+    examSaving = false;
     render();
   }
 
@@ -1169,6 +1179,10 @@ export function renderMarksNatureNPD(container, options = {}) {
       }
     });
 
+    const saveNotice=document.createElement('p');
+    saveNotice.setAttribute('role','status');
+    saveNotice.className='npd-save-status';
+    saveNotice.textContent=examSaveStatus||'Rezultāta saglabāšanas statuss nav zināms.';
     card.innerHTML = `
       <div class="results-header-box ${examScore >= 80 ? 'gold' : ''}">
         <span class="gold-trophy-icon">${examScore >= 80 ? '🏆' : '🌱'}</span>
@@ -1177,7 +1191,7 @@ export function renderMarksNatureNPD(container, options = {}) {
           <strong>${examPointsEarned} no 25 punktiem (${examScore}%)</strong>
           <span class="grade-pill">Vērtējums: ${grade} balles (${gradeText})</span>
         </div>
-        ${examScore >= 80 ? '<p class="bonus-congrats">🎉 Tu esi izpildījis prasību (vismaz 80%) un saņēmis <strong>+20 BP</strong> Zelta bonusa punktus savā krātuvē!</p>' : '<p>Lai saņemtu +20 BP Zelta bonusu, nepieciešams sasniegt vismaz 80% (20 p.). Pārskati kļūdas un pamēģini vēlreiz!</p>'}
+        ${examScore >= 80 ? '<p class="bonus-congrats">🎉 Sasniegts 80% slieksnis. +20 BP īpašo bonusu ieskaita vienreiz pēc veiksmīgas saglabāšanas; precīzu piešķīrumu skati BP kvītī.</p>' : '<p>Lai saņemtu +20 BP Zelta bonusu, nepieciešams sasniegt vismaz 80% (20 p.). Pārskati kļūdas un pamēģini vēlreiz!</p>'}
       </div>
 
       <div class="solo-levels-grid">
@@ -1234,6 +1248,7 @@ export function renderMarksNatureNPD(container, options = {}) {
         </table>
       </div>
     `;
+    card.prepend(saveNotice);
 
     card.querySelector('#btn-retake').onclick = () => {
       examSubmitted = false;
@@ -1366,6 +1381,18 @@ export function renderMarksNatureNPD(container, options = {}) {
   // CSS stili
   const style = document.createElement('style');
   style.textContent = `
+    /* Neatkarīgs, augsta kontrasta bērna mācību ekrāns — arī pie tumšas lietotnes tēmas. */
+    .nature-npd-app, .nature-npd-app * { opacity: 1; }
+    .nature-npd-app { background:#ffffff !important; color:#172b42 !important; color-scheme:light; }
+    .nature-npd-app p, .nature-npd-app li, .nature-npd-app label,
+    .nature-npd-app small, .nature-npd-app .npd-sub,
+    .nature-npd-app .exam-q-prompt { color:#24364a !important; line-height:1.6; }
+    .nature-npd-app small { font-size:0.9rem !important; }
+    .nature-npd-app button, .nature-npd-app select, .nature-npd-app input,
+    .nature-npd-app textarea { font-size:1rem !important; min-height:44px; }
+    .nature-npd-app .exam-q-card, .nature-npd-app .practice-card,
+    .nature-npd-app .theory-card { background:#fff !important; color:#172b42 !important; }
+    .nature-npd-app .npd-save-status { background:#ecfdf5; color:#064e3b !important; border:2px solid #047857; border-radius:12px; padding:14px; font-weight:700; font-size:1rem; }
     .nature-npd-app {
       font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
       color: #1e293b;
