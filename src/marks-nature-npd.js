@@ -997,7 +997,7 @@ export function renderMarksNatureNPD(container, options = {}) {
         const expDiv = document.createElement('div');
         expDiv.className = 'exam-exp-group';
         expDiv.innerHTML = `
-          <div style="background:#f1f5f9; padding:12px; border-radius:8px; border-left:4px solid #3b82f6; margin-bottom:14px; font-size:0.92rem; line-height:1.6;">
+          <div class="experiment-description">
             <strong>Eksperimenta apraksts:</strong> Četri vienādi pupu stādi 14 dienas auga dažādos apstākļos:
             <ul style="margin:6px 0 0; padding-left:20px;">
               <li><strong>Stāds A (Kontrolgrupa):</strong> Saule + laistīts + istabā (+20°C) ➔ 18 cm, stiprs zaļš stumbrs, 6 veselīgas lapas.</li>
@@ -1018,9 +1018,10 @@ export function renderMarksNatureNPD(container, options = {}) {
             btn.type = 'button';
             btn.className = `exam-choice-btn ${examSubAnswers[sq.qId] === oIdx ? 'selected' : ''}`;
             btn.textContent = optText;
+            btn.setAttribute('aria-pressed',String(examSubAnswers[sq.qId] === oIdx));
             btn.onclick = () => {
               examSubAnswers[sq.qId] = oIdx;
-              render();
+              opts.querySelectorAll('.exam-choice-btn').forEach((choice,index)=>{choice.classList.toggle('selected',index===oIdx);choice.setAttribute('aria-pressed',String(index===oIdx));});
             };
             opts.append(btn);
           });
@@ -1036,9 +1037,10 @@ export function renderMarksNatureNPD(container, options = {}) {
           btn.type = 'button';
           btn.className = `exam-choice-btn ${examAnswers[q.id] === oIdx ? 'selected' : ''}`;
           btn.textContent = opt.text;
+          btn.setAttribute('aria-pressed',String(examAnswers[q.id] === oIdx));
           btn.onclick = () => {
             examAnswers[q.id] = oIdx;
-            render();
+            opts.querySelectorAll('.exam-choice-btn').forEach((choice,index)=>{choice.classList.toggle('selected',index===oIdx);choice.setAttribute('aria-pressed',String(index===oIdx));});
           };
           opts.append(btn);
         });
@@ -1437,6 +1439,20 @@ export function renderMarksNatureNPD(container, options = {}) {
       .nature-npd-app .exam-q-prompt {font-size:1.08rem !important;}
       .nature-npd-app .match-row {flex-direction:column !important; align-items:stretch !important;}
     }
+    /* Skaidrs bērna eksāmena izkārtojums neatkarīgi no globālās tēmas */
+    .nature-npd-app .npd-content-box, .nature-npd-app .exam-container, .nature-npd-app .exam-questions-list {background:#f3f6fb !important;color:#14263d !important;}
+    .nature-npd-app .exam-q-card {display:block !important;background:#fff !important;color:#14263d !important;border:2px solid #cbd5e1 !important;padding:22px !important;margin-bottom:20px !important;border-radius:18px !important;}
+    .nature-npd-app .exam-q-card h4,.nature-npd-app .exam-q-card p,.nature-npd-app .exam-q-card strong,.nature-npd-app .exam-q-card li,.nature-npd-app .exam-q-card .exam-q-prompt {color:#172b43 !important;opacity:1 !important;}
+    .nature-npd-app .exam-q-card .exam-q-prompt {font-size:1.15rem !important;line-height:1.55 !important;margin:14px 0 18px !important;}
+    .nature-npd-app .exam-options-stack {display:flex !important;flex-direction:column !important;align-items:stretch !important;gap:10px !important;width:100% !important;}
+    .nature-npd-app .exam-options-stack > .exam-choice-btn {display:block !important;width:100% !important;height:auto !important;min-height:52px !important;box-sizing:border-box !important;white-space:normal !important;text-align:left !important;line-height:1.5 !important;padding:13px 16px !important;color:#172b43 !important;background:#fff !important;border:2px solid #94a3b8 !important;border-radius:12px !important;font-size:1.04rem !important;font-weight:600 !important;}
+    .nature-npd-app .exam-options-stack > .exam-choice-btn.selected {background:#dcfce7 !important;border-color:#15803d !important;color:#14532d !important;box-shadow:inset 5px 0 0 #15803d !important;}
+    .nature-npd-app .exam-options-stack > .exam-choice-btn:focus-visible {outline:3px solid #2563eb !important;outline-offset:2px !important;}
+    .nature-npd-app .experiment-description {background:#eff6ff !important;color:#172b43 !important;border:2px solid #93c5fd !important;border-left:6px solid #2563eb !important;padding:18px 20px !important;margin-bottom:20px !important;border-radius:14px !important;font-size:1.04rem !important;line-height:1.7 !important;}
+    .nature-npd-app .experiment-description * {color:#172b43 !important;opacity:1 !important;}
+    .nature-npd-app .experiment-description li {margin-bottom:9px !important;}
+    .nature-npd-app .exam-exp-group > div:not(.experiment-description) {background:#fff !important;color:#172b43 !important;padding:12px 0 !important;border-bottom:1px solid #cbd5e1;}
+    @media(max-width:680px){.nature-npd-app .exam-q-card {padding:16px !important;}.nature-npd-app .experiment-description {padding:14px !important;}}
     .nature-npd-app {
       font-family: 'DM Sans', system-ui, -apple-system, sans-serif;
       color: #1e293b;
