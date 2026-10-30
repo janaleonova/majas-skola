@@ -252,15 +252,16 @@ export function renderMarksUnit1Mission(container,options={}){
   const questions=itemsForDay();
   const result=scoreUnit1(questions,answers);
   const filled=writing.filter(x=>x.trim()).length;
-  if(activeDate===TEST_DAY&&filled!==7){
-   saveStatus='Lai pabeigtu simulāciju, uzraksti visus 7 teikumus. Rakstīšanas pareizību pārbaudīs pieaugušais.';
+  const writtenWords=writing.reduce((n,x)=>n+countUnit1Words(x),0);
+  if(activeDate===TEST_DAY&&(filled!==7||writtenWords<35)){
+   saveStatus='Lai pabeigtu simulāciju, uzraksti 7 teikumus un kopā vismaz 35 vārdus (mērķis ~50). Pareizību pārbaudīs pieaugušais.';
    render();return;
   }
   if(!canSubmit||typeof saveProgress!=='function'){
    saveStatus='Priekšskatījums: rezultāts netiek iesniegts.';render();return;
   }
   submitting=true;saveStatus='Saglabāju rezultātu…';render();
-  const eligible=unit1DailyCanBonus(activeDate,dayNow,result.percent,filled);
+  const eligible=unit1DailyCanBonus(activeDate,dayNow,result.percent,filled,writtenWords);
   const payload={
    studentRole:'marks',subject:'Angļu valoda',subjectId:'english',
    activityType:activeDate===TEST_DAY?'Unit 1 · 43 p. objektīvā daļa un rakstīšana · exam':'Unit 1 · '+monthDay(activeDate)+' · exam',
@@ -269,7 +270,7 @@ export function renderMarksUnit1Mission(container,options={}){
     missionId:unit1MissionId(activeDate),mode:'exam',
     objectivePoints:result.earned,objectiveMax:result.max,
     writingPendingReview:activeDate===TEST_DAY,writingSentences:activeDate===TEST_DAY?writing:null,
-    writingWordCount:activeDate===TEST_DAY?writing.reduce((n,x)=>n+countUnit1Words(x),0):null,
+    writingWordCount:activeDate===TEST_DAY?writtenWords:null,
     bonusRequirementMet:eligible,bonusAmount:10
    })
   };
