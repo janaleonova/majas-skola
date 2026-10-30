@@ -4,6 +4,8 @@ import {renderDragonSplitMath} from './dragon-split-math.js';
 import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
 import {renderMarksMath} from './marks-math.js';
 import {renderMarksEnglish} from './marks-english.js';
+import {renderMarksUnit1Mission} from './marks-unit1-mission.js';
+import {UNIT1_DAYS,UNIT1_BONUS_DEADLINE,UNIT1_NPD_DATE,unit1MissionId} from './marks-unit1-data.js';
 import {renderMarksSocialStudies} from './marks-social-studies.js';
 import {renderMarksNatureNPD} from './marks-nature-npd.js';
 import {renderSamantaLatvian} from './samanta-latvian.js';
@@ -101,6 +103,20 @@ function renderDashboard(role){
     details:'Interaktīvā darba lapa: 15 jaunie vārdi (bag, guitar, phone, trainers, headphones...), jautājumu veidošana ar am/is/are un īsās atbildes.'}
   ];
   const list=E('div','','today-missions');
+  // Intensīva sagatavošanās angļu valodas Unit 1 NPD (04.11.).
+  if(state.day>='2026-10-30'&&state.day<=UNIT1_NPD_DATE){
+   const active=UNIT1_DAYS.filter(d=>d.date<=state.day).at(-1)||UNIT1_DAYS[0];
+   const done=state.progress.some(r=>r.studentRole==='marks'&&r.studentUid===uidFor(role)&&
+     readNotes(r).missionId===unit1MissionId(active.date)&&describeActivity(r).mode==='exam'&&r.score>=80);
+   const card=E('article','','card task-card unit1-featured');
+   const bonusText=state.day<=UNIT1_BONUS_DEADLINE?
+     (done?'✅ Dienas +10 BP nosacījums izpildīts.':'🎁 Dienas bonuss +10 BP, ja patstāvīgajā daļā vismaz 80%.'):
+     '📝 Šodien NPD. Atkārtošanai pieejamas visas piecas misijas.';
+   card.append(E('h3','🇬🇧 Unit 1 · angļu valodas NPD 04.11.'),E('p',active.icon+' '+active.title+' — '+active.focus),E('p',bonusText),
+     E('p','5 sagatavošanās dienas · be formas, 15 priekšmeti, valstis un tautības, lasīšana, klausīšanās, dialogs, rakstīšana.'));
+   button(card,'Atvērt Unit 1 NPD ekspedīciju →',()=>openModule(role,'anglu-unit1'));
+   list.append(card);
+  }
   for(const spec of specs){
    const completed=state.progress.some(r=>r.studentRole==='marks'&&r.studentUid===uidFor(role)&&
     readNotes(r).missionId===spec.id&&describeActivity(r).mode==='exam'&&r.score>=spec.min);
@@ -204,6 +220,13 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
   else if(role==='marks'&&id==='dzeja')renderMarksPoetryMission(trainer,options);
   else if(role==='marks'&&id==='kristali')renderDragonSplitMath(trainer,options);
   else if(role==='marks'&&id==='anglu')renderMarksEnglish(trainer,{...options,initialTopic});
+  else if(role==='marks'&&id==='anglu-unit1')renderMarksUnit1Mission(trainer,{
+   ...options,
+   completedMissions:state.progress.filter(r=>r.studentRole==='marks'&&r.studentUid===uidFor(role)&&
+     describeActivity(r).mode==='exam'&&r.score>=80&&readNotes(r).missionId?.startsWith('unit1-'))
+     .map(r=>readNotes(r).missionId),
+   today:state.day
+  });
   else if(role==='marks'&&(id==='social'||id==='socialie'))renderMarksSocialStudies(trainer,options);
   else if(role==='marks'&&id==='daba')renderMarksNatureNPD(trainer,{...options,initialTopic,
     requestLatvianAudio:async text=>{
