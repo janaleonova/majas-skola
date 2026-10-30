@@ -1149,4 +1149,4 @@ export const scoreUnit1=(items,answers)=>{const max=items.reduce((n,q)=>n+q.poin
 
 export const countUnit1Words=text=>String(text||'').trim().split(/\s+/).filter(Boolean).length;
 
-export const unit1DailyCanBonus=(date,completedAt,score,writingSentences)=>completedAt>=date&&completedAt<=UNIT1_BONUS_DEADLINE&&score>=80&&(date!==UNIT1_BONUS_DEADLINE||writingSentences===7);
+export const unit1DailyCanBonus=(date,completedAt,score,writingSentences,writingWordCount=0)=>completedAt>=date&&completedAt<=UNIT1_BONUS_DEADLINE&&score>=80&&(date!==UNIT1_BONUS_DEADLINE||(writingSentences===7&&writingWordCount>=35));
