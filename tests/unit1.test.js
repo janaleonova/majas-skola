@@ -18,7 +18,7 @@ test('five daily missions and authentic 52-point rubric with 43 objective points
  assert.deepEqual(UNIT1_DAYS.map(d=>d.date),[
   '2026-10-30','2026-10-31','2026-11-01','2026-11-02','2026-11-03']);
  assert.equal(NEW_WORDS.length,15);
- assert.equal(UNIT1_DAY2.length,10);
+ assert.equal(UNIT1_DAY2.length,20);
  assert.equal(UNIT1_DAY3.length,12);
  assert.equal(UNIT1_DAY4.length,12);
  assert.equal(unit1AutoTotal,43);
