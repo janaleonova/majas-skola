@@ -7,6 +7,7 @@ import {UNIT1_DAYS,UNIT1_MOCK,UNIT1_RUBRIC,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,
   isUnit1Correct,scoreUnit1} from '../src/marks-unit1-data.js';
 import {renderMarksUnit1Mission} from '../src/marks-unit1-mission.js';
 import {CHILD_UIDS,calculateChildPoints} from '../src/learning-policy.js';
+import {dailyTrainingQuestions,dailyExamQuestions,dailyReadiness,UNIT1_TRAINING_BANK} from '../src/marks-unit1-training.js';
 
 const setup=()=>{
  const {document,window}=parseHTML('<html><head></head><body><div id="root"></div></body></html>');
@@ -74,30 +75,67 @@ test('Mark earns five +10 BP bonuses only once each, no bonus before release or 
  assert.equal(bad.events.reduce((sum,e)=>sum+e.missionBonus,0),0);
 });
 
-test('the interactive day-one mission saves a real score with day-specific mission identifier',async()=>{
+test('training is extensive, cumulative and daily NPD covers more than the new topic',()=>{
+ const sizes=UNIT1_DAYS.map(d=>dailyTrainingQuestions(d.date).length);
+ const exam=UNIT1_DAYS.map(d=>dailyExamQuestions(d.date,NEW_WORDS,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,UNIT1_MOCK));
+ assert.deepEqual(sizes,[38,55,62,85,85]);
+ assert.deepEqual(exam.map(a=>a.length),[30,39,33,43,43]);
+ assert.deepEqual(UNIT1_DAYS.map((d,i)=>[d.date,exam[i].length]),[
+  ['2026-10-30',30],['2026-10-31',39],['2026-11-01',33],['2026-11-02',43],['2026-11-03',43]]);
+ for(let i=0;i<5;i++){
+  assert.equal(new Set(exam[i].map(q=>q.id)).size,exam[i].length);
+  assert.equal(new Set(dailyTrainingQuestions(UNIT1_DAYS[i].date).map(q=>q.id)).size,sizes[i]);
+ }
+ assert.equal(Object.values(UNIT1_TRAINING_BANK).flat().length,85);
+ assert.equal(dailyReadiness(84),'almost');
+ assert.equal(dailyReadiness(85),'ready');
+});
+
+test('the guided practice explains mistakes, then day-one NPD independently checks 30 answers and saves bonus',async()=>{
  const {root}=setup();
  let saved;
+ let checkpoint;
  renderMarksUnit1Mission(root,{
   today:'2026-10-30',
   saveProgress:async data=>{saved=data;return 'saved';},
-  onCheckpoint:()=>{}
+  onCheckpoint:data=>{checkpoint=data;}
  });
  assert.equal(root.querySelectorAll('.unit1-day-card').length,5);
- const first=[...root.querySelectorAll('.unit1-day-card button')][0];
+ const first=root.querySelector('.unit1-day-card button');
  first.click();
  assert.ok(root.textContent.includes('Vārdu medības'));
  assert.equal(root.querySelectorAll('.unit1-flashcard').length,15);
- const start=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('sākt patstāvīgo'));
- start.click();
- assert.ok(root.textContent.includes('Jautājums 1'));
- for(let i=0;i<15;i++){
-  const question=NEW_WORDS[i];
-  const input=root.querySelector('.unit1-answer');
-  assert.ok(input);
-  input.value=question.en;
-  input.oninput();
-  const next=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Nākamais →'));
-  if(i<14)next.click();
+ const practice=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Trenēties · 38'));
+ assert.ok(practice);
+ practice.click();
+ assert.ok(root.textContent.includes('Treniņu trase'));
+ const check=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Pārbaudīt atbildi'));
+ assert.ok(check);
+ check.click();
+ assert.ok(root.textContent.includes('Pamēģini vēlreiz'));
+ assert.equal(checkpoint.phase,'practice');
+ const npd=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Kārtot dienas NPD'));
+ npd.click();
+ assert.equal(checkpoint.phase,'exam');
+ const bank=dailyExamQuestions('2026-10-30',NEW_WORDS,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,UNIT1_MOCK);
+ for(let group=0;group<Math.ceil(bank.length/4);group++){
+  const questions=bank.slice(group*4,group*4+4);
+  const blocks=[...root.querySelectorAll('.unit1-question')];
+  assert.equal(blocks.length,questions.length);
+  for(let i=0;i<questions.length;i++){
+   const q=questions[i],block=blocks[i];
+   const input=block.querySelector('input');
+   if(input){input.value=q.answer;input.oninput();}
+   else{
+    const choice=[...block.querySelectorAll('button')].find(b=>b.textContent===q.answer);
+    assert.ok(choice,'Missing correct choice for '+q.id);
+    choice.click();
+   }
+  }
+  if(group<Math.ceil(bank.length/4)-1){
+   const next=[...root.querySelectorAll('button')].find(b=>b.textContent==='Nākamais →');
+   assert.ok(next);next.click();
+  }
  }
  const send=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Pabeigt un saglabāt'));
  send.click();
@@ -108,4 +146,6 @@ test('the interactive day-one mission saves a real score with day-specific missi
  assert.equal(saved.topicId,'unit1-day-2026-10-30');
  assert.equal(saved.score,100);
  assert.equal(JSON.parse(saved.notes).missionId,'unit1-2026-10-30');
+ assert.ok(root.textContent.includes('85%'));
+ assert.ok(root.textContent.includes('Kļūdu')===false);
 });
