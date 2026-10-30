@@ -94,6 +94,17 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
      special.add('daily-family');missionBonus+=5;
    }
   }
+  // Piecas atsevišķas Unit 1 misijas (30.10.–03.11.2026).
+  // Bonuss netiek pieskaitīts par tikai atvērtu vai mācīšanās režīma uzdevumu.
+  const unit1MissionDates=['2026-10-30','2026-10-31','2026-11-01','2026-11-02','2026-11-03'];
+  const unit1Date=unit1MissionDates.find(date=>missionId==='unit1-'+date);
+  if(role==='marks'&&unit1Date&&d.mode==='exam'&&d.subjectId==='english'&&
+     d.topicId==='unit1-day-'+unit1Date&&day>=unit1Date&&day<='2026-11-03'&&
+     percent>=80&&(unit1Date!=='2026-11-03'||
+     (Array.isArray(d.notes.writingSentences)&&d.notes.writingSentences.filter(t=>String(t).trim()).length===7))&&
+     !special.has(missionId)){
+    special.add(missionId);missionBonus+=10;
+  }
   let assignedBonus=0;if(row.taskId&&row.taskQualified===true&&!taskBonuses.has(row.taskId)&&Number.isInteger(row.taskBonus)&&row.taskBonus>=0&&row.taskBonus<=30){assignedBonus=row.taskBonus;taskBonuses.add(row.taskId);}
   const earned=mastery+effort+dailyBonus+missionBonus+assignedBonus;totalEarned+=earned;if(day===today)todayEarned+=earned;activityCount++;
   events.push({attemptId:attempt,day,topicId:d.topicId,mastery,effort,dailyBonus,missionBonus,assignedBonus,earned,balance:totalEarned});
