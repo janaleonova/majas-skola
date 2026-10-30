@@ -79,9 +79,9 @@ test('training is extensive, cumulative and daily NPD covers more than the new t
  const sizes=UNIT1_DAYS.map(d=>dailyTrainingQuestions(d.date).length);
  const exam=UNIT1_DAYS.map(d=>dailyExamQuestions(d.date,NEW_WORDS,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,UNIT1_MOCK));
  assert.deepEqual(sizes,[38,55,62,85,85]);
- assert.deepEqual(exam.map(a=>a.length),[30,39,33,43,43]);
+ assert.deepEqual(exam.map(a=>a.length),[30,39,33,43,50]);
  assert.deepEqual(UNIT1_DAYS.map((d,i)=>[d.date,exam[i].length]),[
-  ['2026-10-30',30],['2026-10-31',39],['2026-11-01',33],['2026-11-02',43],['2026-11-03',43]]);
+  ['2026-10-30',30],['2026-10-31',39],['2026-11-01',33],['2026-11-02',43],['2026-11-03',50]]);
  for(let i=0;i<5;i++){
   assert.equal(new Set(exam[i].map(q=>q.id)).size,exam[i].length);
   assert.equal(new Set(dailyTrainingQuestions(UNIT1_DAYS[i].date).map(q=>q.id)).size,sizes[i]);
