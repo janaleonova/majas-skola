@@ -6,7 +6,7 @@
     "build": "esbuild src/main.js --bundle --minify --outfile=public/bundle.js",
     "dev": "npm run build && node server.js",
     "start": "npm run build && node server.js",
-    "test": "node --test server/*.test.js tests/app.test.js tests/learning-policy.test.js tests/modules.test.js tests/drafts.test.js tests/latvian-speech.test.js",
+    "test": "node --test server/*.test.js tests/app.test.js tests/learning-policy.test.js tests/modules.test.js tests/drafts.test.js tests/latvian-speech.test.js tests/unit1.test.js",
     "test:security-scenarios": "node tests/security-scenarios.test.js",
     "test:rules": "firebase emulators:exec --project demo-majas-skola --config firebase.home-school.json --only firestore \"node --test tests/firestore.emulator.js\"",
     "test:browser": "node tests/browser-ui.js"
