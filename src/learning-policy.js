@@ -101,7 +101,7 @@ export function calculateChildPoints(role,records=[],now=new Date(),expectedUid=
   if(role==='marks'&&unit1Date&&d.mode==='exam'&&d.subjectId==='english'&&
      d.topicId==='unit1-day-'+unit1Date&&day>=unit1Date&&day<='2026-11-03'&&
      percent>=80&&(unit1Date!=='2026-11-03'||
-     (Array.isArray(d.notes.writingSentences)&&d.notes.writingSentences.filter(t=>String(t).trim()).length===7))&&
+     (Array.isArray(d.notes.writingSentences)&&d.notes.writingSentences.filter(t=>String(t).trim()).length===7&&Number(d.notes.writingWordCount)>=35))&&
      !special.has(missionId)){
     special.add(missionId);missionBonus+=10;
   }
