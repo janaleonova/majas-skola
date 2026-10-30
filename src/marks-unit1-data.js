@@ -12,7 +12,8 @@ export const UNIT1_DAYS = [
     "focus": "15 priekšmeti: atpazīšana, pareiza rakstība un angļu izruna",
     "intro": "Atver kartītes, noklausies izrunu un uzraksti priekšmetu vārdus patstāvīgi.",
     "min": 80,
-    "bonus": 10
+    "bonus": 10,
+    "materials": "Darba burtnīca 9. lpp., 5. un 6. uzdevums; 15 priekšmetu vārdi."
   },
   {
     "date": "2026-10-31",
@@ -21,7 +22,8 @@ export const UNIT1_DAYS = [
     "focus": "Valstis un tautības",
     "intro": "Iemācies rakstīt valstu un tautību nosaukumus. Pievērs uzmanību lielajiem sākuma burtiem.",
     "min": 80,
-    "bonus": 10
+    "bonus": 10,
+    "materials": "Valstu un tautību pieraksti; mācies rakstību un izrunu."
   },
   {
     "date": "2026-11-01",
@@ -30,7 +32,8 @@ export const UNIT1_DAYS = [
     "focus": "am/is/are — apgalvojums un noliegums ar visām personām",
     "intro": "I am, you are, he/she/it is, we are, you are, they are. Pārveido arī noliegumā.",
     "min": 80,
-    "bonus": 10
+    "bonus": 10,
+    "materials": "Grāmata 13. lpp., 6. un 7. uzdevums: be tagadnē."
   },
   {
     "date": "2026-11-02",
@@ -39,7 +42,8 @@ export const UNIT1_DAYS = [
     "focus": "Jautājumi, īsās atbildes un dialogs",
     "intro": "Ievieto be teikuma sākumā un lieto Yes/No īsās atbildes.",
     "min": 80,
-    "bonus": 10
+    "bonus": 10,
+    "materials": "Grāmata 15. lpp., 6. uzdevums; darba burtnīca 9. lpp., 5. uzdevums; darba lapa; WB 12. lpp., 2. uzdevums."
   },
   {
     "date": "2026-11-03",
@@ -48,7 +52,8 @@ export const UNIT1_DAYS = [
     "focus": "Lasīšana, klausīšanās, 8 objektīvo uzdevumu grupas un 7 teikumu rakstīšana",
     "intro": "Izmēģinājuma pārbaudes darbā ir 43 automātiski pārbaudāmi punkti un 9 punkti rakstīšanai, ko pārskata pieaugušais.",
     "min": 80,
-    "bonus": 10
+    "bonus": 10,
+    "materials": "Student's Book 19. lpp. “Teen Forum”; Project Log 6. lpp. (write); kladē 7 teikumi par svarīgu cilvēku vai lietu."
   }
 ];
 
