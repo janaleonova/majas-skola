@@ -6,6 +6,7 @@ export const CATALOG={marks:[
  {id:'matematika',subjectId:'math',name:'Skaitļu misijas',description:'Reizrēķins, dalīšana, darbību secība un stāsti'},
  {id:'kristali',subjectId:'math',name:'Kristālu kalve',description:'Reizināšana, sadalot desmitos un vienos',bonus:10,threshold:85,prefix:'Kristālu kalve'},
  {id:'anglu',subjectId:'english',name:'Angļu valoda & Darba lapa',description:'SR: veidot jautājumus ar am/is/are · 15 jaunie vārdi · dienas un mēneši'},
+ {id:'anglu-unit1',subjectId:'english',name:'UNIT 1 · NPD misija 30.10.–03.11.',description:'5 dienas, 15 priekšmeti, valstis un tautības, be, 52 punktu simulācija · līdz +50 BP'},
  {id:'social',subjectId:'social',name:'Sociālās zinības · 4. kl. P.D.',description:'Kā plānot un patērēt resursus saprātīgi? · 8 SR uzdevumi · 43 p.',bonus:20,threshold:80,prefix:'Sociālās zinības'},
  {id:'daba',subjectId:'nature',name:'Dabaszinības · 4. kl. NPD',description:'Kā vairojas, aug un attīstās dzīvie organismi? · 14 SR · 25 p.',bonus:20,threshold:80,prefix:'Dabaszinības 4. kl.'}
 ],samanta:[
