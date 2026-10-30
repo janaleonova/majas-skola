@@ -195,6 +195,76 @@ export const UNIT1_DAY2 = [
     "options": null,
     "points": 1,
     "hint": "Valsts: Canada"
+  },
+  {
+    "id": "country-name-0",
+    "prompt": "🇱🇻 Latvija: ieraksti valsts nosaukumu angliski.",
+    "answer": "Latvia",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-1",
+    "prompt": "🇬🇧 Lielbritānija: ieraksti valsts nosaukumu angliski.",
+    "answer": "the UK",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-2",
+    "prompt": "🇺🇸 ASV: ieraksti valsts nosaukumu angliski.",
+    "answer": "the USA",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-3",
+    "prompt": "🇩🇪 Vācija: ieraksti valsts nosaukumu angliski.",
+    "answer": "Germany",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-4",
+    "prompt": "🇫🇷 Francija: ieraksti valsts nosaukumu angliski.",
+    "answer": "France",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-5",
+    "prompt": "🇮🇹 Itālija: ieraksti valsts nosaukumu angliski.",
+    "answer": "Italy",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-6",
+    "prompt": "🇪🇸 Spānija: ieraksti valsts nosaukumu angliski.",
+    "answer": "Spain",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-7",
+    "prompt": "🇵🇱 Polija: ieraksti valsts nosaukumu angliski.",
+    "answer": "Poland",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-8",
+    "prompt": "🇯🇵 Japāna: ieraksti valsts nosaukumu angliski.",
+    "answer": "Japan",
+    "options": null,
+    "points": 1
+  },
+  {
+    "id": "country-name-9",
+    "prompt": "🇨🇦 Kanāda: ieraksti valsts nosaukumu angliski.",
+    "answer": "Canada",
+    "options": null,
+    "points": 1
   }
 ];
 
