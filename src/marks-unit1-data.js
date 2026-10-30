@@ -213,14 +213,25 @@ export const UNIT1_DAY2 = [
     "prompt": "🇬🇧 Lielbritānija: ieraksti valsts nosaukumu angliski.",
     "answer": "the UK",
     "options": null,
-    "points": 1
+    "points": 1,
+    "accepted": [
+      "UK",
+      "the United Kingdom",
+      "United Kingdom"
+    ]
   },
   {
     "id": "country-name-2",
     "prompt": "🇺🇸 ASV: ieraksti valsts nosaukumu angliski.",
     "answer": "the USA",
     "options": null,
-    "points": 1
+    "points": 1,
+    "accepted": [
+      "USA",
+      "United States",
+      "the United States",
+      "United States of America"
+    ]
   },
   {
     "id": "country-name-3",
