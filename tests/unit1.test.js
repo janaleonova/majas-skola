@@ -46,7 +46,8 @@ test('bonus only on or after scheduled date, before NPD, and writing is required
  assert.equal(unit1DailyCanBonus('2026-10-30','2026-11-03',80,0),true);
  assert.equal(unit1DailyCanBonus('2026-10-30','2026-11-04',100,0),false);
  assert.equal(unit1DailyCanBonus('2026-11-03','2026-11-03',90,6),false);
- assert.equal(unit1DailyCanBonus('2026-11-03','2026-11-03',90,7),true);
+ assert.equal(unit1DailyCanBonus('2026-11-03','2026-11-03',90,7,34),false);
+ assert.equal(unit1DailyCanBonus('2026-11-03','2026-11-03',90,7,49),true);
 });
 
 test('Mark earns five +10 BP bonuses only once each, no bonus before release or after deadline',()=>{
@@ -55,7 +56,7 @@ test('Mark earns five +10 BP bonuses only once each, no bonus before release or 
   topicId:unit1TopicId(date),activityType:'Unit 1 · '+date+' · '+mode,mode,score,
   completedAt:completedDate+'T11:00:00+02:00',
   notes:JSON.stringify({mode,missionId:unit1MissionId(date),
-   writingSentences:hasWriting?Array.from({length:7},(_,i)=>'English sentence '+i+'.'):[]})
+   writingSentences:hasWriting?Array.from({length:7},(_,i)=>'My favourite English sentence is number '+i+'.'):[],writingWordCount:hasWriting?49:0})
  });
  const date='2026-11-03';
  const dates=UNIT1_DAYS.map(d=>d.date);
