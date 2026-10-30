@@ -1,4 +1,5 @@
 import {NEW_WORDS,speakEnglish} from './marks-english.js';
+import {dailyTrainingQuestions,dailyExamQuestions,dailyReadiness,UNIT1_TRAINING_LABELS} from './marks-unit1-training.js';
 import {UNIT1_DAYS,UNIT1_COUNTRIES,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,UNIT1_READING,UNIT1_LISTENING,UNIT1_MOCK,UNIT1_RUBRIC,UNIT1_BONUS_DEADLINE,UNIT1_NPD_DATE,unit1MissionId,unit1TopicId,isUnit1Correct,scoreUnit1,countUnit1Words,unit1DailyCanBonus} from './marks-unit1-data.js';
 
 const el=(tag,cls='',value='')=>{
@@ -14,19 +15,8 @@ const button=(text,callback,cls='unit1-btn')=>{
 const monthDay=date=>date.slice(8,10)+'.'+date.slice(5,7)+'.';
 const DAY1=UNIT1_DAYS[0].date;
 const TEST_DAY=UNIT1_DAYS[4].date;
-const dayQuestions=date=>{
- if(date===DAY1)return NEW_WORDS.map((word,i)=>({
-  id:'object-'+word.id,
-  prompt:word.icon+' '+word.lv+' — uzraksti nosaukumu angliski.',
-  answer:word.en,
-  points:1,
-  extra:word.example
- }));
- if(date===UNIT1_DAYS[1].date)return UNIT1_DAY2;
- if(date===UNIT1_DAYS[2].date)return UNIT1_DAY3;
- if(date===UNIT1_DAYS[3].date)return UNIT1_DAY4;
- return UNIT1_MOCK.flatMap(section=>section.items);
-};
+const dayQuestions=date=>dailyExamQuestions(date,NEW_WORDS,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,UNIT1_MOCK);
+
 const defaultWriting=()=>Array.from({length:7},()=>'');
 
 export function renderMarksUnit1Mission(container,options={}){
@@ -34,9 +24,12 @@ export function renderMarksUnit1Mission(container,options={}){
  const dayNow=typeof today==='string'?today:new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(today);
  const preferred=UNIT1_DAYS.filter(d=>d.date<=dayNow).at(-1)?.date||DAY1;
  let activeDate=UNIT1_DAYS.some(d=>d.date===initialState?.activeDate)?initialState.activeDate:preferred;
- let phase=['home','learn','exam','result'].includes(initialState?.phase)?initialState.phase:'home';
+ let phase=['home','learn','practice','exam','result'].includes(initialState?.phase)?initialState.phase:'home';
  let step=Math.max(0,Number(initialState?.step)||0);
  let answers=initialState?.answers&&typeof initialState.answers==='object'?{...initialState.answers}:{};
+ let practiceIndex=Math.max(0,Number(initialState?.practiceIndex)||0);
+ let practiceAnswers=initialState?.practiceAnswers&&typeof initialState.practiceAnswers==='object'?{...initialState.practiceAnswers}:{};
+ let practiceFeedback=initialState?.practiceFeedback||null;
  let writing=Array.isArray(initialState?.writing)&&initialState.writing.length===7?[...initialState.writing]:defaultWriting();
  let saveStatus='';
  let saved=false;
@@ -47,13 +40,13 @@ export function renderMarksUnit1Mission(container,options={}){
  const root=el('div','unit1-root');
  container.replaceChildren(root);
  const css=el('style');
- css.textContent="\n.unit1-root{max-width:1050px;margin:0 auto;padding:16px 10px 40px;color:#1b2e45!important;color-scheme:light;font-family:system-ui,-apple-system,sans-serif;line-height:1.5}\n.unit1-root *{box-sizing:border-box}\n.unit1-hero,.unit1-panel{background:#fff!important;color:#1b2e45!important;border:1px solid #cfddeb;border-radius:22px;padding:clamp(18px,3vw,30px);margin:0 0 18px;box-shadow:0 5px 25px rgba(16,41,70,.07)}\n.unit1-hero{background:linear-gradient(115deg,#effdf5,#eff7ff)!important;border-color:#b7e8d4}\n.unit1-root h2,.unit1-root h3,.unit1-root h4,.unit1-root p,.unit1-root label,.unit1-root strong,.unit1-root span{color:#1b2e45}\n.unit1-root h2{font-size:clamp(1.6rem,3.4vw,2.3rem);line-height:1.23;margin:12px 0}\n.unit1-root h3{font-size:clamp(1.3rem,2.5vw,1.7rem);margin:4px 0 12px}\n.unit1-root h4{font-size:1.15rem;margin:0 0 12px}\n.unit1-root p{font-size:1rem;margin:8px 0;line-height:1.55}\n.unit1-pill{display:inline-flex;background:#056e55;color:#fff!important;padding:6px 12px;border-radius:99px;font-weight:750;font-size:.82rem;letter-spacing:.03em}\n.unit1-date-line{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}\n.unit1-date-line span{background:#fff;border:1px solid #bddbd0;padding:7px 12px;border-radius:99px;font-size:.91rem}\n.unit1-topnav{display:flex;align-items:center;gap:14px;margin:10px 0 18px}\n.unit1-kicker{color:#52657d!important;font-size:.88rem;font-weight:800;letter-spacing:.03em}\n.unit1-muted{color:#52647b!important}\n.unit1-materials{background:#fff7e6;border-left:4px solid #d69e18;border-radius:8px;padding:12px 15px;font-size:.95rem!important;}\n.unit1-tip{background:#eaf6ff;padding:13px 15px;border-left:4px solid #2683b2;border-radius:8px}\n.unit1-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}\n.unit1-day-card,.unit1-flashcard{background:#f8fafd;border:1px solid #cbd8e7;border-radius:16px;padding:18px}\n.unit1-day-card strong{font-size:1.06rem}\n.unit1-day-card .unit1-focus{min-height:54px}\n.unit1-btn,.unit1-choice{border:2px solid #0b8c74;background:#0a896e!important;color:#fff!important;border-radius:12px;min-height:48px;padding:10px 16px;font-weight:800;font-size:1rem;cursor:pointer;max-width:100%;white-space:normal;line-height:1.4}\n.unit1-btn:hover,.unit1-btn:focus-visible{outline:3px solid #86efac;outline-offset:2px}\n.unit1-btn:disabled{opacity:.45;cursor:not-allowed}\n.unit1-btn.ghost{background:#fff!important;color:#126d65!important;border-color:#77bca9}\n.unit1-btn.primary{background:#076c59!important;border-color:#076c59}\n.unit1-flashcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}\n.unit1-flashcard{display:flex;flex-direction:column;align-items:flex-start;gap:12px}\n.unit1-flash-answer{background:#e6f4ee;color:#064c3b;padding:9px;border-radius:9px;font-weight:700;width:100%}\n.unit1-between{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}\n.unit1-progress{height:12px;background:#e0e7f0;border-radius:99px;overflow:hidden;margin:18px 0}\n.unit1-progress span{display:block;height:100%;border-radius:99px;background:#08916d}\n.unit1-exam-card{background:#fff;border:2px solid #d4deec;border-radius:18px;padding:clamp(16px,3vw,26px);margin:16px 0}\n.unit1-question{border-bottom:1px solid #e1e9f3;padding:14px 0}\n.unit1-question:last-child{border-bottom:0}\n.unit1-prompt{display:block!important;color:#172c43!important;font-weight:750;font-size:1.08rem;line-height:1.55;margin:0 0 14px}\n.unit1-options{display:grid;grid-template-columns:1fr;gap:9px}\n.unit1-choice{display:block;width:100%;text-align:left;background:#fff!important;border-color:#aabbd0;color:#162d42!important;min-height:50px;padding:13px 15px}\n.unit1-choice.chosen{background:#e0f7e9!important;color:#135438!important;border-color:#168454!important;box-shadow:inset 5px 0 0 #168454}\n.unit1-answer{display:block;width:100%;min-height:51px;background:#fff!important;color:#182a40!important;border:2px solid #8fa5bf;border-radius:12px;padding:12px 14px;font-size:1.06rem;font-family:inherit}\n.unit1-answer:focus{border-color:#087e6b;outline:2px solid #87d8bd;outline-offset:1px}\ntextarea.unit1-answer{min-height:70px;resize:vertical}\n.unit1-writing-line{display:block;margin:12px 0;font-weight:700}\n.unit1-writing-line span{display:block;margin:5px 0}\n.unit1-word-meter{background:#e3efff;padding:12px;border-radius:10px;font-weight:700}\n.unit1-controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}\n.unit1-reading{display:block;background:#f0f6ff;border:1px solid #b2cef2;border-radius:14px;padding:16px;margin:14px 0;color:#183149}\n.unit1-reading p{margin:12px 0}\n.unit1-rubric{margin-top:22px;border:1px solid #cdd9e7;border-radius:14px;padding:15px}\n.unit1-review-item{padding:12px 0;border-bottom:1px solid #dae3ef}.unit1-review-item p{margin:6px 0!important}\n.unit1-rubric summary{font-weight:800;cursor:pointer}\n.unit1-rubric-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 15px}\n.unit1-pronouns{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}\n.unit1-pronouns p{background:#eaf6ef;border-radius:10px;padding:11px}\n.unit1-big-score{font-size:clamp(1.5rem,4vw,2.5rem)!important;font-weight:850}\n.unit1-success{color:#075d3d!important;background:#dcfce7;padding:13px;border-radius:12px;font-weight:750}\n.unit1-status{color:#9f1239!important;background:#fff1f2;padding:12px;border-radius:10px;font-weight:700}\n@media(max-width:520px){.unit1-root{padding:7px}.unit1-hero,.unit1-panel{border-radius:16px}.unit1-days{grid-template-columns:1fr}.unit1-controls>.unit1-btn{flex:1}}\n";
+ css.textContent="\n.unit1-root{max-width:1050px;margin:0 auto;padding:16px 10px 40px;color:#1b2e45!important;color-scheme:light;font-family:system-ui,-apple-system,sans-serif;line-height:1.5}\n.unit1-root *{box-sizing:border-box}\n.unit1-hero,.unit1-panel{background:#fff!important;color:#1b2e45!important;border:1px solid #cfddeb;border-radius:22px;padding:clamp(18px,3vw,30px);margin:0 0 18px;box-shadow:0 5px 25px rgba(16,41,70,.07)}\n.unit1-hero{background:linear-gradient(115deg,#effdf5,#eff7ff)!important;border-color:#b7e8d4}\n.unit1-root h2,.unit1-root h3,.unit1-root h4,.unit1-root p,.unit1-root label,.unit1-root strong,.unit1-root span{color:#1b2e45}\n.unit1-root h2{font-size:clamp(1.6rem,3.4vw,2.3rem);line-height:1.23;margin:12px 0}\n.unit1-root h3{font-size:clamp(1.3rem,2.5vw,1.7rem);margin:4px 0 12px}\n.unit1-root h4{font-size:1.15rem;margin:0 0 12px}\n.unit1-root p{font-size:1rem;margin:8px 0;line-height:1.55}\n.unit1-pill{display:inline-flex;background:#056e55;color:#fff!important;padding:6px 12px;border-radius:99px;font-weight:750;font-size:.82rem;letter-spacing:.03em}\n.unit1-date-line{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}\n.unit1-date-line span{background:#fff;border:1px solid #bddbd0;padding:7px 12px;border-radius:99px;font-size:.91rem}\n.unit1-topnav{display:flex;align-items:center;gap:14px;margin:10px 0 18px}\n.unit1-kicker{color:#52657d!important;font-size:.88rem;font-weight:800;letter-spacing:.03em}\n.unit1-muted{color:#52647b!important}\n.unit1-materials{background:#fff7e6;border-left:4px solid #d69e18;border-radius:8px;padding:12px 15px;font-size:.95rem!important;}\n.unit1-tip{background:#eaf6ff;padding:13px 15px;border-left:4px solid #2683b2;border-radius:8px}\n.unit1-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}\n.unit1-day-card,.unit1-flashcard{background:#f8fafd;border:1px solid #cbd8e7;border-radius:16px;padding:18px}\n.unit1-day-card strong{font-size:1.06rem}\n.unit1-day-card .unit1-focus{min-height:54px}\n.unit1-btn,.unit1-choice{border:2px solid #0b8c74;background:#0a896e!important;color:#fff!important;border-radius:12px;min-height:48px;padding:10px 16px;font-weight:800;font-size:1rem;cursor:pointer;max-width:100%;white-space:normal;line-height:1.4}\n.unit1-btn:hover,.unit1-btn:focus-visible{outline:3px solid #86efac;outline-offset:2px}\n.unit1-btn:disabled{opacity:.45;cursor:not-allowed}\n.unit1-btn.ghost{background:#fff!important;color:#126d65!important;border-color:#77bca9}\n.unit1-btn.primary{background:#076c59!important;border-color:#076c59}\n.unit1-flashcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}\n.unit1-flashcard{display:flex;flex-direction:column;align-items:flex-start;gap:12px}\n.unit1-flash-answer{background:#e6f4ee;color:#064c3b;padding:9px;border-radius:9px;font-weight:700;width:100%}\n.unit1-between{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}\n.unit1-progress{height:12px;background:#e0e7f0;border-radius:99px;overflow:hidden;margin:18px 0}\n.unit1-progress span{display:block;height:100%;border-radius:99px;background:#08916d}\n.unit1-exam-card{background:#fff;border:2px solid #d4deec;border-radius:18px;padding:clamp(16px,3vw,26px);margin:16px 0}\n.unit1-question{border-bottom:1px solid #e1e9f3;padding:14px 0}\n.unit1-question:last-child{border-bottom:0}\n.unit1-prompt{display:block!important;color:#172c43!important;font-weight:750;font-size:1.08rem;line-height:1.55;margin:0 0 14px}\n.unit1-options{display:grid;grid-template-columns:1fr;gap:9px}\n.unit1-choice{display:block;width:100%;text-align:left;background:#fff!important;border-color:#aabbd0;color:#162d42!important;min-height:50px;padding:13px 15px}\n.unit1-choice.chosen{background:#e0f7e9!important;color:#135438!important;border-color:#168454!important;box-shadow:inset 5px 0 0 #168454}\n.unit1-answer{display:block;width:100%;min-height:51px;background:#fff!important;color:#182a40!important;border:2px solid #8fa5bf;border-radius:12px;padding:12px 14px;font-size:1.06rem;font-family:inherit}\n.unit1-answer:focus{border-color:#087e6b;outline:2px solid #87d8bd;outline-offset:1px}\ntextarea.unit1-answer{min-height:70px;resize:vertical}\n.unit1-writing-line{display:block;margin:12px 0;font-weight:700}\n.unit1-writing-line span{display:block;margin:5px 0}\n.unit1-word-meter{background:#e3efff;padding:12px;border-radius:10px;font-weight:700}\n.unit1-controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}\n.unit1-reading{display:block;background:#f0f6ff;border:1px solid #b2cef2;border-radius:14px;padding:16px;margin:14px 0;color:#183149}\n.unit1-reading p{margin:12px 0}\n.unit1-rubric{margin-top:22px;border:1px solid #cdd9e7;border-radius:14px;padding:15px}\n.unit1-review-item{padding:12px 0;border-bottom:1px solid #dae3ef}.unit1-review-item p{margin:6px 0!important}\n.unit1-rubric summary{font-weight:800;cursor:pointer}\n.unit1-rubric-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 15px}\n.unit1-pronouns{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}\n.unit1-pronouns p{background:#eaf6ef;border-radius:10px;padding:11px}\n.unit1-big-score{font-size:clamp(1.5rem,4vw,2.5rem)!important;font-weight:850}\n.unit1-exam-notice{max-width:1050px;margin:0 auto 14px!important;border:1px solid #a5c8e8;border-radius:12px;padding:13px;background:#eff6ff;font-weight:700;}\n.unit1-success{color:#075d3d!important;background:#dcfce7;padding:13px;border-radius:12px;font-weight:750}\n.unit1-status{color:#9f1239!important;background:#fff1f2;padding:12px;border-radius:10px;font-weight:700}\n@media(max-width:520px){.unit1-root{padding:7px}.unit1-hero,.unit1-panel{border-radius:16px}.unit1-days{grid-template-columns:1fr}.unit1-controls>.unit1-btn{flex:1}}\n";
  const persist=()=>{
-  onCheckpoint({activeDate,phase,step,answers,writing});
+  onCheckpoint({activeDate,phase,step,answers,writing,practiceIndex,practiceAnswers,practiceFeedback});
  };
  const switchDay=(date,screen='learn')=>{
   if(date>dayNow&&dayNow<UNIT1_NPD_DATE)return;
-  activeDate=date;phase=screen;step=0;answers={};writing=defaultWriting();
+  activeDate=date;phase=screen;step=0;answers={};writing=defaultWriting();practiceIndex=0;practiceAnswers={};practiceFeedback=null;
   saved=false;examResult=null;saveStatus='';showTranscript=false;
   persist();render();
  };
@@ -82,13 +75,13 @@ export function renderMarksUnit1Mission(container,options={}){
  const renderHome=()=>{
   const card=el('section','unit1-panel');
   add(card,el('h3','','Tavas 5 dienu misijas'));
-  add(card,el('p','unit1-muted','Katru dienu sākumā mācies, pēc tam pārbaudi savas zināšanas. Bonusam jāizpilda vismaz 80% patstāvīgajā daļā.'));
+  add(card,el('p','unit1-muted','Katru dienu: atklāj likumsakarības → izpildi 38–85 treniņuzdevumus → kārto kumulatīvo dienas NPD. Gatavības mērķis: 85% vai vairāk. Iepriekšējo dienu tēmas atkārtojas katrā jaunajā NPD. +10 BP pie vismaz 80%.'));
   const grid=el('div','unit1-days');
   for(const d of UNIT1_DAYS){
    const item=el('article','unit1-day-card');
    const row=el('div','unit1-between');
    add(row,el('strong','',d.icon+' '+monthDay(d.date)+' · '+d.title),el('span','unit1-date',d.date===dayNow?'ŠODIEN':''));
-   add(item,row,el('p','unit1-focus',d.focus),el('p','unit1-muted',labelStatus(d)));
+   add(item,row,el('p','unit1-focus',d.focus),el('p','unit1-muted','🎯 '+dailyTrainingQuestions(d.date).length+' treniņi · '+dayQuestions(d.date).length+' dienas NPD jautājumi'),el('p','unit1-muted',labelStatus(d)));
    const isLocked=d.date>dayNow&&dayNow<UNIT1_NPD_DATE;
    const start=button(isLocked?'Vēl nav atvērts':completed.has(unit1MissionId(d.date))?'Atkārtot misiju →':'Sākt misiju →',
     ()=>switchDay(d.date),'unit1-btn');
@@ -148,13 +141,112 @@ export function renderMarksUnit1Mission(container,options={}){
    add(box,el('p','unit1-tip','SB 19. lpp. “Teen Forum” ir mācību grāmatā. Šeit izmantojam pašveidotu līdzīga veida lasīšanas un klausīšanās tekstu — nevis oriģinālās grāmatas tekstu.'));
    add(box,el('p','','Aprakstā izmanto vismaz dažas no šīm konstrukcijām: My favourite person is… / He is… / She is not… / We are… / I am…'));
   }
-  add(box,button('Esmu gatavs — sākt patstāvīgo pārbaudi →',()=>{phase='exam';step=0;persist();render();},'unit1-btn primary'));
+  const actions=el('div','unit1-controls');
+  add(actions,button('🎮 Trenēties · '+dailyTrainingQuestions(activeDate).length+' uzdevumi →',()=>{
+   phase='practice';practiceIndex=0;practiceAnswers={};practiceFeedback=null;persist();render();
+  },'unit1-btn primary'));
+  add(actions,button('📝 Sākt dienas NPD · '+dayQuestions(activeDate).length+' jautājumi →',()=>{
+   phase='exam';step=0;persist();render();
+  },'unit1-btn ghost'));
+  add(box,actions);
+  add(root,box);
+ };
+ const renderPractice=()=>{
+  const day=UNIT1_DAYS.find(d=>d.date===activeDate);
+  const training=dailyTrainingQuestions(activeDate);
+  practiceIndex=Math.min(practiceIndex,training.length-1);
+  const q=training[practiceIndex];
+  add(root,nav('TRENIŅŠ · '+monthDay(activeDate)));
+  const box=el('section','unit1-panel unit1-quiz');
+  add(box,el('h3','',day.icon+' Treniņu trase'),el('p','unit1-muted',
+    'Te drīksti kļūdīties un mācīties. Treniņš nepiešķir NPD bonusu; tas palīdz sasniegt vismaz 85% pārbaudē.'));
+  const summary=el('div','unit1-between');
+  add(summary,el('strong','','Uzdevums '+(practiceIndex+1)+' / '+training.length),
+   el('strong','','Pareizas atbildes: '+Object.entries(practiceAnswers).filter(([id,v])=>
+    training.some(item=>item.id===id&&isUnit1Correct(item,v))).length+' / '+Object.keys(practiceAnswers).length));
+  add(box,summary);
+  const progress=el('div','unit1-progress');const fill=el('span');
+  fill.style.width=(100*(practiceIndex+1)/training.length)+'%';add(progress,fill);add(box,progress);
+  const panel=el('article','unit1-exam-card');
+  add(panel,el('p','unit1-kicker',UNIT1_TRAINING_LABELS[q.id.startsWith('train-object')?'objects':
+   q.id.startsWith('train-country')||q.id.startsWith('train-nation')?'countries':
+   q.id.startsWith('train-be')?'grammar':
+   q.id.startsWith('train-question')?'questions':
+   q.id.startsWith('train-short')?'shortAnswers':
+   q.id.startsWith('train-read')?'reading':'writing']),
+   el('h4','',q.prompt));
+  let value=practiceAnswers[q.id]||'';
+  const feedbackFor=()=>practiceFeedback?.id===q.id?practiceFeedback:null;
+  const choices=el('div','unit1-options');
+  if(q.options?.length){
+   const ordered=[...q.options];
+   const offset=q.id.split('').reduce((n,x)=>n+x.charCodeAt(0),0)%ordered.length;
+   const rotated=[...ordered.slice(offset),...ordered.slice(0,offset)];
+   rotated.forEach(option=>{
+    const b=button(option,()=>{
+     practiceAnswers[q.id]=option;
+     practiceFeedback=null;
+     persist();render();
+    },'unit1-choice'+(value===option?' chosen':''));
+    b.setAttribute('aria-pressed',String(value===option));add(choices,b);
+   });
+   add(panel,choices);
+  }else{
+   const input=el('input','unit1-answer');
+   input.type='text';input.value=value;input.placeholder='Uzraksti patstāvīgi angliski…';
+   input.setAttribute('aria-label',q.prompt);
+   input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;persist();};
+   add(panel,input);
+  }
+  const buttons=el('div','unit1-controls');
+  add(buttons,button('Pārbaudīt atbildi',()=>{
+   const correct=isUnit1Correct(q,practiceAnswers[q.id]||'');
+   practiceFeedback={id:q.id,correct};
+   persist();render();
+  },'unit1-btn primary'));
+  add(buttons,button('💡 Atgādne',()=>{
+   const tip=panel.querySelector('.unit1-practice-hint');
+   if(tip)tip.remove();
+   else add(panel,el('p','unit1-tip unit1-practice-hint',q.hint||'Atceries, kā veidojas pareizais teikums.'));
+  },'unit1-btn ghost'));
+  add(panel,buttons);
+  const fb=feedbackFor();
+  if(fb){
+   const note=el('div',fb.correct?'unit1-success':'unit1-status');
+   add(note,el('strong','',fb.correct?'✅ Pareizi!':'🔁 Pamēģini vēlreiz!'));
+   if(!fb.correct)add(note,el('p','',q.hint||'Pārskati likumu vai piemēru.'));
+   else add(note,el('p','','Tā turpini!'));
+   add(panel,note);
+  }
+  add(box,panel);
+  const navButtons=el('div','unit1-controls');
+  const prev=button('← Iepriekšējais',()=>{
+   practiceIndex=Math.max(0,practiceIndex-1);practiceFeedback=null;persist();render();
+  },'unit1-btn ghost');
+  prev.disabled=practiceIndex===0;add(navButtons,prev);
+  if(practiceIndex<training.length-1)add(navButtons,button('Nākamais treniņš →',()=>{
+   practiceIndex++;practiceFeedback=null;persist();render();
+  },'unit1-btn primary'));
+  else add(navButtons,button('🏆 Pāriet uz dienas NPD →',()=>{
+   phase='exam';step=0;practiceFeedback=null;persist();render();
+  },'unit1-btn primary'));
+  add(box,navButtons);
+  add(box,button('📝 Kārtot dienas NPD',()=>{
+   phase='exam';step=0;practiceFeedback=null;persist();render();
+  },'unit1-btn ghost'));
   add(root,box);
  };
  const itemsForDay=()=>dayQuestions(activeDate);
  const partsForDay=()=>{
   if(activeDate===TEST_DAY)return [...UNIT1_MOCK,{key:'writing',title:'9. Rakstīšana: 7 teikumi',max:9,description:'Apmēram 50 vārdi. Šo daļu vērtē pieaugušais.',items:[]}];
-  return itemsForDay().map((item,i)=>({key:item.id,title:'Jautājums '+(i+1),max:item.points,description:'Vienu uzdevumu vienlaikus',items:[item]}));
+  const questions=itemsForDay();
+  const groups=[];
+  for(let i=0;i<questions.length;i+=4){
+   const segment=questions.slice(i,i+4);
+   groups.push({key:'group-'+i,title:'Dienas NPD · '+(i+1)+'–'+(i+segment.length)+' no '+questions.length,
+    max:segment.reduce((n,item)=>n+item.points,0),description:'Pārbaude aptver gan šodienas, gan iepriekšējās tēmas. Šeit atbildes netiek pateiktas priekšā.',items:segment});
+  }
+  return groups;
  };
  const renderQuestion=(parent,q)=>{
   const block=el('div','unit1-question');
@@ -209,7 +301,8 @@ export function renderMarksUnit1Mission(container,options={}){
   const parts=partsForDay();
   step=Math.max(0,Math.min(step,parts.length-1));
   const part=parts[step];
-  add(root,nav('PĀRBAUDU SEVI · '+monthDay(day.date)));
+  add(root,nav('DIENAS NPD · '+monthDay(day.date)));
+  add(root,el('p','unit1-exam-notice','🎯 Mērķis: vismaz 85%. +10 BP pie vismaz 80%. Pārbaudes laikā nav atbilžu un mājienu.'));
   const main=el('section','unit1-panel unit1-quiz');
   const top=el('div','unit1-between');
   add(top,el('h3','',day.icon+' '+day.title),el('strong','',String(step+1)+' / '+parts.length));
@@ -248,6 +341,8 @@ export function renderMarksUnit1Mission(container,options={}){
   if(submitting)return;
   const day=UNIT1_DAYS.find(d=>d.date===activeDate);
   const questions=itemsForDay();
+  const missing=questions.filter(item=>!String(answers[item.id]||'').trim());
+  if(missing.length){saveStatus='Atbildi uz visiem dienas NPD jautājumiem. Vēl nav aizpildīti: '+missing.length+'.';render();return;}
   const result=scoreUnit1(questions,answers);
   const filled=writing.filter(x=>x.trim()).length;
   const writtenWords=writing.reduce((n,x)=>n+countUnit1Words(x),0);
@@ -290,6 +385,11 @@ export function renderMarksUnit1Mission(container,options={}){
   const result=examResult||scoreUnit1(itemsForDay(),answers);
   add(panel,el('h3','','🎉 Tavs patstāvīgais rezultāts'));
   add(panel,el('p','unit1-big-score',result.earned+' / '+result.max+' p. · '+result.percent+'%'));
+  const readiness=dailyReadiness(result.percent);
+  add(panel,el('p',readiness==='ready'?'unit1-success':'unit1-status',
+   readiness==='ready'?'🏆 Gatavs NPD! Sasniegts vismaz 85%.':
+   readiness==='almost'?'📘 Progress ir, bet vēl trenējies — gatavības mērķis 85%.':
+   '🔁 Atkārto pamatlikumus un treniņuzdevumus, tad kārto dienas NPD atkārtoti.'));
   if(activeDate===TEST_DAY){
    add(panel,el('p','','Izmēģinājuma NPD: '+result.earned+'/43 p. objektīvajos uzdevumos. Rakstīšana — vēl 9 p., kurus piešķir skolotājs/vecāks pēc pārbaudes. Kopējais vērtējums no 52 p. pašlaik nav noteikts.'));
   }
@@ -309,13 +409,19 @@ export function renderMarksUnit1Mission(container,options={}){
   if(result.eligible)add(panel,el('p','unit1-success','✅ +10 BP bonusa nosacījumi sasniegti. Faktiski ieskaitītos BP apskati LEVEL UP kvītī.'));
   else add(panel,el('p','unit1-muted','Bonuss tiek piešķirts vienu reizi pie vismaz 80%, iesniedzot atbilstošā periodā. Vari atkārtot treniņu.'));
   add(panel,button('Izvēlēties nākamo dienu →',()=>{phase='home';persist();render();},'unit1-btn primary'));
-  add(panel,button('Atkārtot šo dienu',()=>switchDay(activeDate),'unit1-btn ghost'));
+  add(panel,button('🎮 Vēl daudz treniņu',()=>{
+   phase='practice';practiceIndex=0;practiceFeedback=null;persist();render();
+  },'unit1-btn ghost'));
+  add(panel,button('🔁 Atkārtot dienas NPD',()=>{
+   phase='exam';step=0;answers={};examResult=null;saveStatus='';persist();render();
+  },'unit1-btn ghost'));
   add(root,panel);
  };
  function render(){
   shell();
   if(phase==='home')renderHome();
   else if(phase==='learn')renderLesson();
+  else if(phase==='practice')renderPractice();
   else if(phase==='exam')renderExam();
   else renderResult();
  }
