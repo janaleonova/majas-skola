@@ -1021,7 +1021,7 @@ export const UNIT1_TRAINING_BANK = {
     "points": 1,
     "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
     "spellingWord": "games console",
-    "spellingMask": "c_nsole"
+    "spellingMask": "games c_nsole"
   },
   {
     "id": "train-spell-13",
