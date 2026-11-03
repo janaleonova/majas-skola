@@ -1,3 +1,12 @@
+test('Completed basics survive reopening and Samanta can read in short sections',()=>{
+ const root=setup();renderDailyFoundations(root,{role:'samanta',today:'2026-11-03',initialPart:'language',completedToday:{math:{score:88},language:{score:100}}});
+ assert.ok(root.textContent.includes('100%'));
+ press(root,'Lasīt pa teikumiem');
+ assert.ok(root.textContent.includes('Grūtā vārda zilbes'));
+ press(root,'Visas dienas misijas');
+ assert.ok(root.textContent.includes('Pabeigts · 88%'));
+});
+
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {parseHTML} from 'linkedom';
@@ -22,7 +31,7 @@ test('Daily foundations are deterministic and all math/word-problem answers are 
   const all=Object.fromEntries(a.math.map(q=>[q.id,String(q.answer)]));
   assert.deepEqual(foundationScore('math',a,all),{correct:8,total:8});
   const correct=Object.fromEntries(a.language.questions.map(q=>[q.id,q.answer]));
-  assert.deepEqual(foundationScore('language',a,correct),{correct:3,total:3});
+  assert.deepEqual(foundationScore('language',a,correct),{correct:4,total:4});
   assert.ok(a.nut.answer>=0);
   const nut={facts:a.nut.needed,question:a.nut.question,firstOperation:'multiply',firstAnswer:a.nut.firstAnswer,secondOperation:'subtract',answer:a.nut.answer};
   assert.deepEqual(foundationScore('nut',a,nut),{correct:6,total:6});
@@ -42,6 +51,7 @@ test('Students can start daily reading and save a separate language result',asyn
  assert.equal(payload.subjectId,'language');assert.equal(payload.score,100);
  assert.equal(JSON.parse(payload.notes).dailyFoundationDate,'2026-11-03');
  assert.equal(checkpoint.part,'language');
+ assert.ok(data.language.text.length<getDailyFoundations('marks','2026-11-03').language.text.length);
 });
 test('Math saves independent score under a week-scoped topic, not an unlimited daily bonus',async()=>{
  const root=setup(),mission=getDailyFoundations('marks','2026-11-03');let payload;
