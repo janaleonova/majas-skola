@@ -19,6 +19,19 @@ const press=(root,needle)=>{
  const found=[...root.querySelectorAll('button')].find(b=>b.textContent.includes(needle));
  assert.ok(found,'Button missing: '+needle);found.click();return found;
 };
+test('Hard-nut rotation really uses multiplication, addition, subtraction AND division',()=>{
+ const modes=new Set(),operations=new Set();
+ for(let day=1;day<=28;day++)for(const role of ['marks','samanta']){
+  const date='2026-11-'+String(day).padStart(2,'0'),nut=getDailyFoundations(role,date).nut;
+  modes.add(nut.mode);operations.add(nut.firstOperation);operations.add(nut.secondOperation);
+  assert.ok(nut.answer>=0);
+  assert.ok(nut.story.includes(nut.question));
+  assert.ok(nut.facts.some(f=>f.id==='irrelevant'));
+ }
+ assert.deepEqual([...modes].sort(),[0,1,2]);
+ assert.deepEqual([...operations].sort(),['add','divide','multiply','subtract']);
+});
+
 test('Daily foundations are deterministic and all math/word-problem answers are valid',()=>{
  assert.deepEqual(FOUNDATION_PARTS,['math','language','nut']);
  assert.equal(validFoundationDate('2026-02-30'),false);
@@ -33,7 +46,7 @@ test('Daily foundations are deterministic and all math/word-problem answers are 
   const correct=Object.fromEntries(a.language.questions.map(q=>[q.id,q.answer]));
   assert.deepEqual(foundationScore('language',a,correct),{correct:4,total:4});
   assert.ok(a.nut.answer>=0);
-  const nut={facts:a.nut.needed,question:a.nut.question,firstOperation:'multiply',firstAnswer:a.nut.firstAnswer,secondOperation:'subtract',answer:a.nut.answer};
+  const nut={facts:a.nut.needed,question:a.nut.question,firstOperation:a.nut.firstOperation,firstAnswer:a.nut.firstAnswer,secondOperation:a.nut.secondOperation,answer:a.nut.answer};
   assert.deepEqual(foundationScore('nut',a,nut),{correct:6,total:6});
   assert.equal(foundationScore('nut',a,{...nut,facts:a.nut.facts.map(f=>f.id)}).correct,5);
   assert.ok(a.nut.story.includes(String(a.nut.facts[3].value)));
@@ -78,9 +91,9 @@ test('Nut is an interactive sequence; a corrected mistake does not award first-t
  }
  press(root,'Pārbaudīt šo soli');assert.ok(root.textContent.includes('Solis 2'));
  press(root,data.nut.question);press(root,'Pārbaudīt šo soli');
- press(root,'Reizināt');press(root,'Pārbaudīt šo soli');
+ press(root,({multiply:'Reizināt',divide:'Dalīt'})[data.nut.firstOperation]);press(root,'Pārbaudīt šo soli');
  let field=root.querySelector('#basic-firstAnswer');field.value=String(data.nut.firstAnswer);field.oninput();press(root,'Pārbaudīt šo soli');
- press(root,'Atņemt');press(root,'Pārbaudīt šo soli');
+ press(root,({subtract:'Atņemt',add:'Saskaitīt'})[data.nut.secondOperation]);press(root,'Pārbaudīt šo soli');
  field=root.querySelector('#basic-answer');field.value=String(data.nut.answer);field.oninput();press(root,'Pārbaudīt šo soli');
  await Promise.resolve();await Promise.resolve();await Promise.resolve();
  assert.equal(payload.score,83);
