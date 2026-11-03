@@ -278,7 +278,7 @@ app.post('/api/daily-coach',express.json({limit:'3kb'}),async(req,res)=>{
   const request=JSON.stringify({part,context,studentExplanation:explanation.trim()});
   const response=await providerFetch('https://generativelanguage.googleapis.com/v1beta/models/'+encodeURIComponent(model)+':generateContent',{
    method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},
-   body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:request}]}],generationConfig:{temperature:0.15,maxOutputTokens:220}})
+   body:JSON.stringify({systemInstruction:{parts:[{text:system}]},contents:[{role:'user',parts:[{text:request}]}],generationConfig:{temperature:0.15,maxOutputTokens:600}})
   });
   if(!response.ok)return res.status(503).json({error:'MI modelis īslaicīgi nav pieejams.'});
   const data=await response.json();
