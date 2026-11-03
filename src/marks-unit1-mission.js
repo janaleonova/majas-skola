@@ -40,7 +40,12 @@ export function renderMarksUnit1Mission(container,options={}){
  const root=el('div','unit1-root');
  container.replaceChildren(root);
  const css=el('style');
- css.textContent="\n.unit1-root{max-width:1050px;margin:0 auto;padding:16px 10px 40px;color:#1b2e45!important;color-scheme:light;font-family:system-ui,-apple-system,sans-serif;line-height:1.5}\n.unit1-root *{box-sizing:border-box}\n.unit1-hero,.unit1-panel{background:#fff!important;color:#1b2e45!important;border:1px solid #cfddeb;border-radius:22px;padding:clamp(18px,3vw,30px);margin:0 0 18px;box-shadow:0 5px 25px rgba(16,41,70,.07)}\n.unit1-hero{background:linear-gradient(115deg,#effdf5,#eff7ff)!important;border-color:#b7e8d4}\n.unit1-root h2,.unit1-root h3,.unit1-root h4,.unit1-root p,.unit1-root label,.unit1-root strong,.unit1-root span{color:#1b2e45}\n.unit1-root h2{font-size:clamp(1.6rem,3.4vw,2.3rem);line-height:1.23;margin:12px 0}\n.unit1-root h3{font-size:clamp(1.3rem,2.5vw,1.7rem);margin:4px 0 12px}\n.unit1-root h4{font-size:1.15rem;margin:0 0 12px}\n.unit1-root p{font-size:1rem;margin:8px 0;line-height:1.55}\n.unit1-pill{display:inline-flex;background:#056e55;color:#fff!important;padding:6px 12px;border-radius:99px;font-weight:750;font-size:.82rem;letter-spacing:.03em}\n.unit1-date-line{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}\n.unit1-date-line span{background:#fff;border:1px solid #bddbd0;padding:7px 12px;border-radius:99px;font-size:.91rem}\n.unit1-topnav{display:flex;align-items:center;gap:14px;margin:10px 0 18px}\n.unit1-kicker{color:#52657d!important;font-size:.88rem;font-weight:800;letter-spacing:.03em}\n.unit1-muted{color:#52647b!important}\n.unit1-materials{background:#fff7e6;border-left:4px solid #d69e18;border-radius:8px;padding:12px 15px;font-size:.95rem!important;}\n.unit1-tip{background:#eaf6ff;padding:13px 15px;border-left:4px solid #2683b2;border-radius:8px}\n.unit1-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}\n.unit1-day-card,.unit1-flashcard{background:#f8fafd;border:1px solid #cbd8e7;border-radius:16px;padding:18px}\n.unit1-day-card strong{font-size:1.06rem}\n.unit1-day-card .unit1-focus{min-height:54px}\n.unit1-btn,.unit1-choice{border:2px solid #0b8c74;background:#0a896e!important;color:#fff!important;border-radius:12px;min-height:48px;padding:10px 16px;font-weight:800;font-size:1rem;cursor:pointer;max-width:100%;white-space:normal;line-height:1.4}\n.unit1-btn:hover,.unit1-btn:focus-visible{outline:3px solid #86efac;outline-offset:2px}\n.unit1-btn:disabled{opacity:.45;cursor:not-allowed}\n.unit1-btn.ghost{background:#fff!important;color:#126d65!important;border-color:#77bca9}\n.unit1-btn.primary{background:#076c59!important;border-color:#076c59}\n.unit1-flashcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}\n.unit1-flashcard{display:flex;flex-direction:column;align-items:flex-start;gap:12px}\n.unit1-flash-answer{background:#e6f4ee;color:#064c3b;padding:9px;border-radius:9px;font-weight:700;width:100%}\n.unit1-between{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}\n.unit1-progress{height:12px;background:#e0e7f0;border-radius:99px;overflow:hidden;margin:18px 0}\n.unit1-progress span{display:block;height:100%;border-radius:99px;background:#08916d}\n.unit1-exam-card{background:#fff;border:2px solid #d4deec;border-radius:18px;padding:clamp(16px,3vw,26px);margin:16px 0}\n.unit1-question{border-bottom:1px solid #e1e9f3;padding:14px 0}\n.unit1-question:last-child{border-bottom:0}\n.unit1-prompt{display:block!important;color:#172c43!important;font-weight:750;font-size:1.08rem;line-height:1.55;margin:0 0 14px}\n.unit1-options{display:grid;grid-template-columns:1fr;gap:9px}\n.unit1-choice{display:block;width:100%;text-align:left;background:#fff!important;border-color:#aabbd0;color:#162d42!important;min-height:50px;padding:13px 15px}\n.unit1-choice.chosen{background:#e0f7e9!important;color:#135438!important;border-color:#168454!important;box-shadow:inset 5px 0 0 #168454}\n.unit1-answer{display:block;width:100%;min-height:51px;background:#fff!important;color:#182a40!important;border:2px solid #8fa5bf;border-radius:12px;padding:12px 14px;font-size:1.06rem;font-family:inherit}\n.unit1-answer:focus{border-color:#087e6b;outline:2px solid #87d8bd;outline-offset:1px}\ntextarea.unit1-answer{min-height:70px;resize:vertical}\n.unit1-writing-line{display:block;margin:12px 0;font-weight:700}\n.unit1-writing-line span{display:block;margin:5px 0}\n.unit1-word-meter{background:#e3efff;padding:12px;border-radius:10px;font-weight:700}\n.unit1-controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}\n.unit1-reading{display:block;background:#f0f6ff;border:1px solid #b2cef2;border-radius:14px;padding:16px;margin:14px 0;color:#183149}\n.unit1-reading p{margin:12px 0}\n.unit1-rubric{margin-top:22px;border:1px solid #cdd9e7;border-radius:14px;padding:15px}\n.unit1-review-item{padding:12px 0;border-bottom:1px solid #dae3ef}.unit1-review-item p{margin:6px 0!important}\n.unit1-rubric summary{font-weight:800;cursor:pointer}\n.unit1-rubric-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 15px}\n.unit1-pronouns{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}\n.unit1-pronouns p{background:#eaf6ef;border-radius:10px;padding:11px}\n.unit1-big-score{font-size:clamp(1.5rem,4vw,2.5rem)!important;font-weight:850}\n.unit1-topic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px}\n.unit1-topic-grid .unit1-btn{text-align:left}\n.unit1-exam-notice{max-width:1050px;margin:0 auto 14px!important;border:1px solid #a5c8e8;border-radius:12px;padding:13px;background:#eff6ff;font-weight:700;}\n.unit1-success{color:#075d3d!important;background:#dcfce7;padding:13px;border-radius:12px;font-weight:750}\n.unit1-status{color:#9f1239!important;background:#fff1f2;padding:12px;border-radius:10px;font-weight:700}\n@media(max-width:520px){.unit1-root{padding:7px}.unit1-hero,.unit1-panel{border-radius:16px}.unit1-days{grid-template-columns:1fr}.unit1-controls>.unit1-btn{flex:1}}\n";
+ css.textContent="\n.unit1-root{max-width:1050px;margin:0 auto;padding:16px 10px 40px;color:#1b2e45!important;color-scheme:light;font-family:system-ui,-apple-system,sans-serif;line-height:1.5}\n.unit1-root *{box-sizing:border-box}\n.unit1-hero,.unit1-panel{background:#fff!important;color:#1b2e45!important;border:1px solid #cfddeb;border-radius:22px;padding:clamp(18px,3vw,30px);margin:0 0 18px;box-shadow:0 5px 25px rgba(16,41,70,.07)}\n.unit1-hero{background:linear-gradient(115deg,#effdf5,#eff7ff)!important;border-color:#b7e8d4}\n.unit1-root h2,.unit1-root h3,.unit1-root h4,.unit1-root p,.unit1-root label,.unit1-root strong,.unit1-root span{color:#1b2e45}\n.unit1-root h2{font-size:clamp(1.6rem,3.4vw,2.3rem);line-height:1.23;margin:12px 0}\n.unit1-root h3{font-size:clamp(1.3rem,2.5vw,1.7rem);margin:4px 0 12px}\n.unit1-root h4{font-size:1.15rem;margin:0 0 12px}\n.unit1-root p{font-size:1rem;margin:8px 0;line-height:1.55}\n.unit1-pill{display:inline-flex;background:#056e55;color:#fff!important;padding:6px 12px;border-radius:99px;font-weight:750;font-size:.82rem;letter-spacing:.03em}\n.unit1-date-line{display:flex;flex-wrap:wrap;gap:8px;margin-top:18px}\n.unit1-date-line span{background:#fff;border:1px solid #bddbd0;padding:7px 12px;border-radius:99px;font-size:.91rem}\n.unit1-topnav{display:flex;align-items:center;gap:14px;margin:10px 0 18px}\n.unit1-kicker{color:#52657d!important;font-size:.88rem;font-weight:800;letter-spacing:.03em}\n.unit1-muted{color:#52647b!important}\n.unit1-materials{background:#fff7e6;border-left:4px solid #d69e18;border-radius:8px;padding:12px 15px;font-size:.95rem!important;}\n.unit1-tip{background:#eaf6ff;padding:13px 15px;border-left:4px solid #2683b2;border-radius:8px}\n.unit1-days{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:18px}\n.unit1-day-card,.unit1-flashcard{background:#f8fafd;border:1px solid #cbd8e7;border-radius:16px;padding:18px}\n.unit1-day-card strong{font-size:1.06rem}\n.unit1-day-card .unit1-focus{min-height:54px}\n.unit1-btn,.unit1-choice{border:2px solid #0b8c74;background:#0a896e!important;color:#fff!important;border-radius:12px;min-height:48px;padding:10px 16px;font-weight:800;font-size:1rem;cursor:pointer;max-width:100%;white-space:normal;line-height:1.4}\n.unit1-btn:hover,.unit1-btn:focus-visible{outline:3px solid #86efac;outline-offset:2px}\n.unit1-btn:disabled{opacity:.45;cursor:not-allowed}\n.unit1-btn.ghost{background:#fff!important;color:#126d65!important;border-color:#77bca9}\n.unit1-btn.primary{background:#076c59!important;border-color:#076c59}\n.unit1-flashcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px;margin:18px 0}\n.unit1-flashcard{display:flex;flex-direction:column;align-items:flex-start;gap:12px}\n.unit1-flash-answer{background:#e6f4ee;color:#064c3b;padding:9px;border-radius:9px;font-weight:700;width:100%}\n.unit1-between{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}\n.unit1-progress{height:12px;background:#e0e7f0;border-radius:99px;overflow:hidden;margin:18px 0}\n.unit1-progress span{display:block;height:100%;border-radius:99px;background:#08916d}\n.unit1-exam-card{background:#fff;border:2px solid #d4deec;border-radius:18px;padding:clamp(16px,3vw,26px);margin:16px 0}\n.unit1-question{border-bottom:1px solid #e1e9f3;padding:14px 0}\n.unit1-question:last-child{border-bottom:0}\n.unit1-prompt{display:block!important;color:#172c43!important;font-weight:750;font-size:1.08rem;line-height:1.55;margin:0 0 14px}\n.unit1-options{display:grid;grid-template-columns:1fr;gap:9px}\n.unit1-choice{display:block;width:100%;text-align:left;background:#fff!important;border-color:#aabbd0;color:#162d42!important;min-height:50px;padding:13px 15px}\n.unit1-choice.chosen{background:#e0f7e9!important;color:#135438!important;border-color:#168454!important;box-shadow:inset 5px 0 0 #168454}\n.unit1-answer{display:block;width:100%;min-height:51px;background:#fff!important;color:#182a40!important;border:2px solid #8fa5bf;border-radius:12px;padding:12px 14px;font-size:1.06rem;font-family:inherit}\n.unit1-answer:focus{border-color:#087e6b;outline:2px solid #87d8bd;outline-offset:1px}
+.unit1-letter-pad{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));gap:6px;max-width:570px;margin:12px 0 16px}
+.unit1-letter-key{border:1px solid #7598b2;background:#f1f8ff;color:#183149;border-radius:9px;min-height:45px;font-size:1rem;font-weight:800;cursor:pointer;padding:4px}
+.unit1-letter-key:focus-visible{outline:3px solid #087e6b;outline-offset:2px}
+.unit1-letter-key.wide{grid-column:span 2;background:#fff9df}
+@media(max-width:380px){.unit1-letter-pad{gap:3px}.unit1-letter-key{min-height:42px}}\ntextarea.unit1-answer{min-height:70px;resize:vertical}\n.unit1-writing-line{display:block;margin:12px 0;font-weight:700}\n.unit1-writing-line span{display:block;margin:5px 0}\n.unit1-word-meter{background:#e3efff;padding:12px;border-radius:10px;font-weight:700}\n.unit1-controls{display:flex;gap:12px;flex-wrap:wrap;justify-content:space-between}\n.unit1-reading{display:block;background:#f0f6ff;border:1px solid #b2cef2;border-radius:14px;padding:16px;margin:14px 0;color:#183149}\n.unit1-reading p{margin:12px 0}\n.unit1-rubric{margin-top:22px;border:1px solid #cdd9e7;border-radius:14px;padding:15px}\n.unit1-review-item{padding:12px 0;border-bottom:1px solid #dae3ef}.unit1-review-item p{margin:6px 0!important}\n.unit1-rubric summary{font-weight:800;cursor:pointer}\n.unit1-rubric-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:2px 15px}\n.unit1-pronouns{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px}\n.unit1-pronouns p{background:#eaf6ef;border-radius:10px;padding:11px}\n.unit1-big-score{font-size:clamp(1.5rem,4vw,2.5rem)!important;font-weight:850}\n.unit1-topic-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:12px}\n.unit1-topic-grid .unit1-btn{text-align:left}\n.unit1-exam-notice{max-width:1050px;margin:0 auto 14px!important;border:1px solid #a5c8e8;border-radius:12px;padding:13px;background:#eff6ff;font-weight:700;}\n.unit1-success{color:#075d3d!important;background:#dcfce7;padding:13px;border-radius:12px;font-weight:750}\n.unit1-status{color:#9f1239!important;background:#fff1f2;padding:12px;border-radius:10px;font-weight:700}\n@media(max-width:520px){.unit1-root{padding:7px}.unit1-hero,.unit1-panel{border-radius:16px}.unit1-days{grid-template-columns:1fr}.unit1-controls>.unit1-btn{flex:1}}\n";
  const persist=()=>{
   onCheckpoint({activeDate,phase,step,answers,writing,practiceIndex,practiceAnswers,practiceFeedback});
  };
@@ -49,6 +54,13 @@ export function renderMarksUnit1Mission(container,options={}){
   activeDate=date;phase=screen;step=0;answers={};writing=defaultWriting();practiceIndex=0;practiceAnswers={};practiceFeedback=null;
   saved=false;examResult=null;saveStatus='';showTranscript=false;
   persist();render();
+ };
+ const jumpToSpelling=(date,full=false)=>{
+  if(date!==activeDate){activeDate=date;answers={};writing=defaultWriting();practiceAnswers={};saved=false;examResult=null;}
+  const training=dailyTrainingQuestions(date);
+  practiceIndex=training.findIndex(q=>q.id.startsWith(full?'train-spell-full-':'train-spell-'));
+  if(practiceIndex<0)practiceIndex=0;
+  phase='practice';practiceFeedback=null;saveStatus='';persist();render();
  };
  const nav=(label)=>{
   const n=el('nav','unit1-topnav');
@@ -75,7 +87,7 @@ export function renderMarksUnit1Mission(container,options={}){
  const renderHome=()=>{
   const card=el('section','unit1-panel');
   add(card,el('h3','','Tavas 5 dienu misijas'));
-  add(card,el('p','unit1-muted','Katru dienu: atklāj likumsakarības → izpildi 38–85 treniņuzdevumus → kārto kumulatīvo dienas NPD. Gatavības mērķis: 85% vai vairāk. Iepriekšējo dienu tēmas atkārtojas katrā jaunajā NPD. +10 BP pie vismaz 80%.'));
+  add(card,el('p','unit1-muted','Katru dienu: atklāj likumsakarības → izpildi atbilstošās tēmas treniņuzdevumus → kārto kumulatīvo dienas NPD. Gatavības mērķis: 85% vai vairāk. Iepriekšējo dienu tēmas atkārtojas katrā jaunajā NPD. +10 BP pie vismaz 80%.'));
   const grid=el('div','unit1-days');
   for(const d of UNIT1_DAYS){
    const item=el('article','unit1-day-card');
@@ -85,7 +97,11 @@ export function renderMarksUnit1Mission(container,options={}){
    const isLocked=d.date>dayNow&&dayNow<UNIT1_NPD_DATE;
    const start=button(isLocked?'Vēl nav atvērts':completed.has(unit1MissionId(d.date))?'Atkārtot misiju →':'Sākt misiju →',
     ()=>switchDay(d.date),'unit1-btn');
-   start.disabled=isLocked;add(item,start);add(grid,item);
+   start.disabled=isLocked;add(item,start);
+   if(!isLocked&&dailyTrainingQuestions(d.date).some(q=>q.id.startsWith('train-spell-'))){
+    add(item,button('⌨️ Trenēt vārdu rakstību',()=>jumpToSpelling(d.date),'unit1-btn ghost'));
+   }
+   add(grid,item);
   }
   add(card,grid);
   const scoring=el('details','unit1-rubric');
@@ -139,12 +155,17 @@ export function renderMarksUnit1Mission(container,options={}){
   }else{
    add(box,el('h4','','Pirms finiša'),el('p','','NPD simulācijā ir astoņas objektīvo uzdevumu daļas (43 p.) un 7 teikumu apraksts (9 p., nepieciešama pieaugušā pārbaude).'));
    add(box,el('p','unit1-tip','SB 19. lpp. “Teen Forum” ir mācību grāmatā. Šeit izmantojam pašveidotu līdzīga veida lasīšanas un klausīšanās tekstu — nevis oriģinālās grāmatas tekstu.'));
+   add(box,el('p','unit1-tip','NPD daļā ar L_tvi_n jāieraksta viss vārds (Latvian), bet burtu treniņā — tikai izlaistie burti. Raksti patstāvīgi, nevis ierunā.'));
    add(box,el('p','','Aprakstā izmanto vismaz dažas no šīm konstrukcijām: My favourite person is… / He is… / She is not… / We are… / I am…'));
   }
   const actions=el('div','unit1-controls');
   add(actions,button('🎮 Trenēties · '+dailyTrainingQuestions(activeDate).length+' uzdevumi →',()=>{
    phase='practice';practiceIndex=0;practiceAnswers={};practiceFeedback=null;persist();render();
   },'unit1-btn primary'));
+  if(dailyTrainingQuestions(activeDate).some(q=>q.id.startsWith('train-spell-'))){
+   add(actions,button('⌨️ Trūkstošie burti →',()=>jumpToSpelling(activeDate),'unit1-btn ghost'));
+   add(actions,button('✍️ Pilna vārda rakstība →',()=>jumpToSpelling(activeDate,true),'unit1-btn ghost'));
+  }
   add(actions,button('📝 Sākt dienas NPD · '+dayQuestions(activeDate).length+' jautājumi →',()=>{
    phase='exam';step=0;persist();render();
   },'unit1-btn ghost'));
@@ -152,6 +173,7 @@ export function renderMarksUnit1Mission(container,options={}){
   add(root,box);
  };
  const practiceCategory=q=>
+  q.id.startsWith('train-spell-full')?'spellingFull':
   q.id.startsWith('train-spell')?'spelling':
   q.id.startsWith('train-object')?'objects':
   q.id.startsWith('train-country')||q.id.startsWith('train-nation')?'countries':
@@ -190,7 +212,7 @@ export function renderMarksUnit1Mission(container,options={}){
   const panel=el('article','unit1-exam-card');
   add(panel,el('p','unit1-kicker',UNIT1_TRAINING_LABELS[practiceCategory(q)]),
    el('h4','',q.prompt));
-  if(q.spellingWord)add(panel,el('p','unit1-tip','⌨️ Rakstīšanas treniņš: ieraksti tikai trūkstošos burtus ar tastatūru. Izruna nav rakstības pārbaude.'));
+  if(q.spellingWord)add(panel,el('p','unit1-tip',q.spellingFull?'⌨️ Uzraksti visu vārdu no atmiņas. Lieto tastatūru vai ekrāna burtus.':'⌨️ Ieraksti TIKAI trūkstošos burtus. Lieto tastatūru vai ekrāna burtus, nevis balss ievadi.'));
   let value=practiceAnswers[q.id]||'';
   const feedbackFor=()=>practiceFeedback?.id===q.id?practiceFeedback:null;
   const choices=el('div','unit1-options');
@@ -209,10 +231,19 @@ export function renderMarksUnit1Mission(container,options={}){
    add(panel,choices);
   }else{
    const input=el('input','unit1-answer');
-   input.type='text';input.value=value;input.placeholder=q.spellingWord?'Ieraksti trūkstošos burtus…':'Uzraksti patstāvīgi angliski…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
+   input.type='text';input.value=value;input.placeholder=q.spellingFull?'Raksti visu vārdu…':q.spellingWord?'Ieraksti tikai izlaistos burtus…':'Uzraksti patstāvīgi angliski…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
+   if(q.spellingWord)input.setAttribute('inputmode','none');
    input.setAttribute('aria-label',q.prompt);
-   input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;persist();};
+   input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;panel.querySelector('.unit1-feedback')?.remove();persist();};
    add(panel,input);
+   if(q.spellingWord){
+    const pad=el('div','unit1-letter-pad');pad.setAttribute('aria-label','Burtu tastatūra');
+    const press=character=>{input.value+=character;input.oninput();};
+    for(const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')add(pad,button(letter,()=>press(letter.toLowerCase()),'unit1-letter-key'));
+    add(pad,button('Atstarpe',()=>press(' '),'unit1-letter-key wide'));
+    add(pad,button('⌫ Dzēst',()=>{input.value=input.value.slice(0,-1);input.oninput();},'unit1-letter-key wide'));
+    add(panel,pad);
+   }
   }
   const buttons=el('div','unit1-controls');
   add(buttons,button('Pārbaudīt atbildi',()=>{
@@ -228,7 +259,7 @@ export function renderMarksUnit1Mission(container,options={}){
   add(panel,buttons);
   const fb=feedbackFor();
   if(fb){
-   const note=el('div',fb.correct?'unit1-success':'unit1-status');
+   const note=el('div','unit1-feedback '+(fb.correct?'unit1-success':'unit1-status'));
    add(note,el('strong','',fb.correct?'✅ Pareizi!':'🔁 Pamēģini vēlreiz!'));
    if(!fb.correct)add(note,el('p','',q.hint||'Pārskati likumu vai piemēru.'));
    else add(note,el('p','',q.spellingWord?'Pilnais vārds: '+q.spellingWord+' · Tā turpini!':'Tā turpini!'));
