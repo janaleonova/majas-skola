@@ -1,5 +1,6 @@
 export const SUBJECTS=[{id:'language',name:'Latviešu valoda un literatūra',icon:'📕'},{id:'math',name:'Matemātika',icon:'🧮'},{id:'english',name:'Angļu valoda',icon:'🌎'},{id:'social',name:'Sociālās zinības',icon:'🏛️'},{id:'nature',name:'Dabaszinības',icon:'🌿'}];
 export const CATALOG={marks:[
+ {id:'pamati',subjectId:'language',name:'Ikdienas pamatprasmes',description:'Katru dienu: lasīšana un valoda, + − × ÷, interaktīvs Cietais rieksts un MI konsultants'},
  {id:'latviesu',subjectId:'language',name:'Vārdi, galotnes un saziņa',description:'5 tēmas · vietniekvārdu locīšana (7 locījumi), galotnes, vārddarināšana'},
  {id:'teikumi',subjectId:'language',name:'Teikumu pūķa akadēmija',description:'Vārdšķiras un teikuma centrs',bonus:10,threshold:85,prefix:'Teikumu pūķa akadēmija'},
  {id:'dzeja',subjectId:'language',name:'Dzejas superizaicinājums',description:'Rainis un Juris Kronbergs · lasi un pamato',bonus:15,threshold:85,prefix:'Dzejas superizaicinājums'},
@@ -10,6 +11,7 @@ export const CATALOG={marks:[
  {id:'social',subjectId:'social',name:'Sociālās zinības · 4. kl. P.D.',description:'Kā plānot un patērēt resursus saprātīgi? · 8 SR uzdevumi · 43 p.',bonus:20,threshold:80,prefix:'Sociālās zinības'},
  {id:'daba',subjectId:'nature',name:'Dabaszinības · 4. kl. NPD',description:'Kā vairojas, aug un attīstās dzīvie organismi? · 14 SR · 25 p.',bonus:20,threshold:80,prefix:'Dabaszinības 4. kl.'}
 ],samanta:[
+ {id:'pamati',subjectId:'language',name:'Ikdienas pamatprasmes',description:'Īsā lasīšana, trūkstošie burti, četru darbību treniņš un teksta uzdevums ar MI palīdzību'},
  {id:'daba',subjectId:'nature',name:'Dabas teritorijas · 3. kl. NPD',description:'Kas kopīgs un atšķirīgs mežam, pļavai, purvam un ūdeņiem · +20 BP',bonus:20,threshold:80,prefix:'Dabas teritorijas'},
  {id:'saskaitisana',subjectId:'math',name:'Saskaitīšanas pērles',description:'3 paņēmieni un summas līdz 100',bonus:15,threshold:80,prefix:'Saskaitīšanas pērles'},
  {id:'matematika',subjectId:'math',name:'Skaitļu piedzīvojums',description:'Reizrēķins, dalīšana, attēli un stāsti'},
