@@ -972,20 +972,25 @@ html[data-app-version="v3"] .foundation-mission-grid{display:grid;grid-template-
 html[data-app-version="v3"] .daily-foundations-overview .foundation-mission-tile{
  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;text-align:center;
  min-height:185px;width:100%;margin:0;padding:18px 10px 14px;border-radius:20px;
- border:3px solid #a7b8cd!important;background:#f7f9fc!important;color:#203050!important;
- box-shadow:none!important;cursor:pointer;white-space:normal
+ border:3px solid var(--mission-neon,#529bd9)!important;background:var(--mission-surface,#f4f9ff)!important;color:#203050!important;
+ box-shadow:0 0 0 1px var(--mission-inner,#c7e8fc) inset,0 0 9px 1px var(--mission-halo,#7dc7f05c),0 0 22px 2px var(--mission-halo-soft,#7dc7f02d),0 9px 22px #233b6110!important;
+ cursor:pointer;white-space:normal;transition:box-shadow .2s ease,border-color .2s ease,transform .2s ease
 }
-html[data-app-version="v3"] .daily-foundations-overview .foundation-status-new{border-color:#a1b5cd!important;background:#f8faff!important}
-html[data-app-version="v3"] .daily-foundations-overview .foundation-status-started{border-color:#d98722!important;background:#fff7ed!important}
-html[data-app-version="v3"] .daily-foundations-overview .foundation-status-complete{border-color:#25855d!important;background:#effaf4!important}
+html[data-app-version="v3"] .daily-foundations-overview .foundation-status-new{--mission-neon:#4e9cd4;--mission-surface:#f6faff;--mission-inner:#cbe8ff;--mission-halo:#58a8ed66;--mission-halo-soft:#72baff2b}
+html[data-app-version="v3"] .daily-foundations-overview .foundation-status-started{--mission-neon:#d98220;--mission-surface:#fff9f0;--mission-inner:#ffe5b5;--mission-halo:#ffab4580;--mission-halo-soft:#ffb85036}
+html[data-app-version="v3"] .daily-foundations-overview .foundation-status-complete{--mission-neon:#198e67;--mission-surface:#f1fff8;--mission-inner:#b6efd1;--mission-halo:#39cf9a75;--mission-halo-soft:#64e9b33b}
 html[data-app-version="v3"] .foundation-mission-symbol{font-size:clamp(2.4rem,4vw,3.2rem);line-height:1.2;display:block;margin-bottom:2px}
 html[data-app-version="v3"] .foundation-mission-name{font-family:'Nunito',system-ui,sans-serif;font-size:clamp(1.04rem,1.65vw,1.22rem);font-weight:900;color:#152c49;line-height:1.24}
 html[data-app-version="v3"] .foundation-mission-status{font-size:.94rem;font-weight:800;color:#34465c}
 html[data-app-version="v3"] .foundation-status-started .foundation-mission-status{color:#9b540b}
 html[data-app-version="v3"] .foundation-status-complete .foundation-mission-status{color:#176b4d}
 html[data-app-version="v3"] .foundation-mission-action{font-size:.88rem;font-weight:800;color:#1d5c76;margin-top:7px}
-html[data-app-version="v3"] .foundation-mission-tile:hover{transform:translateY(-2px);filter:brightness(.985)}
-html[data-app-version="v3"] .foundation-mission-tile:focus-visible{outline:4px solid #3a79ac;outline-offset:3px}
+html[data-app-version="v3"] .foundation-mission-tile:hover{transform:translateY(-2px);box-shadow:0 0 0 1px var(--mission-inner,#c7e8fc) inset,0 0 14px 2px var(--mission-halo,#7dc7f05c),0 0 30px 5px var(--mission-halo-soft,#7dc7f02d),0 12px 22px #233b6117!important}
+html[data-app-version="v3"] .foundation-mission-tile:focus-visible{outline:4px solid #203c73;outline-offset:4px}
+@media(prefers-reduced-motion:reduce){
+ html[data-app-version="v3"] .foundation-mission-tile{transition:none!important}
+ html[data-app-version="v3"] .foundation-mission-tile:hover{transform:none!important}
+}
 html[data-app-version="v3"] .foundation-legacy-links{margin:16px 0 0;border-top:1px solid #e3eaf2;padding:14px 3px 0;color:#35516b}
 html[data-app-version="v3"] .foundation-legacy-links summary{font-size:.97rem;font-weight:800;color:#31536f;cursor:pointer}
 html[data-app-version="v3"] .foundation-legacy-links .button-cluster button{font-size:.94rem}
