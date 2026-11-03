@@ -110,6 +110,25 @@ export function renderMarksUnit1Mission(container,options={}){
  const readOut=text=>{
   speakEnglish(text);
  };
+
+ const isVocabularySpelling=q=>q.id.startsWith('object-')||q.id.startsWith('country-')||q.id.startsWith('country-name-')||/^n[1-7]$/.test(q.id);
+ const addLetterPad=(parent,input)=>{
+  input.setAttribute('inputmode','none');input.setAttribute('readonly','');
+  const pad=el('div','unit1-letter-pad');pad.setAttribute('aria-label','Burtu tastatūra');
+  const press=character=>{input.value+=character;input.oninput();};
+  const erase=()=>{input.value=input.value.slice(0,-1);input.oninput();};
+  input.onkeydown=event=>{
+   const key=event.key;
+   if(/^[a-z]$/i.test(key)){event.preventDefault?.();press(key.toLowerCase());}
+   else if(key==='Backspace'){event.preventDefault?.();erase();}
+   else if(key===' '){event.preventDefault?.();press(' ');}
+   else if(key==='-'){event.preventDefault?.();press('-');}
+  };
+  for(const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')add(pad,button(letter,()=>press(letter.toLowerCase()),'unit1-letter-key'));
+  add(pad,button('Atstarpe',()=>press(' '),'unit1-letter-key wide'));
+  add(pad,button('⌫ Dzēst',erase,'unit1-letter-key wide'));
+  add(parent,pad);
+ };
  const lessonCards=(pairs)=>{
   const grid=el('div','unit1-flashcards');
   pairs.forEach(({front,back,example,voice})=>{
@@ -231,22 +250,7 @@ export function renderMarksUnit1Mission(container,options={}){
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;panel.querySelector('.unit1-feedback')?.remove();persist();};
    add(panel,input);
-   if(q.spellingWord){
-    const pad=el('div','unit1-letter-pad');pad.setAttribute('aria-label','Burtu tastatūra');
-    const press=character=>{input.value+=character;input.oninput();};
-    const erase=()=>{input.value=input.value.slice(0,-1);input.oninput();};
-    input.onkeydown=event=>{
-     const key=event.key;
-     if(/^[a-z]$/i.test(key)){event.preventDefault?.();press(key.toLowerCase());}
-     else if(key==='Backspace'){event.preventDefault?.();erase();}
-     else if(key===' '){event.preventDefault?.();press(' ');}
-     else if(key==='-'){event.preventDefault?.();press('-');}
-    };
-    for(const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')add(pad,button(letter,()=>press(letter.toLowerCase()),'unit1-letter-key'));
-    add(pad,button('Atstarpe',()=>press(' '),'unit1-letter-key wide'));
-    add(pad,button('⌫ Dzēst',erase,'unit1-letter-key wide'));
-    add(panel,pad);
-   }
+   if(q.spellingWord)addLetterPad(panel,input);
   }
   const buttons=el('div','unit1-controls');
   add(buttons,button('Pārbaudīt atbildi',()=>{
@@ -325,6 +329,10 @@ export function renderMarksUnit1Mission(container,options={}){
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{answers[q.id]=input.value;persist();};
    add(block,input);
+   if(isVocabularySpelling(q)){
+    add(block,el('p','unit1-muted','⌨️ Uzraksti vārdu patstāvīgi, izmantojot tastatūras taustiņus vai ekrāna burtus. Balss ievade šajā uzdevumā nav pieejama.'));
+    addLetterPad(block,input);
+   }
   }
   add(parent,block);
  };
