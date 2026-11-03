@@ -84,30 +84,58 @@ function taskCard(parent,task,role){
  if(status==='completed')button(box,'Apskatīt tēmu',()=>task.moduleId?openModule(role,task.moduleId):null,'quiet-button');
  parent.append(box);
 }
+function foundationMissionState(role,id){
+ const progress=state.progress.filter(row=>row.studentUid===uidFor(role)&&row.studentRole===role&&
+  readNotes(row).dailyFoundationDate===state.day&&readNotes(row).dailyFoundationPart===id);
+ if(progress.length)return {status:'complete',score:Math.max(...progress.map(row=>Number(row.score)||0))};
+ const saved=readDraft(uidFor(role),'pamati')?.state;
+ if(saved?.date!==state.day||saved.role!==role)return {status:'new'};
+ const entries=saved.values?.[id]||{};
+ const started=id==='nut'
+  ?Boolean((entries.facts?.length||0)||Object.keys(entries).some(key=>key!=='facts'&&String(entries[key]??'').trim())||saved.part==='nut'&&saved.step>0)
+  :Object.values(entries).some(value=>String(value??'').trim()!=='');
+ if(started||saved.completed?.[id])return {status:'started'};
+ return {status:'new'};
+}
 function renderFoundationsDashboard(parent,role){
  const section=E('section','','module daily-foundations-overview');
- section.append(E('span','KATRU DIENU','eyebrow'),E('h2','🌱 Pamati, kas nekur nepazūd'),
-  E('p','15–25 minūtes: īsa lasīšana un valoda, četru darbību aprēķini, viens interaktīvs teksta uzdevums. Pildi arī pa daļām.'));
- const grid=E('div','','today-missions');
- for(const [id,title] of [['language','📖 Lasu un rakstu'],['math','🧮 Rēķinu ikdienā'],['nut','🥜 Dienas Cietais rieksts']]){
-  const matching=state.progress.filter(r=>r.studentUid===uidFor(role)&&r.studentRole===role&&readNotes(r).dailyFoundationDate===state.day&&readNotes(r).dailyFoundationPart===id);
-  const score=matching.length?Math.max(...matching.map(r=>Number(r.score)||0)):null;
-  const card=E('article','','card task-card');
-  card.append(E('h3',title),E('p',score!==null?'✅ Šodien jau pabeigts · labākais rezultāts '+score+'%':'Vēl nav pabeigts šodien.'),
-    E('p',id==='language'?'Lasīšana ar izpratni un burtu rakstība.':id==='math'?'Pluss, mīnuss, reizrēķins un dalīšana.':'Atrodi dotos, izvēlies darbības un pamato risinājumu.'));
-  button(card,score!==null?'Atkārtot →':'Sākt →',()=>openModule(role,'pamati',null,false,id));
-  grid.append(card);
+ section.append(E('span','KATRU DIENU','eyebrow'),E('h2','🌱 Tavas šodienas misijas'));
+ const grid=E('div','','foundation-mission-grid');
+ const missions=[
+  {id:'language',icon:'🔤',name:'Burtu misija'},
+  {id:'math',icon:'🧮',name:'Skaitļu misija'},
+  {id:'nut',icon:'🧩',name:'Cietais rieksts'}
+ ];
+ for(const mission of missions){
+  const current=foundationMissionState(role,mission.id);
+  const statuses={
+   new:{label:'Nav sākts',action:'Sākt misiju'},
+   started:{label:'Iesākts',action:'Turpināt misiju'},
+   complete:{label:'Šodien paveikts',action:'Atkārtot misiju'}
+  };
+  const status=statuses[current.status];
+  const tile=E('button','','foundation-mission-tile foundation-status-'+current.status);
+  tile.type='button';tile.setAttribute('aria-label',mission.name+' — '+status.label+'. '+status.action);
+  const symbol=E('span',mission.icon,'foundation-mission-symbol');symbol.setAttribute('aria-hidden','true');
+  const name=E('strong',mission.name,'foundation-mission-name');
+  const text=E('span',status.label,'foundation-mission-status');
+  const action=E('span',status.action+' →','foundation-mission-action');
+  tile.append(symbol,name,text,action);
+  tile.onclick=()=>openModule(role,'pamati',null,false,mission.id);
+  grid.append(tile);
  }
  section.append(grid);
+ const old=E('details','','foundation-legacy-links');
+ old.append(E('summary','📚 Vēl vārdu spēles un iepriekšējās misijas'));
  const links=E('div','','button-cluster');
  if(role==='marks'){
-  button(links,'📕 Atvērt latviešu valodas trenažieri →',()=>openModule(role,'latviesu'), 'quiet-button');
-  button(links,'🐉 Teikumu pūķa akadēmija →',()=>openModule(role,'teikumi'),'quiet-button');
+  button(links,'Latviešu valodas trenažieris →',()=>openModule(role,'latviesu'),'quiet-button');
+  button(links,'Teikumu pūķa akadēmija →',()=>openModule(role,'teikumi'),'quiet-button');
  }else{
-  button(links,'🌸 Valodas dārzs un vieglā lasīšana →',()=>openModule(role,'latviesu'),'quiet-button');
+  button(links,'Valodas dārzs un vieglā lasīšana →',()=>openModule(role,'latviesu'),'quiet-button');
  }
- section.append(E('p','Iepriekšējie latviešu valodas uzdevumi paliek pieejami katru dienu.','points-disclaimer'),links);
- parent.append(section);
+ old.append(links);
+ section.append(old);parent.append(section);
 }
 function renderDashboard(role){
  state.active=null;state.dirty=false;currentActivity='Priekšmetu izvēle';state.day=dayKey(new Date());
