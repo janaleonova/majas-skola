@@ -42,13 +42,13 @@ export function getDailyFoundations(role,date){
  const seed=dayNumber(date),variant=mod(seed+(role==='marks'?0:3),templates.length),story=templates[variant];
  const groups=2+mod(seed+(role==='marks'?2:0),4),per=3+mod(seed*3+(role==='marks'?1:0),6),given=1+mod(seed,Math.min(6,groups*per-1)),irrelevant=3+mod(seed,6),product=groups*per,total=product-given,nutTemplate=nuts[mod(seed+(role==='marks'?0:2),nuts.length)];
  const nut={
-  story:`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā ir ${per} ${nutTemplate.unit}. Viņš/viņa atdeva draugam ${given} ${nutTemplate.unit}. Blakus uz galda atrodas arī ${irrelevant} ${nutTemplate.extra}. Cik ${nutTemplate.unit} palika?`,
+  story:`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā bija ${per} ${nutTemplate.unit}. Pēc tam ${nutTemplate.owner} draugam atdeva ${given} gabalus. Uz galda esošais pulkstenis rādīja ${irrelevant}:00. Cik ${nutTemplate.unit} palika?`,
   question:`Cik ${nutTemplate.unit} palika?`,
-  facts:[{id:'groups',label:`${groups} ${nutTemplate.box}`,value:groups},{id:'per',label:`${per} ${nutTemplate.unit} katrā`,value:per},{id:'given',label:`${given} atdotas`,value:given},{id:'irrelevant',label:`${irrelevant} ${nutTemplate.extra}`,value:irrelevant}],
-  needed:['groups','per','given'],questionOptions:[`Cik ${nutTemplate.unit} palika?`,`Cik ${nutTemplate.extra} ir uz galda?`,`Cik ${nutTemplate.box} ir kopā?`],
+  facts:[{id:'groups',label:`${groups} ${nutTemplate.box}`,value:groups},{id:'per',label:`${per} ${nutTemplate.unit} katrā`,value:per},{id:'given',label:`Atdeva: ${given}`,value:given},{id:'irrelevant',label:`Pulkstenī ${irrelevant}:00`,value:irrelevant}],
+  needed:['groups','per','given'],questionOptions:[`Cik ${nutTemplate.unit} palika?`,`Cik bija pulkstenis?`,`Cik ${nutTemplate.box} ir kopā?`],
   firstOperation:'multiply',secondOperation:'subtract',firstAnswer:product,answer:total,
   firstPrompt:`${groups} × ${per} = ?`,secondPrompt:`${product} − ${given} = ?`, operations:['multiply','add','subtract','divide'],
-  explanation:`Vispirms ${groups} × ${per} = ${product}, pēc tam ${product} − ${given} = ${total}. ${irrelevant} ${nutTemplate.extra} aprēķinam nav vajadzīgi.`
+  explanation:`Vispirms ${groups} × ${per} = ${product}, pēc tam ${product} − ${given} = ${total}. Pulksteņa laiks (${irrelevant}:00) aprēķinam nav vajadzīgs.`
  };
  return {role,date,math:arithmetic(role,seed),language:{...story,text:role==='samanta'?story.easyText:story.text,questions:[{id:'read',prompt:story.question,options:story.options,answer:story.answer},{id:'spell',prompt:`Ieraksti trūkstošo burtu vārdā ${story.masked}`,answer:story.missing},{id:'meaning',prompt:'Kāds ir galvenais notikums izlasītajā tekstā?',options:[`Stāsts par: ${story.title.toLowerCase()}`,'Stāsts par kosmosa ceļojumu','Stāsts par zemūdeni'],answer:`Stāsts par: ${story.title.toLowerCase()}`},{id:'write',prompt:`Uzraksti visu vārdu bez izlaistajiem burtiem: ${story.masked}`,answer:story.word}]},nut};
 }
