@@ -153,6 +153,44 @@ test('spelling shortcut opens keyboard and accepts tapped missing letters',()=>{
  assert.ok(root.textContent.includes('Pilnais vārds: '+q.spellingWord));
 });
 
+
+test('daily NPD vocabulary must be typed letter by letter, not dictated',()=>{
+ const {root}=setup();
+ renderMarksUnit1Mission(root,{today:'2026-10-30'});
+ const start=root.querySelector('.unit1-day-card button');
+ start.click();
+ const exam=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Sākt dienas NPD'));
+ assert.ok(exam);
+ exam.click();
+ const fields=[...root.querySelectorAll('.unit1-question input')];
+ assert.equal(fields.length,4);
+ assert.ok(fields.every(input=>input.hasAttribute('readonly')));
+ assert.equal(root.querySelectorAll('.unit1-letter-pad').length,4);
+ const first=fields[0];
+ first.onkeydown({key:'b',preventDefault(){}});
+ first.onkeydown({key:'a',preventDefault(){}});
+ first.onkeydown({key:'g',preventDefault(){}});
+ assert.equal(first.value,'bag');
+});
+
+test('mock NPD nationality blanks request the full word with letter keyboard',()=>{
+ const {root}=setup();
+ renderMarksUnit1Mission(root,{today:'2026-11-03'});
+ const last=[...root.querySelectorAll('.unit1-day-card')].at(-1);
+ last.querySelector('button').click();
+ const launch=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Sākt dienas NPD'));
+ assert.ok(launch);launch.click();
+ for(let i=0;i<3;i++){
+  const next=[...root.querySelectorAll('button')].find(b=>b.textContent==='Nākamais →');
+  assert.ok(next);next.click();
+ }
+ assert.ok(root.textContent.includes('Tautību rakstība'));
+ const fields=[...root.querySelectorAll('.unit1-question input')];
+ assert.equal(fields.length,7);
+ assert.ok(fields.every(f=>f.hasAttribute('readonly')));
+ assert.ok(root.textContent.includes('PILNU tautības nosaukumu'));
+});
+
 test('the guided practice explains mistakes, then day-one NPD independently checks 30 answers and saves bonus',async()=>{
  const {root}=setup();
  let saved;
