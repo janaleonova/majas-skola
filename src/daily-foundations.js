@@ -124,6 +124,7 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
   const block=el('section','','db-box');
   add(block,el('h3','🤖 MI konsultants pārbauda tavu domu gaitu'));
   add(block,el('p','Pastāsti vienā vai divos teikumos, kā tu saprati uzdevumu. MI sniegs ieteikumu, bet nemainīs aprēķināto rezultātu.'));
+  add(block,el('p','Raksti tikai par uzdevumu — neievadi savu uzvārdu, kontaktus vai citu privātu informāciju.','db-sub'));
   const field=el('textarea','','db-input');field.value=reason;field.rows=3;field.placeholder='Es vispirms atradu… Pēc tam…';field.maxLength=450;
   field.oninput=()=>{reason=field.value;persist();};add(block,field);
   const ask=button(working?'Pārbaudu…':'Pārbaudīt skaidrojumu ar MI',async()=>{
