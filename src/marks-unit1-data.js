@@ -739,53 +739,53 @@ export const UNIT1_MOCK = [
     "key": "nationalities",
     "title": "4. Tautību rakstība",
     "max": 3.5,
-    "description": "7 tautības × 0,5 p. Vārdu rakstība.",
+    "description": "7 tautības × 0,5 p. Ieraksti PILNU tautības nosaukumu angliski, nevis tikai izlaistos burtus.",
     "items": [
       {
         "id": "n1",
-        "prompt": "Latvia → L_tvi_n",
+        "prompt": "Latvia → L_tvi_n (ieraksti visu vārdu)",
         "answer": "Latvian",
         "options": null,
         "points": 0.5
       },
       {
         "id": "n2",
-        "prompt": "Germany → G_rm_n",
+        "prompt": "Germany → G_rm_n (ieraksti visu vārdu)",
         "answer": "German",
         "options": null,
         "points": 0.5
       },
       {
         "id": "n3",
-        "prompt": "France → Fr_nch",
+        "prompt": "France → Fr_nch (ieraksti visu vārdu)",
         "answer": "French",
         "options": null,
         "points": 0.5
       },
       {
         "id": "n4",
-        "prompt": "Italy → It_lian",
+        "prompt": "Italy → It_lian (ieraksti visu vārdu)",
         "answer": "Italian",
         "options": null,
         "points": 0.5
       },
       {
         "id": "n5",
-        "prompt": "Spain → Sp_nish",
+        "prompt": "Spain → Sp_nish (ieraksti visu vārdu)",
         "answer": "Spanish",
         "options": null,
         "points": 0.5
       },
       {
         "id": "n6",
-        "prompt": "Poland → P_lish",
+        "prompt": "Poland → P_lish (ieraksti visu vārdu)",
         "answer": "Polish",
         "options": null,
         "points": 0.5
       },
       {
         "id": "n7",
-        "prompt": "Japan → J_pan_se",
+        "prompt": "Japan → J_pan_se (ieraksti visu vārdu)",
         "answer": "Japanese",
         "options": null,
         "points": 0.5
