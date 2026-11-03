@@ -152,6 +152,7 @@ export function renderMarksUnit1Mission(container,options={}){
   add(root,box);
  };
  const practiceCategory=q=>
+  q.id.startsWith('train-spell')?'spelling':
   q.id.startsWith('train-object')?'objects':
   q.id.startsWith('train-country')||q.id.startsWith('train-nation')?'countries':
   q.id.startsWith('train-be')?'grammar':
@@ -189,6 +190,7 @@ export function renderMarksUnit1Mission(container,options={}){
   const panel=el('article','unit1-exam-card');
   add(panel,el('p','unit1-kicker',UNIT1_TRAINING_LABELS[practiceCategory(q)]),
    el('h4','',q.prompt));
+  if(q.spellingWord)add(panel,el('p','unit1-tip','⌨️ Rakstīšanas treniņš: ieraksti tikai trūkstošos burtus ar tastatūru. Izruna nav rakstības pārbaude.'));
   let value=practiceAnswers[q.id]||'';
   const feedbackFor=()=>practiceFeedback?.id===q.id?practiceFeedback:null;
   const choices=el('div','unit1-options');
@@ -207,7 +209,7 @@ export function renderMarksUnit1Mission(container,options={}){
    add(panel,choices);
   }else{
    const input=el('input','unit1-answer');
-   input.type='text';input.value=value;input.placeholder='Uzraksti patstāvīgi angliski…';
+   input.type='text';input.value=value;input.placeholder=q.spellingWord?'Ieraksti trūkstošos burtus…':'Uzraksti patstāvīgi angliski…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;persist();};
    add(panel,input);
@@ -229,7 +231,7 @@ export function renderMarksUnit1Mission(container,options={}){
    const note=el('div',fb.correct?'unit1-success':'unit1-status');
    add(note,el('strong','',fb.correct?'✅ Pareizi!':'🔁 Pamēģini vēlreiz!'));
    if(!fb.correct)add(note,el('p','',q.hint||'Pārskati likumu vai piemēru.'));
-   else add(note,el('p','','Tā turpini!'));
+   else add(note,el('p','',q.spellingWord?'Pilnais vārds: '+q.spellingWord+' · Tā turpini!':'Tā turpini!'));
    add(panel,note);
   }
   add(box,panel);
@@ -285,7 +287,7 @@ export function renderMarksUnit1Mission(container,options={}){
    add(block,choices);
   }else{
    const input=el('input','unit1-answer');
-   input.type='text';input.value=current;input.placeholder='Ieraksti angļu valodā…';input.autocomplete='off';
+   input.type='text';input.value=current;input.placeholder='Ieraksti angļu valodā…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{answers[q.id]=input.value;persist();};
    add(block,input);
