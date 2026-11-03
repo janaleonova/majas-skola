@@ -24,7 +24,25 @@ test('dashboard → assigned lesson → grade → receipt → updated dashboard;
  const click=text=>{const b=[...document.querySelectorAll('button')].find(b=>b.textContent===text);assert.ok(b,'Missing '+text);b.click();};
  try{
   new Function(compiled.outputFiles[0].text)();for(let i=0;i<10;i++)await tick();
-  assert.equal(document.querySelectorAll('.subject-grid>.card').length,5);assert.ok(document.querySelector('.daily-task').textContent.includes('Dienas matemātika'));
+  assert.equal(document.querySelectorAll('.subject-grid>.card').length,5);
+  const missionTiles=()=>[...document.querySelectorAll('.foundation-mission-tile')];
+  assert.deepEqual(missionTiles().map(x=>x.querySelector('.foundation-mission-name').textContent),['Burtu misija','Skaitļu misija','Cietais rieksts']);
+  assert.equal(missionTiles().length,3);
+  assert.ok(missionTiles().every(x=>x.classList.contains('foundation-status-new')));
+  const day=window.appTest.state.day,storageKey='majas-skola:'+CHILD_UIDS.marks+':draft-v3:pamati';
+  localStorage.setItem(storageKey,JSON.stringify({version:3,state:{role:'marks',date:day,values:{language:{read:'Izlasīju tekstu'},math:{},nut:{facts:[]}}}}));
+  window.appTest.renderDashboard('marks');
+  assert.ok(missionTiles()[0].classList.contains('foundation-status-started'));
+  assert.equal(missionTiles()[0].querySelector('.foundation-mission-status').textContent,'Iesākts');
+  localStorage.setItem(storageKey,'null');
+  window.rows.progress.push({studentUid:CHILD_UIDS.marks,studentRole:'marks',subject:'Latviešu valoda',subjectId:'language',activityType:'Ikdienas pamatprasmes · Burtu misija · exam',score:100,recordedAt:{seconds:Date.now()/1000},notes:JSON.stringify({dailyFoundationDate:day,dailyFoundationPart:'language'})});
+  window.appTest.state.progress=window.rows.progress.slice();
+  window.appTest.renderDashboard('marks');
+  assert.ok(missionTiles()[0].classList.contains('foundation-status-complete'));
+  assert.ok(missionTiles()[0].textContent.includes('Šodien paveikts'));
+  window.rows.progress.pop();window.appTest.state.progress=window.rows.progress.slice();
+  window.appTest.renderDashboard('marks');
+  assert.ok(document.querySelector('.daily-task').textContent.includes('Dienas matemātika'));
   click('Sākt uzdevumu →');const tile=[...document.querySelectorAll('.topic-tile')].find(x=>x.textContent.includes('Reizrēķins'));tile.click();click('🌱 Mācos · 8');for(let i=0;i<10;i++)await tick();
   for(let i=0;i<8;i++){const expr=document.querySelector('.math-expression').textContent;const numbers=expr.match(/\d+/g).map(Number);document.querySelector('.big-number-input').value=String(numbers[0]*numbers[1]);document.querySelector('.math-answer-form').dispatchEvent(new window.Event('submit',{bubbles:true,cancelable:true}));click('Turpināt uzreiz →');}
   for(let i=0;i<15;i++)await tick();assert.ok(document.querySelector('.bp-receipt').textContent.includes('+7 BP'));assert.equal(window.rows.progress.length,1);assert.equal(window.rows.tasks[0].completions.marks.status,'completed');click('Atgriezties pie dienas plāna →');assert.ok(document.querySelector('.compact-progress').textContent.includes('Kopā 7 BP'));assert.ok(document.querySelector('.daily-task').textContent.includes('Izpildīts')||document.querySelector('.daily-task').textContent.includes('Šodienas'));
