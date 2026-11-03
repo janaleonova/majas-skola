@@ -220,6 +220,13 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
    'Pārskati uzdevuma tekstu un mēģini vēlreiz.','db-alert'));
   add(box,button('Pārbaudīt šo soli →',()=>{
    if(working)return;
+   const a=values.nut;
+   const hasAnswer=step===0?Array.isArray(a.facts)&&a.facts.length>0:
+    step===1?safeText(a.question)!=='':
+    step===2?safeText(a.firstOperation)!=='':
+    step===3?isNumeric(a.firstAnswer):
+    step===4?safeText(a.secondOperation)!=='':isNumeric(a.answer);
+   if(!hasAnswer){message='Vispirms izvēlies vai ieraksti savu atbildi. Tukša atbilde netiek skaitīta kā kļūda.';render();return;}
    const correct=expectedCorrect(step);
    if(!Object.hasOwn(firstTry,step))firstTry[step]=correct;
    if(correct){if(step<5){step++;message='';persist();render();}
