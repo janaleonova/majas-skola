@@ -20,7 +20,7 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
  let step=Math.max(0,Math.min(5,Number(saved?.step)||0));
  let attempts=saved?.attempts&&typeof saved.attempts==='object'?{...saved.attempts}:{};
  let firstTry=saved?.firstTry&&typeof saved.firstTry==='object'?{...saved.firstTry}:{};
- let completed={...completedToday,...(saved?.completed&&typeof saved.completed==='object'?saved.completed:{})};
+ let completed={...(saved?.completed&&typeof saved.completed==='object'?saved.completed:{}),...completedToday};
  let showReadingHelp=false;
  let message='',working=false,aiText='',reason=saved?.reason||'';
  const root=el('div','','db-root');container.replaceChildren(root);
