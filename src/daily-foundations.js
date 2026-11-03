@@ -194,6 +194,15 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
   const n=mission.nut,box=el('section','','db-box');
   add(box,el('h3','🥜 Cietais rieksts'),el('p','Izlasi tekstu. Tev jāatrod svarīgā informācija un jāizvēlas darbības, nevis jāmin gala atbilde.'));
   add(box,el('p',n.story,'db-reading'));
+  if(completed.nut){
+   add(box,el('p','✅ Cietais rieksts atrisināts. Rezultāts par pirmo patstāvīgo mēģinājumu: '+completed.nut.score+'%.','db-good'));
+   add(box,el('p','Risinājuma pārbaude: '+n.explanation,'db-sub'));
+   add(box,button('🔁 Risināt šo uzdevumu no sākuma',()=>{
+    values.nut={facts:[]};step=0;attempts={};firstTry={};completed.nut=null;reason='';aiText='';message='';persist();render();
+   },'db-btn secondary'));
+   finish(box);add(root,box);return;
+  }
+  add(box,el('p','Svarīgi: procentos skaitām pirmos patstāvīgos mēģinājumus. Ja kļūdījies, labo tik ilgi, līdz saproti — tas ir treniņa mērķis.','db-sub'));
   const bar=el('div','','db-progress');const fill=el('span');fill.style.width=percent(step,6)+'%';add(bar,fill);add(box,bar);
   add(box,el('p','Solis '+(step+1)+' no 6','db-step'));
   if(step===0){
