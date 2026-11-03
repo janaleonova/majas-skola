@@ -28,6 +28,19 @@ try{
   await page.locator(role==='vecaks'?'#modules form':'.daily-task').waitFor();
   assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth),'Dashboard overflow '+role+' '+viewport.width);
   if(role!=='vecaks'){
+   assert.equal(await page.locator('.foundation-mission-tile').count(),3,'Exactly three daily icon missions');
+   const layout=await page.locator('.foundation-mission-grid').evaluate(grid=>{
+    const cards=[...grid.querySelectorAll('.foundation-mission-tile')];
+    return {tops:cards.map(c=>Math.round(c.getBoundingClientRect().top)),
+      titles:cards.map(c=>c.querySelector('.foundation-mission-name')?.textContent),
+      borders:cards.map(c=>getComputedStyle(c).borderTopWidth),
+      scroll: grid.scrollWidth>grid.clientWidth};
+   });
+   assert.deepEqual(layout.titles,['Burtu misija','Skaitļu misija','Cietais rieksts']);
+   assert.ok(layout.tops.every(y=>y===layout.tops[0]),'Missions share one horizontal row');
+   assert.ok(layout.borders.every(v=>parseFloat(v)>=2),'Mission status outline must be visible');
+   if(viewport.width===390)assert.ok(layout.scroll,'Mobile daily mission cards scroll horizontally');
+   assert.equal(await page.locator('.foundation-status-new').count(),3);
    assert.equal(await page.locator('.subject-grid>.card').count(),new Set(CATALOG[role].map(m=>m.subjectId)).size);
    const labels=await page.locator('.subject-grid button').allTextContents();
    for(const name of labels){
