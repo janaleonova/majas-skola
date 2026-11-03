@@ -5,6 +5,7 @@ import {renderFirstDiagnostic,DIAGNOSTIC_VERSION} from './first-diagnostic.js';
 import {renderMarksMath} from './marks-math.js';
 import {renderMarksEnglish} from './marks-english.js';
 import {renderMarksUnit1Mission} from './marks-unit1-mission.js';
+import {renderDailyFoundations} from './daily-foundations.js';
 import {UNIT1_DAYS,UNIT1_BONUS_DEADLINE,UNIT1_NPD_DATE,unit1MissionId} from './marks-unit1-data.js';
 import {renderMarksSocialStudies} from './marks-social-studies.js';
 import {renderMarksNatureNPD} from './marks-nature-npd.js';
@@ -83,6 +84,31 @@ function taskCard(parent,task,role){
  if(status==='completed')button(box,'Apskatīt tēmu',()=>task.moduleId?openModule(role,task.moduleId):null,'quiet-button');
  parent.append(box);
 }
+function renderFoundationsDashboard(parent,role){
+ const section=E('section','','module daily-foundations-overview');
+ section.append(E('span','KATRU DIENU','eyebrow'),E('h2','🌱 Pamati, kas nekur nepazūd'),
+  E('p','15–25 minūtes: īsa lasīšana un valoda, četru darbību aprēķini, viens interaktīvs teksta uzdevums. Pildi arī pa daļām.'));
+ const grid=E('div','','today-missions');
+ for(const [id,title] of [['language','📖 Lasu un rakstu'],['math','🧮 Rēķinu ikdienā'],['nut','🥜 Dienas Cietais rieksts']]){
+  const matching=state.progress.filter(r=>r.studentUid===uidFor(role)&&r.studentRole===role&&readNotes(r).dailyFoundationDate===state.day&&readNotes(r).dailyFoundationPart===id);
+  const score=matching.length?Math.max(...matching.map(r=>Number(r.score)||0)):null;
+  const card=E('article','','card task-card');
+  card.append(E('h3',title),E('p',score!==null?'✅ Šodien jau pabeigts · labākais rezultāts '+score+'%':'Vēl nav pabeigts šodien.'),
+    E('p',id==='language'?'Lasīšana ar izpratni un burtu rakstība.':id==='math'?'Pluss, mīnuss, reizrēķins un dalīšana.':'Atrodi dotos, izvēlies darbības un pamato risinājumu.'));
+  button(card,score!==null?'Atkārtot →':'Sākt →',()=>openModule(role,'pamati',null,false,id));
+  grid.append(card);
+ }
+ section.append(grid);
+ const links=E('div','','button-cluster');
+ if(role==='marks'){
+  button(links,'📕 Atvērt latviešu valodas trenažieri →',()=>openModule(role,'latviesu'), 'quiet-button');
+  button(links,'🐉 Teikumu pūķa akadēmija →',()=>openModule(role,'teikumi'),'quiet-button');
+ }else{
+  button(links,'🌸 Valodas dārzs un vieglā lasīšana →',()=>openModule(role,'latviesu'),'quiet-button');
+ }
+ section.append(E('p','Iepriekšējie latviešu valodas uzdevumi paliek pieejami katru dienu.','points-disclaimer'),links);
+ parent.append(section);
+}
 function renderDashboard(role){
  state.active=null;state.dirty=false;currentActivity='Priekšmetu izvēle';state.day=dayKey(new Date());
  const area=$('modules');area.classList.remove('learning-active');area.replaceChildren();
@@ -91,6 +117,7 @@ function renderDashboard(role){
  const points=pointsFor(role),top=E('section','','module compact-progress');
  top.append(E('h2','Šodien +'+points.todayEarned+' BP · Kopā '+points.balance+' BP'),E('p','💎 '+points.crystals.length+'/3 dienas priekšmeti · '+points.remaining+' BP līdz kino mērķim'));
  const slots=E('div','','crystal-slots');for(const subject of SUBJECTS)slots.append(E('span',(points.crystals.includes(subject.id)?'✅ ':'○ ')+subject.icon+' '+subject.name));top.append(slots);area.append(top);
+ renderFoundationsDashboard(area,role);
  const tasks=state.tasks.filter(t=>['both',role].includes(t.assignedTo)),activeTasks=tasks.filter(t=>taskState(t,role,state.day)==='available');
  const assigned=tasks.find(t=>t.daily&&['available','completed'].includes(taskState(t,role,state.day))&&(!t.dueDate||t.dueDate>=state.day)&&(!t.startDate||t.startDate<=state.day))||activeTasks.find(t=>t.moduleId);
  const dailyModule=CATALOG[role][Math.floor(Date.parse(state.day+'T00:00:00Z')/86400000)%CATALOG[role].length];
@@ -214,6 +241,10 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
  const api=async(path,payload)=>{const token=await state.user.getIdToken();const response=await fetch(path,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+token},body:JSON.stringify(payload),signal:AbortSignal.timeout(20000)});const data=await response.json();if(!response.ok)throw Error(data.error||'Servera kļūda');return data;};
  try{
   if(id==='diagnostic')renderFirstDiagnostic(trainer,{...options,role,alreadyCompleted:state.progress.some(r=>r.studentUid===uidFor(role)&&r.activityType===DIAGNOSTIC_VERSION),onBack:()=>leave(()=>renderDashboard(role))});
+  else if(id==='pamati'&&['marks','samanta'].includes(role))renderDailyFoundations(trainer,{
+   ...options,role,today:state.day,initialPart:initialTopic,
+   askAI:async payload=>(await api('/api/daily-coach',payload)).reply
+  });
   else if(role==='marks'&&id==='latviesu')renderLatvianSchool(trainer,{...options,initialTopic,askAI:async payload=>(await api('/api/marka-ai',payload)).reply});
   else if(role==='marks'&&id==='matematika')renderMarksMath(trainer,{...options,initialTopic,startVerifiedSession:async(topic,mode)=>api('/api/math/session',{topic,mode}),gradeVerifiedSession:async(token,answers)=>api('/api/math/grade',{token,answers})});
   else if(role==='marks'&&id==='teikumi')renderMarksSentenceMission(trainer,options);
