@@ -227,16 +227,24 @@ export function renderMarksUnit1Mission(container,options={}){
   }else{
    const input=el('input','unit1-answer');
    input.type='text';input.value=value;input.placeholder=q.spellingFull?'Raksti visu vārdu…':q.spellingWord?'Ieraksti tikai izlaistos burtus…':'Uzraksti patstāvīgi angliski…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
-   if(q.spellingWord)input.setAttribute('inputmode','none');
+   if(q.spellingWord){input.setAttribute('inputmode','none');input.setAttribute('readonly','');}
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;panel.querySelector('.unit1-feedback')?.remove();persist();};
    add(panel,input);
    if(q.spellingWord){
     const pad=el('div','unit1-letter-pad');pad.setAttribute('aria-label','Burtu tastatūra');
     const press=character=>{input.value+=character;input.oninput();};
+    const erase=()=>{input.value=input.value.slice(0,-1);input.oninput();};
+    input.onkeydown=event=>{
+     const key=event.key;
+     if(/^[a-z]$/i.test(key)){event.preventDefault?.();press(key.toLowerCase());}
+     else if(key==='Backspace'){event.preventDefault?.();erase();}
+     else if(key===' '){event.preventDefault?.();press(' ');}
+     else if(key==='-'){event.preventDefault?.();press('-');}
+    };
     for(const letter of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ')add(pad,button(letter,()=>press(letter.toLowerCase()),'unit1-letter-key'));
     add(pad,button('Atstarpe',()=>press(' '),'unit1-letter-key wide'));
-    add(pad,button('⌫ Dzēst',()=>{input.value=input.value.slice(0,-1);input.oninput();},'unit1-letter-key wide'));
+    add(pad,button('⌫ Dzēst',erase,'unit1-letter-key wide'));
     add(panel,pad);
    }
   }
