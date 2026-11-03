@@ -11,7 +11,7 @@ const OP_LABELS={multiply:'Reizināt (×)',add:'Saskaitīt (+)',subtract:'Atņem
 const todayKey=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Riga',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const safeText=x=>String(x??'').trim();
 const isNumeric=x=>/^-?\d+$/.test(safeText(x));
-export function renderDailyFoundations(container,{role='marks',today=todayKey(),initialPart=null,initialState=null,canSubmit=true,saveProgress=async()=>null,onCheckpoint=()=>{},askAI=null}={}){
+export function renderDailyFoundations(container,{role='marks',today=todayKey(),initialPart=null,initialState=null,completedToday={},canSubmit=true,saveProgress=async()=>null,onCheckpoint=()=>{},askAI=null}={}){
  const date=typeof today==='string'?today:todayKey(),mission=getDailyFoundations(role,date);
  const saved=initialState?.date===date&&initialState?.role===role?initialState:null;
  let part=PARTS.includes(initialPart)?initialPart:PARTS.includes(saved?.part)?saved.part:'home';
@@ -20,7 +20,8 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
  let step=Math.max(0,Math.min(5,Number(saved?.step)||0));
  let attempts=saved?.attempts&&typeof saved.attempts==='object'?{...saved.attempts}:{};
  let firstTry=saved?.firstTry&&typeof saved.firstTry==='object'?{...saved.firstTry}:{};
- let completed=saved?.completed&&typeof saved.completed==='object'?{...saved.completed}:{};
+ let completed={...completedToday,...(saved?.completed&&typeof saved.completed==='object'?saved.completed:{})};
+ let showReadingHelp=false;
  let message='',working=false,aiText='',reason=saved?.reason||'';
  const root=el('div','','db-root');container.replaceChildren(root);
  const style=el('style');style.textContent=`
@@ -157,6 +158,14 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
   const box=el('section','','db-box');
   add(box,el('h3','📖 '+partName(part)),el('p','Lasi lēni un saproti. Drīksti pārlasīt vairākas reizes.'));
   add(box,el('h4',mission.language.title),el('p',mission.language.text,'db-reading'));
+  if(role==='samanta'){
+   add(box,button(showReadingHelp?'Paslēpt lasīšanas palīdzību':'🔎 Lasīt pa teikumiem',()=>{showReadingHelp=!showReadingHelp;render();},'db-btn secondary'));
+   if(showReadingHelp){
+    const helper=el('div','','db-box');add(helper,el('h4','Lasām soli pa solim'));
+    mission.language.text.split(/\.\s*/).map(t=>t.trim()).filter(Boolean).forEach((sentence,i)=>add(helper,el('p',(i+1)+'. '+sentence+'.','db-reading')));
+    add(helper,el('p','Grūtā vārda zilbes: '+mission.language.syllables,'db-sub'));add(box,helper);
+   }
+  }
   mission.language.questions.forEach(q=>{
    const card=el('div','','db-question');add(card,el('h4',q.prompt));
    if(q.options)choose(card,q.options,q.id);
