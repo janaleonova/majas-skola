@@ -49,7 +49,7 @@ export function getDailyFoundations(role,date){
  const modeDivide=mode===2,modeAdd=mode===1;
  const firstOperation=modeDivide?'divide':'multiply',secondOperation=modeAdd?'add':'subtract';
  const firstAnswer=modeDivide?per:product,answer=modeDivide?per-given:modeAdd?product+given:product-given;
- const question=modeDivide?`Cik ${nutTemplate.unitGenitive} palika vienā iepakojumā?`:
+ const question=modeDivide?`Cik ${nutTemplate.unitGenitive} palika tajā iepakojumā, no kura atdeva draugam?`:
    modeAdd?`Cik ${nutTemplate.unitGenitive} tagad ir kopā?`:`Cik ${nutTemplate.unitGenitive} palika?`;
  const story=modeDivide
   ?`${nutTemplate.owner} sadalīja ${product} ${nutTemplate.unit} vienādi ${groups} iepakojumos. Pēc tam no viena iepakojuma ${nutTemplate.owner} atdeva draugam ${given} gabalus. Uz galda pulkstenis rādīja ${irrelevant}:00. ${question}`
