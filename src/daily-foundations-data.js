@@ -14,11 +14,11 @@ const templates=[
  {title:'Pastaiga gar upi',theme:'putnu vērošanu',easyText:'Agate un vectēvs vēroja putnus pie upes. Agate skatījās no attāluma.',syllables:'put-ni',text:'Agate ar vectēvu gāja gar upi. Viņi pamanīja pīles un vienu gulbi. Vectēvs pastāstīja, ka putnus nedrīkst traucēt ligzdošanas laikā. Agate putnus vēroja no attāluma.',question:'Kā Agate vēroja putnus?',options:['No attāluma','No laivas','No koka'],answer:'No attāluma',word:'putni',masked:'p_tni',missing:'u'}
 ];
 const nuts=[
- {place:'uzlīmes',owner:'Liene',unit:'uzlīmes',box:'aploksnes',extra:'zīmulis'},
- {place:'kartiņas',owner:'Rihards',unit:'kartiņas',box:'paciņas',extra:'lineāls'},
- {place:'krāsainos akmentiņus',owner:'Laura',unit:'akmentiņi',box:'maisiņi',extra:'dzēšgumija'},
- {place:'konfektes',owner:'Tomass',unit:'konfektes',box:'kastītes',extra:'pildspalva'},
- {place:'zīmodziņus',owner:'Marta',unit:'zīmodziņi',box:'lādītes',extra:'burtnīca'}
+ {place:'uzlīmes',owner:'Liene',unit:'uzlīmes',unitGenitive:'uzlīmju',boxGenitive:'aplokšņu',box:'aploksnes',extra:'zīmulis'},
+ {place:'kartiņas',owner:'Rihards',unit:'kartiņas',unitGenitive:'kartiņu',boxGenitive:'paciņu',box:'paciņas',extra:'lineāls'},
+ {place:'krāsainos akmentiņus',owner:'Laura',unit:'akmentiņi',unitGenitive:'akmentiņu',boxGenitive:'maisiņu',box:'maisiņi',extra:'dzēšgumija'},
+ {place:'konfektes',owner:'Tomass',unit:'konfektes',unitGenitive:'konfekšu',boxGenitive:'kastīšu',box:'kastītes',extra:'pildspalva'},
+ {place:'zīmodziņus',owner:'Marta',unit:'zīmodziņi',unitGenitive:'zīmodziņu',boxGenitive:'lādīšu',box:'lādītes',extra:'burtnīca'}
 ];
 function arithmetic(role,seed){
  const level=role==='marks'?1:0,offset=mod(seed*7+(level?11:3),30);
@@ -42,10 +42,10 @@ export function getDailyFoundations(role,date){
  const seed=dayNumber(date),variant=mod(seed+(role==='marks'?0:3),templates.length),story=templates[variant];
  const groups=2+mod(seed+(role==='marks'?2:0),4),per=3+mod(seed*3+(role==='marks'?1:0),6),given=1+mod(seed,Math.min(6,groups*per-1)),irrelevant=3+mod(seed,6),product=groups*per,total=product-given,nutTemplate=nuts[mod(seed+(role==='marks'?0:2),nuts.length)];
  const nut={
-  story:`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā bija ${per} ${nutTemplate.unit}. Pēc tam ${nutTemplate.owner} draugam atdeva ${given} gabalus. Uz galda esošais pulkstenis rādīja ${irrelevant}:00. Cik ${nutTemplate.unit} palika?`,
-  question:`Cik ${nutTemplate.unit} palika?`,
+  story:`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā bija ${per} ${nutTemplate.unit}. Pēc tam ${nutTemplate.owner} draugam atdeva ${given} gabalus. Uz galda esošais pulkstenis rādīja ${irrelevant}:00. Cik ${nutTemplate.unitGenitive} palika?`,
+  question:`Cik ${nutTemplate.unitGenitive} palika?`,
   facts:[{id:'groups',label:`${groups} ${nutTemplate.box}`,value:groups},{id:'per',label:`${per} ${nutTemplate.unit} katrā`,value:per},{id:'given',label:`Atdeva: ${given}`,value:given},{id:'irrelevant',label:`Pulkstenī ${irrelevant}:00`,value:irrelevant}],
-  needed:['groups','per','given'],questionOptions:[`Cik ${nutTemplate.unit} palika?`,`Cik bija pulkstenis?`,`Cik ${nutTemplate.box} ir kopā?`],
+  needed:['groups','per','given'],questionOptions:[`Cik ${nutTemplate.unitGenitive} palika?`,`Cik bija pulkstenis?`,`Cik ${nutTemplate.boxGenitive} ir kopā?`],
   firstOperation:'multiply',secondOperation:'subtract',firstAnswer:product,answer:total,
   firstPrompt:`${groups} × ${per} = ?`,secondPrompt:`${product} − ${given} = ?`, operations:['multiply','add','subtract','divide'],
   explanation:`Vispirms ${groups} × ${per} = ${product}, pēc tam ${product} − ${given} = ${total}. Pulksteņa laiks (${irrelevant}:00) aprēķinam nav vajadzīgs.`
