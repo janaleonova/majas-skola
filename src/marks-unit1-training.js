@@ -1015,12 +1015,12 @@ export const UNIT1_TRAINING_BANK = {
   },
   {
     "id": "train-spell-12",
-    "prompt": "✍️ 🎮 spēļu konsole — papildini: c_nsole. Ieraksti TIKAI trūkstošos burtus.",
+    "prompt": "✍️ 🎮 spēļu konsole — papildini: games c_nsole. Ieraksti TIKAI trūkstošos burtus.",
     "answer": "o",
     "options": null,
     "points": 1,
     "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
-    "spellingWord": "console",
+    "spellingWord": "games console",
     "spellingMask": "c_nsole"
   },
   {
