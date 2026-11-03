@@ -40,15 +40,39 @@ function arithmetic(role,seed){
 export function getDailyFoundations(role,date){
  if(!['marks','samanta'].includes(role)||!validFoundationDate(date))throw Error('Nederīga dienas pamatprasmju misija.');
  const seed=dayNumber(date),variant=mod(seed+(role==='marks'?0:3),templates.length),story=templates[variant];
- const groups=2+mod(seed+(role==='marks'?2:0),4),per=3+mod(seed*3+(role==='marks'?1:0),6),given=1+mod(seed,Math.min(6,groups*per-1)),irrelevant=3+mod(seed,6),product=groups*per,total=product-given,nutTemplate=nuts[mod(seed+(role==='marks'?0:2),nuts.length)];
- const nut={
-  story:`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā bija ${per} ${nutTemplate.unit}. Pēc tam ${nutTemplate.owner} draugam atdeva ${given} gabalus. Uz galda esošais pulkstenis rādīja ${irrelevant}:00. Cik ${nutTemplate.unitGenitive} palika?`,
-  question:`Cik ${nutTemplate.unitGenitive} palika?`,
-  facts:[{id:'groups',label:`${groups} ${nutTemplate.box}`,value:groups},{id:'per',label:`${per} ${nutTemplate.unit} katrā`,value:per},{id:'given',label:`Atdeva: ${given}`,value:given},{id:'irrelevant',label:`Pulkstenī ${irrelevant}:00`,value:irrelevant}],
-  needed:['groups','per','given'],questionOptions:[`Cik ${nutTemplate.unitGenitive} palika?`,`Cik bija pulkstenis?`,`Cik ${nutTemplate.boxGenitive} ir kopā?`],
-  firstOperation:'multiply',secondOperation:'subtract',firstAnswer:product,answer:total,
-  firstPrompt:`${groups} × ${per} = ?`,secondPrompt:`${product} − ${given} = ?`, operations:['multiply','add','subtract','divide'],
-  explanation:`Vispirms ${groups} × ${per} = ${product}, pēc tam ${product} − ${given} = ${total}. Pulksteņa laiks (${irrelevant}:00) aprēķinam nav vajadzīgs.`
+ const groups=2+mod(seed+(role==='marks'?2:0),4);
+ const per=3+mod(seed*3+(role==='marks'?1:0),6);
+ const product=groups*per,mode=mod(seed+(role==='marks'?0:1),3);
+ const given=1+mod(seed,mode===2?per-1:Math.min(6,product-1));
+ const irrelevant=3+mod(seed,6),nutTemplate=nuts[mod(seed+(role==='marks'?0:2),nuts.length)];
+ const extraFact={id:'irrelevant',label:`Pulkstenī ${irrelevant}:00`,value:irrelevant};
+ const modeDivide=mode===2,modeAdd=mode===1;
+ const firstOperation=modeDivide?'divide':'multiply',secondOperation=modeAdd?'add':'subtract';
+ const firstAnswer=modeDivide?per:product,answer=modeDivide?per-given:modeAdd?product+given:product-given;
+ const question=modeDivide?`Cik ${nutTemplate.unitGenitive} palika vienā iepakojumā?`:
+   modeAdd?`Cik ${nutTemplate.unitGenitive} tagad ir kopā?`:`Cik ${nutTemplate.unitGenitive} palika?`;
+ const story=modeDivide
+  ?`${nutTemplate.owner} sadalīja ${product} ${nutTemplate.unit} vienādi ${groups} iepakojumos. Pēc tam no viena iepakojuma ${nutTemplate.owner} atdeva draugam ${given} gabalus. Uz galda pulkstenis rādīja ${irrelevant}:00. ${question}`
+  :`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā bija ${per} ${nutTemplate.unit}. Pēc tam ${nutTemplate.owner} ${modeAdd?'atrada vēl':'draugam atdeva'} ${given} gabalus. Uz galda pulkstenis rādīja ${irrelevant}:00. ${question}`;
+ const facts=modeDivide
+  ?[{id:'total',label:`Kopā ${product} ${nutTemplate.unit}`,value:product},
+    {id:'groups',label:`${groups} iepakojumi`,value:groups},
+    {id:'given',label:`No viena atdeva: ${given}`,value:given},extraFact]
+  :[{id:'groups',label:`${groups} ${nutTemplate.box}`,value:groups},
+    {id:'per',label:`${per} ${nutTemplate.unit} katrā`,value:per},
+    {id:'given',label:`${modeAdd?'Pievienoja':'Atdeva'}: ${given}`,value:given},extraFact];
+ const needed=modeDivide?['total','groups','given']:['groups','per','given'];
+ const firstPrompt=modeDivide?`${product} ÷ ${groups} = ?`:`${groups} × ${per} = ?`;
+ const secondPrompt=modeAdd?`${product} + ${given} = ?`:`${firstAnswer} − ${given} = ?`;
+ const firstHint=modeDivide?'Sadali priekšmetu skaitu vienādās grupās.': 'Vienādas grupas palīdz aprēķināt kopskaitu.';
+ const secondHint=modeAdd?'Pēc papildināšanas skaits kļūst lielāks.':'Pēc atdošanas skaits kļūst mazāks.';
+ const nut={mode,story,question,facts,needed,
+  questionOptions:[question,'Cik bija pulkstenis?',`Cik ${nutTemplate.boxGenitive} ir kopā?`],
+  firstOperation,secondOperation,firstAnswer,answer,
+  firstStagePrompt:modeDivide?'Cik bija katrā iepakojumā pirms atdošanas?':'Cik bija kopā pirms pārmaiņām?',
+  firstHint,secondHint,firstPrompt,secondPrompt,
+  operations:['multiply','add','subtract','divide'],
+  explanation:`Vispirms ${firstPrompt.replace('?',String(firstAnswer))}, pēc tam ${secondPrompt.replace('?',String(answer))}. Pulksteņa laiks (${irrelevant}:00) aprēķinam nav vajadzīgs.`
  };
  return {role,date,math:arithmetic(role,seed),language:{...story,text:role==='samanta'?story.easyText:story.text,questions:[{id:'read',prompt:story.question,options:story.options,answer:story.answer},{id:'spell',prompt:`Ieraksti trūkstošo burtu vārdā ${story.masked}`,answer:story.missing},{id:'meaning',prompt:'Par ko ir šis teksts?',options:[`Par ${story.theme}`,'Par kosmosa ceļojumu','Par zemūdeni'],answer:`Par ${story.theme}`},{id:'write',prompt:`Uzraksti visu vārdu bez izlaistajiem burtiem: ${story.masked}`,answer:story.word}]},nut};
 }
