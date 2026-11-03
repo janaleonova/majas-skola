@@ -226,7 +226,7 @@ export function renderMarksUnit1Mission(container,options={}){
    add(panel,choices);
   }else{
    const input=el('input','unit1-answer');
-   input.type='text';input.value=value;input.placeholder=q.spellingFull?'Raksti visu vārdu…':q.spellingWord?'Ieraksti tikai izlaistos burtus…':'Uzraksti patstāvīgi angliski…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
+   input.type='text';input.value=value;input.placeholder=q.spellingFull?'Raksti visu vārdu…':q.spellingWord?'Ieraksti tikai izlaistos burtus…':'Uzraksti patstāvīgi angliski…';input.autocomplete='off';input.setAttribute('autocomplete','off');input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
    if(q.spellingWord){input.setAttribute('inputmode','none');input.setAttribute('readonly','');}
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{practiceAnswers[q.id]=input.value;practiceFeedback=null;panel.querySelector('.unit1-feedback')?.remove();persist();};
@@ -321,7 +321,7 @@ export function renderMarksUnit1Mission(container,options={}){
    add(block,choices);
   }else{
    const input=el('input','unit1-answer');
-   input.type='text';input.value=current;input.placeholder='Ieraksti angļu valodā…';input.autocomplete='off';input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
+   input.type='text';input.value=current;input.placeholder='Ieraksti angļu valodā…';input.autocomplete='off';input.setAttribute('autocomplete','off');input.spellcheck=false;input.setAttribute('autocorrect','off');input.setAttribute('autocapitalize','off');
    input.setAttribute('aria-label',q.prompt);
    input.oninput=()=>{answers[q.id]=input.value;persist();};
    add(block,input);
