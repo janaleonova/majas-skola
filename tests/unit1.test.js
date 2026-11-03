@@ -78,7 +78,7 @@ test('Mark earns five +10 BP bonuses only once each, no bonus before release or 
 test('training is extensive, cumulative and daily NPD covers more than the new topic',()=>{
  const sizes=UNIT1_DAYS.map(d=>dailyTrainingQuestions(d.date).length);
  const exam=UNIT1_DAYS.map(d=>dailyExamQuestions(d.date,NEW_WORDS,UNIT1_DAY2,UNIT1_DAY3,UNIT1_DAY4,UNIT1_MOCK));
- assert.deepEqual(sizes,[38,55,62,85,85]);
+ assert.deepEqual(sizes,[53,98,105,128,128]);
  assert.deepEqual(exam.map(a=>a.length),[30,39,33,43,50]);
  assert.deepEqual(UNIT1_DAYS.map((d,i)=>[d.date,exam[i].length]),[
   ['2026-10-30',30],['2026-10-31',39],['2026-11-01',33],['2026-11-02',43],['2026-11-03',50]]);
@@ -86,9 +86,66 @@ test('training is extensive, cumulative and daily NPD covers more than the new t
   assert.equal(new Set(exam[i].map(q=>q.id)).size,exam[i].length);
   assert.equal(new Set(dailyTrainingQuestions(UNIT1_DAYS[i].date).map(q=>q.id)).size,sizes[i]);
  }
- assert.equal(Object.values(UNIT1_TRAINING_BANK).flat().length,85);
+ assert.equal(Object.values(UNIT1_TRAINING_BANK).flat().length,128);
  assert.equal(dailyReadiness(84),'almost');
  assert.equal(dailyReadiness(85),'ready');
+});
+
+
+test('spelling gap tasks reconstruct the exact word and are available on NPD eve',()=>{
+ const gaps=UNIT1_TRAINING_BANK.spelling;
+ const fromMemory=UNIT1_TRAINING_BANK.spellingFull;
+ assert.equal(gaps.length,35);
+ assert.equal(fromMemory.length,8);
+ for(const q of gaps){
+  assert.equal(q.spellingMask.length,q.spellingWord.length,q.id);
+  let missing='';
+  for(let i=0;i<q.spellingMask.length;i++){
+   if(q.spellingMask[i]==='_')missing+=q.spellingWord[i];
+   else assert.equal(q.spellingMask[i],q.spellingWord[i],q.id);
+  }
+  assert.equal(q.answer,missing,q.id);
+  assert.ok(isUnit1Correct(q,missing),q.id);
+  assert.ok(!isUnit1Correct(q,'WRONG'),q.id);
+ }
+ assert.ok(gaps.some(q=>q.spellingWord==='games console'));
+ assert.ok(gaps.some(q=>q.spellingWord==='the UK'));
+ assert.ok(fromMemory.some(q=>q.answer==='a games console'));
+ assert.ok(fromMemory.every(q=>q.options===null));
+ for(const date of ['2026-11-02','2026-11-03']){
+  const training=dailyTrainingQuestions(date);
+  assert.ok(training.some(q=>q.id.startsWith('train-spell-')),date);
+  assert.ok(training.some(q=>q.id.startsWith('train-spell-full-')),date);
+ }
+ assert.equal(UNIT1_MOCK.find(s=>s.key==='nationalities').items.length,7);
+ assert.equal(UNIT1_MOCK.find(s=>s.key==='nationalities').max,3.5);
+});
+
+test('spelling shortcut opens keyboard and accepts tapped missing letters',()=>{
+ const {root}=setup();
+ let checkpoint;
+ renderMarksUnit1Mission(root,{today:'2026-11-03',onCheckpoint:state=>{checkpoint=state;}});
+ const day=[...root.querySelectorAll('.unit1-day-card')].at(-1);
+ assert.ok(day);
+ const shortcut=[...day.querySelectorAll('button')].find(x=>x.textContent.includes('Trenēt vārdu rakstību'));
+ assert.ok(shortcut);
+ shortcut.click();
+ assert.equal(checkpoint.phase,'practice');
+ const q=UNIT1_TRAINING_BANK.spelling[0];
+ const field=root.querySelector('.unit1-exam-card input');
+ assert.ok(field);
+ assert.equal(field.getAttribute('autocomplete'),'off');
+ assert.equal(field.getAttribute('inputmode'),'none');
+ assert.equal(root.querySelectorAll('.unit1-letter-key').length,28);
+ for(const ch of q.answer){
+  const key=[...root.querySelectorAll('.unit1-letter-key')].find(x=>x.textContent===ch.toUpperCase());
+  assert.ok(key,ch);
+  key.click();
+ }
+ assert.equal(checkpoint.practiceAnswers[q.id],q.answer);
+ const check=[...root.querySelectorAll('button')].find(b=>b.textContent==='Pārbaudīt atbildi');
+ check.click();
+ assert.ok(root.textContent.includes('Pilnais vārds: '+q.spellingWord));
 });
 
 test('the guided practice explains mistakes, then day-one NPD independently checks 30 answers and saves bonus',async()=>{
@@ -105,7 +162,7 @@ test('the guided practice explains mistakes, then day-one NPD independently chec
  first.click();
  assert.ok(root.textContent.includes('Vārdu medības'));
  assert.equal(root.querySelectorAll('.unit1-flashcard').length,15);
- const practice=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Trenēties · 38'));
+ const practice=[...root.querySelectorAll('button')].find(b=>b.textContent.includes('Trenēties · 53'));
  assert.ok(practice);
  practice.click();
  assert.ok(root.textContent.includes('Treniņu trase'));
