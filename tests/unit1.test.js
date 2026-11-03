@@ -136,12 +136,17 @@ test('spelling shortcut opens keyboard and accepts tapped missing letters',()=>{
  assert.ok(field);
  assert.equal(field.getAttribute('autocomplete'),'off');
  assert.equal(field.getAttribute('inputmode'),'none');
+ assert.equal(field.hasAttribute('readonly'),true,'Spelling must not accept dictated/pasted text');
  assert.equal(root.querySelectorAll('.unit1-letter-key').length,28);
  for(const ch of q.answer){
   const key=[...root.querySelectorAll('.unit1-letter-key')].find(x=>x.textContent===ch.toUpperCase());
   assert.ok(key,ch);
   key.click();
  }
+ assert.equal(checkpoint.practiceAnswers[q.id],q.answer);
+ field.onkeydown({key:'Backspace',preventDefault(){}});
+ assert.equal(checkpoint.practiceAnswers[q.id],q.answer.slice(0,-1));
+ field.onkeydown({key:q.answer.slice(-1),preventDefault(){}});
  assert.equal(checkpoint.practiceAnswers[q.id],q.answer);
  const check=[...root.querySelectorAll('button')].find(b=>b.textContent==='Pārbaudīt atbildi');
  check.click();
