@@ -147,8 +147,7 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
   const grid=el('div','','db-math-grid');
   for(const q of mission.math){const card=el('div','','db-question');input(card,q.id,q.prompt,true);add(grid,card);}
   add(box,grid);
-  const filled=mission.math.every(q=>isNumeric(values.math[q.id]));
-  add(box,button('Pārbaudīt visus 8 piemērus',()=>{if(filled){const s=foundationScore('math',mission,values.math);result(percent(s.correct,s.total));}else{message='Vispirms ieraksti atbildes visos astoņos piemēros.';render();}},'db-btn'));
+  add(box,button('Pārbaudīt visus 8 piemērus',()=>{if(mission.math.every(q=>isNumeric(values.math[q.id]))){const s=foundationScore('math',mission,values.math);result(percent(s.correct,s.total));}else{message='Vispirms ieraksti atbildes visos astoņos piemēros.';render();}},'db-btn'));
   if(completed.math){const errors=mission.math.filter(q=>String(values.math[q.id]??'').trim()!==String(q.answer));
    if(errors.length)add(box,el('p','db-alert','Jāpatrenē: '+errors.map(q=>q.prompt.replace('?',String(q.answer))).join(' · ')));
   }
@@ -164,9 +163,8 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
    else input(card,q.id,'Uzraksti trūkstošo burtu',false);
    add(box,card);
   });
-  const ready=mission.language.questions.every(q=>safeText(values.language[q.id])!=='');
   add(box,button('Pārbaudīt lasīšanu un rakstīšanu',()=>{
-   if(!ready){message='Izlasi tekstu un atbildi uz visiem trim jautājumiem.';render();return;}
+   if(!mission.language.questions.every(q=>safeText(values.language[q.id])!=='')){message='Izlasi tekstu un atbildi uz visiem trim jautājumiem.';render();return;}
    const s=foundationScore('language',mission,values.language);result(percent(s.correct,s.total));
   }));
   if(completed.language){const errors=mission.language.questions.filter(q=>safeText(values.language[q.id]).toLocaleLowerCase('lv')!==q.answer.toLocaleLowerCase('lv'));
