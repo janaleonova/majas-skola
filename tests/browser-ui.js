@@ -34,11 +34,13 @@ try{
     return {tops:cards.map(c=>Math.round(c.getBoundingClientRect().top)),
       titles:cards.map(c=>c.querySelector('.foundation-mission-name')?.textContent),
       borders:cards.map(c=>getComputedStyle(c).borderTopWidth),
+      shadows:cards.map(c=>getComputedStyle(c).boxShadow),
       scroll: grid.scrollWidth>grid.clientWidth};
    });
    assert.deepEqual(layout.titles,['Burtu misija','Skaitļu misija','Cietais rieksts']);
    assert.ok(layout.tops.every(y=>y===layout.tops[0]),'Missions share one horizontal row');
    assert.ok(layout.borders.every(v=>parseFloat(v)>=2),'Mission status outline must be visible');
+   assert.ok(layout.shadows.every(v=>v!=='none'&&v.includes('rgb')),'Daily mission cards must have a visible neon-style glow');
    if(viewport.width===390)assert.ok(layout.scroll,'Mobile daily mission cards scroll horizontally');
    assert.equal(await page.locator('.foundation-status-new').count(),3);
    assert.equal(await page.locator('.subject-grid>.card').count(),new Set(CATALOG[role].map(m=>m.subjectId)).size);
