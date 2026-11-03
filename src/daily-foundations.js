@@ -211,12 +211,12 @@ export function renderDailyFoundations(container,{role='marks',today=todayKey(),
    choose(box,n.facts,'facts',null,true);
   }else if(step===1){add(box,el('h4','2. Kas uzdevumā jāaprēķina?'));choose(box,n.questionOptions,'question');}
   else if(step===2){add(box,el('h4','3. Kādu darbību veiksi vispirms?'));choose(box,n.operations.map(x=>({id:x,label:OP_LABELS[x]})),'firstOperation');}
-  else if(step===3){add(box,el('h4','4. Cik bija kopā pirms atdošanas?'));input(box,'firstAnswer','Ieraksti pirmās darbības rezultātu',true);}
+  else if(step===3){add(box,el('h4','4. '+n.firstStagePrompt));input(box,'firstAnswer','Ieraksti pirmās darbības rezultātu',true);}
   else if(step===4){add(box,el('h4','5. Kādu darbību veiksi otrajā solī?'));choose(box,n.operations.map(x=>({id:x,label:OP_LABELS[x]})),'secondOperation');}
-  else{add(box,el('h4','6. Cik palika?'));input(box,'answer','Ieraksti gala rezultātu',true);}
+  else{add(box,el('h4','6. '+n.question));input(box,'answer','Ieraksti gala rezultātu',true);}
   const feedback=attempts[step]||0;
   if(feedback>0&&!expectedCorrect(step))add(box,el('p',feedback>=2?
-   (['Ievēro: daļa skaitļu stāstā ir lieki.','Atrodi vārdu “palika”.','Vispirms vienādas grupas saliec kopā.','Atceries: grupu skaits × vienā grupā.','Daļa priekšmetu ir atdota.','No kopskaita jāatņem atdotais.'][step]):
+   (['Ievēro: daļa skaitļu stāstā ir lieki.','Atrodi jautājumu uzdevuma beigās.',n.firstHint,n.firstHint,n.secondHint,n.secondHint][step]):
    'Pārskati uzdevuma tekstu un mēģini vēlreiz.','db-alert'));
   add(box,button('Pārbaudīt šo soli →',()=>{
    if(working)return;
