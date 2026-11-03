@@ -243,6 +243,11 @@ function openModule(role,id,task=null,resume=false,initialTopic=null,missionId=n
   if(id==='diagnostic')renderFirstDiagnostic(trainer,{...options,role,alreadyCompleted:state.progress.some(r=>r.studentUid===uidFor(role)&&r.activityType===DIAGNOSTIC_VERSION),onBack:()=>leave(()=>renderDashboard(role))});
   else if(id==='pamati'&&['marks','samanta'].includes(role))renderDailyFoundations(trainer,{
    ...options,role,today:state.day,initialPart:initialTopic,
+   completedToday:Object.fromEntries(['language','math','nut'].flatMap(part=>{
+    const scores=state.progress.filter(row=>row.studentUid===uidFor(role)&&row.studentRole===role&&
+     readNotes(row).dailyFoundationDate===state.day&&readNotes(row).dailyFoundationPart===part).map(row=>Number(row.score)).filter(Number.isFinite);
+    return scores.length?[[part,{score:Math.max(...scores)}]]:[];
+   })),
    askAI:async payload=>(await api('/api/daily-coach',payload)).reply
   });
   else if(role==='marks'&&id==='latviesu')renderLatvianSchool(trainer,{...options,initialTopic,askAI:async payload=>(await api('/api/marka-ai',payload)).reply});
