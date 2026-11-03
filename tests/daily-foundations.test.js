@@ -67,7 +67,11 @@ test('Math saves independent score under a week-scoped topic, not an unlimited d
 test('Nut is an interactive sequence; a corrected mistake does not award first-try points',async()=>{
  const root=setup(),data=getDailyFoundations('samanta','2026-11-03');let payload;
  renderDailyFoundations(root,{role:'samanta',today:'2026-11-03',initialPart:'nut',saveProgress:async data=>{payload=data;return 'ok';}});
- press(root,'Pārbaudīt šo soli');assert.ok(root.textContent.includes('Vēl nav pareizi'));
+ press(root,'Pārbaudīt šo soli');assert.ok(root.textContent.includes('Tukša atbilde netiek skaitīta kā kļūda'));
+ let wrong=[...root.querySelectorAll('.db-choice')].find(b=>b.textContent.includes(data.nut.facts[3].label));
+ wrong.click();press(root,'Pārbaudīt šo soli');assert.ok(root.textContent.includes('Vēl nav pareizi'));
+ wrong=[...root.querySelectorAll('.db-choice')].find(b=>b.textContent.includes(data.nut.facts[3].label));
+ wrong.click();
  for(const f of data.nut.facts.filter(f=>data.nut.needed.includes(f.id))){
   const btn=[...root.querySelectorAll('.db-choice')].find(b=>b.textContent.includes(f.label));
   assert.ok(btn,f.label);btn.click();
