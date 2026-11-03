@@ -51,7 +51,7 @@ export function getDailyFoundations(role,date){
  const firstAnswer=modeDivide?per:product,answer=modeDivide?per-given:modeAdd?product+given:product-given;
  const question=modeDivide?`Cik ${nutTemplate.unitGenitive} palika tajā iepakojumā, no kura atdeva draugam?`:
    modeAdd?`Cik ${nutTemplate.unitGenitive} tagad ir kopā?`:`Cik ${nutTemplate.unitGenitive} palika?`;
- const story=modeDivide
+ const nutStory=modeDivide
   ?`${nutTemplate.owner} sadalīja ${product} ${nutTemplate.unit} vienādi ${groups} iepakojumos. Pēc tam no viena iepakojuma ${nutTemplate.owner} atdeva draugam ${given} gabalus. Uz galda pulkstenis rādīja ${irrelevant}:00. ${question}`
   :`${nutTemplate.owner} sakrāja ${groups} ${nutTemplate.box}. Katrā bija ${per} ${nutTemplate.unit}. Pēc tam ${nutTemplate.owner} ${modeAdd?'atrada vēl':'draugam atdeva'} ${given} gabalus. Uz galda pulkstenis rādīja ${irrelevant}:00. ${question}`;
  const facts=modeDivide
@@ -66,7 +66,7 @@ export function getDailyFoundations(role,date){
  const secondPrompt=modeAdd?`${product} + ${given} = ?`:`${firstAnswer} − ${given} = ?`;
  const firstHint=modeDivide?'Sadali priekšmetu skaitu vienādās grupās.': 'Vienādas grupas palīdz aprēķināt kopskaitu.';
  const secondHint=modeAdd?'Pēc papildināšanas skaits kļūst lielāks.':'Pēc atdošanas skaits kļūst mazāks.';
- const nut={mode,story,question,facts,needed,
+ const nut={mode,story:nutStory,question,facts,needed,
   questionOptions:[question,'Cik bija pulkstenis?',`Cik ${nutTemplate.boxGenitive} ir kopā?`],
   firstOperation,secondOperation,firstAnswer,answer,
   firstStagePrompt:modeDivide?'Cik bija katrā iepakojumā pirms atdošanas?':'Cik bija kopā pirms pārmaiņām?',
