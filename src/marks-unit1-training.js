@@ -895,300 +895,435 @@ export const UNIT1_TRAINING_BANK = {
   "spelling": [
   {
     "id": "train-spell-0",
-    "prompt": "✍️ 🎒 soma — papildini trūkstošos burtus: b _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "ag",
+    "prompt": "✍️ 🎒 soma — papildini: b_g. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "bag"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "bag",
+    "spellingMask": "b_g"
   },
   {
     "id": "train-spell-1",
-    "prompt": "✍️ 🎸 ģitāra — papildini trūkstošos burtus: g _ _ t _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "uiar",
+    "prompt": "✍️ 🎸 ģitāra — papildini: g_itar. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "u",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "guitar"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "guitar",
+    "spellingMask": "g_itar"
   },
   {
     "id": "train-spell-2",
-    "prompt": "✍️ 📱 telefons — papildini trūkstošos burtus: p _ _ n _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "hoe",
+    "prompt": "✍️ 📱 telefons — papildini: ph_ne. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "o",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "phone"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "phone",
+    "spellingMask": "ph_ne"
   },
   {
     "id": "train-spell-3",
-    "prompt": "✍️ 👟 sporta apavi — papildini trūkstošos burtus: t _ _ i _ _ r _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "ranes",
+    "prompt": "✍️ 👟 sporta apavi — papildini: tr_ine_s. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "ar",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "trainers"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "trainers",
+    "spellingMask": "tr_ine_s"
   },
   {
     "id": "train-spell-4",
-    "prompt": "✍️ 🏀 basketbola bumba — papildini trūkstošos burtus: b _ _ k _ _ b _ _ l. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "asetal",
+    "prompt": "✍️ 🏀 basketbola bumba — papildini: bask_tba_l. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "el",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "basketball"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "basketball",
+    "spellingMask": "bask_tba_l"
   },
   {
     "id": "train-spell-5",
-    "prompt": "✍️ 🎧 austiņas — papildini trūkstošos burtus: h _ _ d _ _ o _ _ s. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "eaphne",
+    "prompt": "✍️ 🎧 austiņas — papildini: headph_nes. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "o",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "headphones"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "headphones",
+    "spellingMask": "headph_nes"
   },
   {
     "id": "train-spell-6",
-    "prompt": "✍️ 🛹 skeitbords — papildini trūkstošos burtus: s _ _ t _ _ o _ _ d. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "kaebar",
+    "prompt": "✍️ 🛹 skeitbords — papildini: skateb_ard. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "o",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "skateboard"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "skateboard",
+    "spellingMask": "skateb_ard"
   },
   {
     "id": "train-spell-7",
-    "prompt": "✍️ 👕 T-krekls — papildini trūkstošos burtus: T - _ h _ _ t. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "sir",
+    "prompt": "✍️ 👕 T-krekls — papildini: T-sh_rt. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "i",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "T-shirt"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "T-shirt",
+    "spellingMask": "T-sh_rt"
   },
   {
     "id": "train-spell-8",
-    "prompt": "✍️ 🚲 velosipēds — papildini trūkstošos burtus: b _ _ e. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "ik",
+    "prompt": "✍️ 🚲 velosipēds — papildini: b_ke. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "i",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "bike"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "bike",
+    "spellingMask": "b_ke"
   },
   {
     "id": "train-spell-9",
-    "prompt": "✍️ 👖 džinsi — papildini trūkstošos burtus: j _ _ n _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "eas",
+    "prompt": "✍️ 👖 džinsi — papildini: j_ans. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "e",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "jeans"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "jeans",
+    "spellingMask": "j_ans"
   },
   {
     "id": "train-spell-10",
-    "prompt": "✍️ 🕶️ saulesbrilles — papildini trūkstošos burtus: s _ _ g _ _ s _ _ s. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "unlase",
+    "prompt": "✍️ 🕶️ saulesbrilles — papildini: sun_lasses. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "g",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "sunglasses"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "sunglasses",
+    "spellingMask": "sun_lasses"
   },
   {
     "id": "train-spell-11",
-    "prompt": "✍️ ⌚ pulkstenis — papildini trūkstošos burtus: w _ _ c _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "ath",
+    "prompt": "✍️ ⌚ pulkstenis — papildini: wa_ch. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "t",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "watch"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "watch",
+    "spellingMask": "wa_ch"
   },
   {
     "id": "train-spell-12",
-    "prompt": "✍️ 🎮 spēļu konsole — papildini trūkstošos burtus: c _ _ s _ _ e. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "onol",
+    "prompt": "✍️ 🎮 spēļu konsole — papildini: c_nsole. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "o",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "console"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "console",
+    "spellingMask": "c_nsole"
   },
   {
     "id": "train-spell-13",
-    "prompt": "✍️ 💻 portatīvais dators — papildini trūkstošos burtus: l _ _ t _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "apop",
+    "prompt": "✍️ 💻 portatīvais dators — papildini: lap_op. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "t",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "laptop"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "laptop",
+    "spellingMask": "lap_op"
   },
   {
     "id": "train-spell-14",
-    "prompt": "✍️ 🧶 džemperis — papildini trūkstošos burtus: s _ _ a _ _ r. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "wete",
+    "prompt": "✍️ 🧶 džemperis — papildini: sw_ater. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "e",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "sweater"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "sweater",
+    "spellingMask": "sw_ater"
   },
   {
     "id": "train-spell-15",
-    "prompt": "✍️ 🇱🇻 latvietis — papildini trūkstošos burtus: L _ _ v _ _ n. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "atia",
+    "prompt": "✍️ 🇱🇻 latvietis — papildini: Latv_an. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "i",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Latvian"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Latvian",
+    "spellingMask": "Latv_an"
   },
   {
     "id": "train-spell-16",
-    "prompt": "✍️ 🇬🇧 brits — papildini trūkstošos burtus: B _ _ t _ _ h. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "riis",
+    "prompt": "✍️ 🇬🇧 brits — papildini: Br_tish. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "i",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "British"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "British",
+    "spellingMask": "Br_tish"
   },
   {
     "id": "train-spell-17",
-    "prompt": "✍️ 🇺🇸 amerikānis — papildini trūkstošos burtus: A _ _ r _ _ a _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "meicn",
+    "prompt": "✍️ 🇺🇸 amerikānis — papildini: Amer_can. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "i",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "American"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "American",
+    "spellingMask": "Amer_can"
   },
   {
     "id": "train-spell-18",
-    "prompt": "✍️ 🇩🇪 vācietis — papildini trūkstošos burtus: G _ _ m _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "eran",
+    "prompt": "✍️ 🇩🇪 vācietis — papildini: G_rman. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "e",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "German"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "German",
+    "spellingMask": "G_rman"
   },
   {
     "id": "train-spell-19",
-    "prompt": "✍️ 🇫🇷 francūzis — papildini trūkstošos burtus: F _ _ n _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "rech",
+    "prompt": "✍️ 🇫🇷 francūzis — papildini: Fr_nch. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "e",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "French"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "French",
+    "spellingMask": "Fr_nch"
   },
   {
     "id": "train-spell-20",
-    "prompt": "✍️ 🇮🇹 itālis — papildini trūkstošos burtus: I _ _ l _ _ n. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "taia",
+    "prompt": "✍️ 🇮🇹 itālis — papildini: It_lian. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Italian"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Italian",
+    "spellingMask": "It_lian"
   },
   {
     "id": "train-spell-21",
-    "prompt": "✍️ 🇪🇸 spānis — papildini trūkstošos burtus: S _ _ n _ _ h. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "pais",
+    "prompt": "✍️ 🇪🇸 spānis — papildini: Sp_nish. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Spanish"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Spanish",
+    "spellingMask": "Sp_nish"
   },
   {
     "id": "train-spell-22",
-    "prompt": "✍️ 🇵🇱 polis — papildini trūkstošos burtus: P _ _ i _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "olsh",
+    "prompt": "✍️ 🇵🇱 polis — papildini: Pol_sh. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "i",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Polish"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Polish",
+    "spellingMask": "Pol_sh"
   },
   {
     "id": "train-spell-23",
-    "prompt": "✍️ 🇯🇵 japānis — papildini trūkstošos burtus: J _ _ a _ _ s _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "apnee",
+    "prompt": "✍️ 🇯🇵 japānis — papildini: Japa_ese. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "n",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Japanese"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Japanese",
+    "spellingMask": "Japa_ese"
   },
   {
     "id": "train-spell-24",
-    "prompt": "✍️ 🇨🇦 kanādietis — papildini trūkstošos burtus: C _ _ a _ _ a _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "andin",
+    "prompt": "✍️ 🇨🇦 kanādietis — papildini: Can_dian. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Canadian"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Canadian",
+    "spellingMask": "Can_dian"
   },
   {
     "id": "train-spell-25",
-    "prompt": "✍️ 🇱🇻 Latvija — papildini trūkstošos burtus: L _ _ v _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "atia",
+    "prompt": "✍️ 🇱🇻 Latvija — papildini: Lat_ia. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "v",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Latvia"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Latvia",
+    "spellingMask": "Lat_ia"
+  },
+  {
+    "id": "train-spell-33",
+    "prompt": "✍️ 🇬🇧 Lielbritānija — papildini: the _K. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "U",
+    "options": null,
+    "points": 1,
+    "hint": "Raksti ar tastatūru un izmanto lielo burtu, ja vajag.",
+    "spellingWord": "the UK",
+    "spellingMask": "the _K"
+  },
+  {
+    "id": "train-spell-34",
+    "prompt": "✍️ 🇺🇸 ASV — papildini: the US_. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "A",
+    "options": null,
+    "points": 1,
+    "hint": "Raksti ar tastatūru un izmanto lielo burtu, ja vajag.",
+    "spellingWord": "the USA",
+    "spellingMask": "the US_"
   },
   {
     "id": "train-spell-26",
-    "prompt": "✍️ 🇩🇪 Vācija — papildini trūkstošos burtus: G _ _ m _ _ y. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "eran",
+    "prompt": "✍️ 🇩🇪 Vācija — papildini: Germ_ny. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Germany"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Germany",
+    "spellingMask": "Germ_ny"
   },
   {
     "id": "train-spell-27",
-    "prompt": "✍️ 🇫🇷 Francija — papildini trūkstošos burtus: F _ _ n _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "race",
+    "prompt": "✍️ 🇫🇷 Francija — papildini: Fr_nce. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "France"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "France",
+    "spellingMask": "Fr_nce"
   },
   {
     "id": "train-spell-28",
-    "prompt": "✍️ 🇮🇹 Itālija — papildini trūkstošos burtus: I _ _ l _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "tay",
+    "prompt": "✍️ 🇮🇹 Itālija — papildini: It_ly. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Italy"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Italy",
+    "spellingMask": "It_ly"
   },
   {
     "id": "train-spell-29",
-    "prompt": "✍️ 🇪🇸 Spānija — papildini trūkstošos burtus: S _ _ i _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "pan",
+    "prompt": "✍️ 🇪🇸 Spānija — papildini: Sp_in. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Spain"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Spain",
+    "spellingMask": "Sp_in"
   },
   {
     "id": "train-spell-30",
-    "prompt": "✍️ 🇵🇱 Polija — papildini trūkstošos burtus: P _ _ a _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "olnd",
+    "prompt": "✍️ 🇵🇱 Polija — papildini: P_land. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "o",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Poland"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Poland",
+    "spellingMask": "P_land"
   },
   {
     "id": "train-spell-31",
-    "prompt": "✍️ 🇯🇵 Japāna — papildini trūkstošos burtus: J _ _ a _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "apn",
+    "prompt": "✍️ 🇯🇵 Japāna — papildini: Jap_n. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Japan"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Japan",
+    "spellingMask": "Jap_n"
   },
   {
     "id": "train-spell-32",
-    "prompt": "✍️ 🇨🇦 Kanāda — papildini trūkstošos burtus: C _ _ a _ _. Ieraksti TIKAI trūkstošos burtus pēc kārtas.",
-    "answer": "anda",
+    "prompt": "✍️ 🇨🇦 Kanāda — papildini: Can_da. Ieraksti TIKAI trūkstošos burtus.",
+    "answer": "a",
     "options": null,
     "points": 1,
-    "hint": "Paskaties uz redzamajiem burtiem un mēģini vēlreiz. Pilno vārdu atklāj tikai pēc pareizas atbildes.",
-    "spellingWord": "Canada"
+    "hint": "Paskaties uz redzamajiem burtiem un raksti ar tastatūru. Pamēģini vēlreiz.",
+    "spellingWord": "Canada",
+    "spellingMask": "Can_da"
+  }
+],
+  "spellingFull": [
+  {
+    "id": "train-spell-full-0",
+    "prompt": "⌨️ 🎸 ģitāra — uzraksti visu vārdu angliski no atmiņas (ar a).",
+    "answer": "a guitar",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "a guitar",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-1",
+    "prompt": "⌨️ 🎧 austiņas — uzraksti visu vārdu angliski no atmiņas.",
+    "answer": "headphones",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "headphones",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-2",
+    "prompt": "⌨️ 🛹 skeitbords — uzraksti visu vārdu angliski no atmiņas (ar a).",
+    "answer": "a skateboard",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "a skateboard",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-3",
+    "prompt": "⌨️ 🎮 spēļu konsole — uzraksti visu vārdu angliski no atmiņas (ar a).",
+    "answer": "a games console",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "a games console",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-4",
+    "prompt": "⌨️ 🕶️ saulesbrilles — uzraksti visu vārdu angliski no atmiņas.",
+    "answer": "sunglasses",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "sunglasses",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-5",
+    "prompt": "⌨️ 🇬🇧 brits — uzraksti visu vārdu angliski no atmiņas.",
+    "answer": "British",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "British",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-6",
+    "prompt": "⌨️ 🇩🇪 Vācija — uzraksti visu vārdu angliski no atmiņas.",
+    "answer": "Germany",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "Germany",
+    "spellingFull": true
+  },
+  {
+    "id": "train-spell-full-7",
+    "prompt": "⌨️ 🇪🇸 Spānija — uzraksti visu vārdu angliski no atmiņas.",
+    "answer": "Spain",
+    "options": null,
+    "points": 1,
+    "hint": "Pārbaudi katru burtu. Raksti, nevis ierunā.",
+    "spellingWord": "Spain",
+    "spellingFull": true
   }
 ],
   "writing": [
@@ -1253,7 +1388,7 @@ export const UNIT1_TRAINING_BANK = {
     }
   ]
 };
-export const UNIT1_TRAINING_KEYS = ['objects','countries','spelling','grammar','questions','shortAnswers','reading','writing'];
+export const UNIT1_TRAINING_KEYS = ['objects','countries','spelling','spellingFull','grammar','questions','shortAnswers','reading','writing'];
 export const UNIT1_TRAINING_LABELS = {
   "objects": "Priekšmeti",
   "countries": "Valstis un tautības",
@@ -1262,15 +1397,16 @@ export const UNIT1_TRAINING_LABELS = {
   "shortAnswers": "Īsās atbildes",
   "reading": "Lasīšana",
   "spelling": "✍️ Trūkstošie burti",
+  "spellingFull": "⌨️ Pilna vārda rakstība",
   "writing": "Rakstīšana"
 };
 export const dailyTrainingQuestions=date=>{
  const bank=UNIT1_TRAINING_BANK;
  if(date==='2026-10-30')return [...bank.objects,...bank.grammar.slice(0,12),...bank.countries.slice(0,6),...bank.spelling.slice(0,15),...bank.questions.slice(0,3),...bank.shortAnswers.slice(0,2)];
- if(date==='2026-10-31')return [...bank.objects.slice(0,8),...bank.countries,...bank.spelling,...bank.grammar,...bank.questions.slice(0,5),...bank.shortAnswers.slice(0,4)];
- if(date==='2026-11-01')return [...bank.objects.slice(0,8),...bank.countries.slice(0,12),...bank.spelling,...bank.grammar,...bank.questions,...bank.shortAnswers.slice(0,6),...bank.writing];
- if(date==='2026-11-02')return [...bank.objects,...bank.countries,...bank.grammar,...bank.questions,...bank.shortAnswers,...bank.reading,...bank.writing];
- return [...bank.objects,...bank.countries,...bank.grammar,...bank.questions,...bank.shortAnswers,...bank.reading,...bank.writing];
+ if(date==='2026-10-31')return [...bank.objects.slice(0,8),...bank.countries,...bank.spelling,...bank.spellingFull,...bank.grammar,...bank.questions.slice(0,5),...bank.shortAnswers.slice(0,4)];
+ if(date==='2026-11-01')return [...bank.objects.slice(0,8),...bank.countries.slice(0,12),...bank.spelling,...bank.spellingFull,...bank.grammar,...bank.questions,...bank.shortAnswers.slice(0,6),...bank.writing];
+ if(date==='2026-11-02')return [...bank.objects,...bank.countries,...bank.spelling,...bank.spellingFull,...bank.grammar,...bank.questions,...bank.shortAnswers,...bank.reading,...bank.writing];
+ return [...bank.objects,...bank.countries,...bank.spelling,...bank.spellingFull,...bank.grammar,...bank.questions,...bank.shortAnswers,...bank.reading,...bank.writing];
 };
 export const dailyExamQuestions=(date,objects,day2,day3,day4,mock)=>{
  if(date==='2026-11-03')return mock.flatMap(section=>section.items);
